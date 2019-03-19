@@ -1,11 +1,5 @@
 package services
 
-import (
-	"core/data-structures"
-	"core/utility"
-	"strings"
-)
-
 type Map struct{}
 
 type MapInput struct {
@@ -19,31 +13,32 @@ type MapOutput struct {
 
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
-	var outputData *data_structures.WordTokenHashTable
-	var outputDataDigest string
-	var err error
+	/*
+		var outputData *data_structures.WordTokenHashTable
+		var outputDataDigest string
+		var err error
 
-	outputData = data_structures.BuildWordTokenHashTable(input.OutputWordHashTableArraySize)
+		outputData = data_structures.BuildWordTokenHashTable(input.OutputWordHashTableArraySize)
 
-	wordScanner := utility.BuildWordScannerFromString(input.InputString)
+		wordScanner := utility.BuildWordScannerFromString(input.InputString)
 
-	for wordScanner.Scan() {
+		for wordScanner.Scan() {
 
-		currentWord := strings.ToLower(wordScanner.Text())
-		if err = outputData.InsertWord(currentWord); err != nil {
+			currentWord := strings.ToLower(wordScanner.Text())
+			if err = outputData.InsertWord(currentWord); err != nil {
+				return err
+			}
+		}
+
+		if outputDataDigest, err = outputData.GetDigest(); err != nil {
 			return err
 		}
-	}
 
-	if outputDataDigest, err = outputData.GetDigest(); err != nil {
-		return err
-	}
+		if err = outputData.WriteOnLocalDisk(); err != nil {
+			return err
+		}
 
-	if err = outputData.WriteOnLocalDisk(); err != nil {
-		return err
-	}
-
-	output.OutputFileDigest = outputDataDigest
-
+		output.OutputFileDigest = outputDataDigest
+	*/
 	return nil
 }

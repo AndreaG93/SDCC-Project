@@ -7,65 +7,9 @@ import (
 	"os"
 )
 
-type TokenWordHashTableSerialized []TokenWordHashTableSerializationUnit
+type WordTokenHashTableSerialized []WordToken
 
-type TokenWordHashTableSerializationUnit struct {
-	TableSizeOrIndex uint
-	Word             string
-	Occurrences      uint
-}
-
-func (obj *TokenWordHashTableSerialized) writeOnLocalDisk() error {
-
-	var outputFile *os.File
-	var outputFileName string
-	var err error
-
-	if outputFileName, err = utility.SHA512(*obj); err != nil {
-		return err
-	}
-	if outputFile, err = os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666); err != nil {
-		return err
-	}
-	defer func() {
-		utility.CheckError(outputFile.Close())
-	}()
-
-	encoder := gob.NewEncoder(outputFile)
-
-	if err = encoder.Encode(*obj); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func writeTokenWordHashTableSerializationUnitsOnLocalDisk(data []TokenWordHashTableSerializationUnit) error {
-
-	var outputFile *os.File
-	var outputFileName string
-	var err error
-
-	if outputFileName, err = utility.SHA512(data); err != nil {
-		return err
-	}
-	if outputFile, err = os.OpenFile(outputFileName, os.O_RDONLY|os.O_CREATE, 0666); err != nil {
-		return err
-	}
-	defer func() {
-		utility.CheckError(outputFile.Close())
-	}()
-
-	encoder := gob.NewEncoder(outputFile)
-
-	if err = encoder.Encode(data); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func readSerializedWordHashTableWithCollisionListFromLocalDisk(filePath string) ([]TokenWordHashTableSerializationUnit, error) {
+func ReadWordTokenHashTableSerializedFromLocalDisk(filePath string) (WordTokenHashTableSerialized, error) {
 
 	var inputFile *os.File
 	var err error
@@ -78,7 +22,7 @@ func readSerializedWordHashTableWithCollisionListFromLocalDisk(filePath string) 
 	}()
 
 	decoder := gob.NewDecoder(inputFile)
-	output := []TokenWordHashTableSerializationUnit{}
+	output := WordTokenHashTableSerialized{}
 
 	err = decoder.Decode(&output)
 	if err != nil {
@@ -86,6 +30,25 @@ func readSerializedWordHashTableWithCollisionListFromLocalDisk(filePath string) 
 	}
 
 	fmt.Println(output)
+
+	return output, nil
+}
+
+func (obj WordTokenHashTableSerialized) Deserialize() (*WordTokenHashTable, error) {
+
+	var output *WordTokenHashTable
+	var currentWordToken *WordToken
+
+	output = BuildWordTokenHashTable(obj[0].Occurrences)
+
+	for index := uint(1); index < uint(len(obj)); index++ {
+
+		currentWordToken = BuildWordToken(obj[index].Word, obj[index].Occurrences)
+		if err := (*output).InsertWordToken(currentWordToken); err != nil {
+			return nil, err
+		}
+
+	}
 
 	return output, nil
 }

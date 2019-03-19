@@ -69,9 +69,12 @@ func (obj *WordTokenList) Print() {
 
 func (obj *WordTokenList) WordToken() *WordToken {
 
-	currentWordTokenElement := (*obj).currentWordTokenElement
+	var output *WordToken
 
-	return (currentWordTokenElement.Value).(*WordToken)
+	currentWordTokenElement := (*obj).currentWordTokenElement
+	output = ((*currentWordTokenElement).Value).(*WordToken)
+
+	return output
 }
 
 func (obj *WordTokenList) IteratorReset() {
