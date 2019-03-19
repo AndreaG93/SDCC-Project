@@ -3,7 +3,6 @@ package data_structures
 import (
 	"core/utility"
 	"encoding/gob"
-	"fmt"
 	"os"
 )
 
@@ -28,8 +27,6 @@ func ReadWordTokenHashTableSerializedFromLocalDisk(filePath string) (WordTokenHa
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println(output)
 
 	return output, nil
 }

@@ -1,12 +1,33 @@
 package utility
 
 import (
+	"bytes"
 	"encoding/gob"
 	"errors"
+	"io/ioutil"
 	"os"
 )
 
-func WriteToLocalDisk(data interface{}) error {
+func WriteToLocalDisk(filename string, data interface{}) error {
+
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
+
+	if err := enc.Encode(data); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(filename, buffer.Bytes(), 0644); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ReadFromLocalDisk(filename string) ([]byte, error) {
+	return ioutil.ReadFile(filename)
+}
+
+func WriteToLocalDisk2(data interface{}) error {
 
 	var outputFile *os.File
 	var outputFileName string

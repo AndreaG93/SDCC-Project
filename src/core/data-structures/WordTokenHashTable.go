@@ -94,3 +94,7 @@ func (obj *WordTokenHashTable) Serialize() WordTokenHashTableSerialized {
 
 	return output
 }
+
+func (obj *WordTokenHashTable) extractWordTokenListAt() *WordTokenList {
+
+}

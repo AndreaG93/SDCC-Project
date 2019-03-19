@@ -55,7 +55,7 @@ func Test_DigestGenerating(t *testing.T) {
 	serializedData = (*data).Serialize()
 	digestBeforeSerialization, _ = utility.SHA512(serializedData)
 
-	if err = utility.WriteToLocalDisk(serializedData); err != nil {
+	if err = utility.WriteToLocalDisk(digestBeforeSerialization, serializedData); err != nil {
 		panic(err)
 	}
 
