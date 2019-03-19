@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func WriteDataToFile(data interface{}) error {
+func WriteToLocalDisk(data interface{}) error {
 	return nil
 }
 

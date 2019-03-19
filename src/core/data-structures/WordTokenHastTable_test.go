@@ -16,19 +16,19 @@ func Test_Inserting(t *testing.T) {
 		input2 = "Graziani"
 	)
 
-	data := BuildWordHashTableWithCollisionList(10)
+	data := BuildWordTokenHashTable(10)
 
-	if err := data.Insert(input1); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input1); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
-	if err := data.Insert(input2); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input2); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
-	if err := data.Insert(input1); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input1); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
-	if err := data.Insert(input1); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input1); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
 
 	var index1 uint
@@ -71,8 +71,8 @@ func Test_Inserting(t *testing.T) {
 		log.Fatal("Output 2: NOT correct!")
 	}
 
-	fmt.Println(data.numberOfOccurrences)
-	if data.numberOfOccurrences != 2 {
+	fmt.Println(data.numberOfDistinctWords)
+	if data.numberOfDistinctWords != 2 {
 		log.Fatal("Number of stored occurrences NOT correct!")
 	}
 }
@@ -85,19 +85,19 @@ func Test_DigestGenerating(t *testing.T) {
 		expectedOutput = "7cf06db9ae13658cd35c9e36433b09ef80682de9af846cdde9645c7fc477341391418c762ef172bb42d0f3419bb3fdbbca1d9687c5d17d4549cc6c99f79e305d"
 	)
 
-	data := BuildWordHashTableWithCollisionList(10)
+	data := BuildWordTokenHashTable(10)
 
-	if err := data.Insert(input1); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input1); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
-	if err := data.Insert(input2); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input2); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
-	if err := data.Insert(input1); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input1); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
-	if err := data.Insert(input1); err != nil {
-		log.Fatal("Insert Operation Failed!")
+	if err := data.InsertWord(input1); err != nil {
+		log.Fatal("InsertWord Operation Failed!")
 	}
 
 	var digest string

@@ -7,13 +7,40 @@ import (
 	"os"
 )
 
-type serializedWordHashTableWithCollisionList struct {
+type TokenWordHashTableSerialized []TokenWordHashTableSerializationUnit
+
+type TokenWordHashTableSerializationUnit struct {
 	TableSizeOrIndex uint
 	Word             string
 	Occurrences      uint
 }
 
-func writeSerializedWordHashTableWithCollisionListOnLocalDisk(data []serializedWordHashTableWithCollisionList) error {
+func (obj *TokenWordHashTableSerialized) writeOnLocalDisk() error {
+
+	var outputFile *os.File
+	var outputFileName string
+	var err error
+
+	if outputFileName, err = utility.SHA512(*obj); err != nil {
+		return err
+	}
+	if outputFile, err = os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666); err != nil {
+		return err
+	}
+	defer func() {
+		utility.CheckError(outputFile.Close())
+	}()
+
+	encoder := gob.NewEncoder(outputFile)
+
+	if err = encoder.Encode(*obj); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeTokenWordHashTableSerializationUnitsOnLocalDisk(data []TokenWordHashTableSerializationUnit) error {
 
 	var outputFile *os.File
 	var outputFileName string
@@ -38,7 +65,7 @@ func writeSerializedWordHashTableWithCollisionListOnLocalDisk(data []serializedW
 	return nil
 }
 
-func ReadSerializedWordHashTableWithCollisionListFromLocalDisk(filePath string) ([]serializedWordHashTableWithCollisionList, error) {
+func readSerializedWordHashTableWithCollisionListFromLocalDisk(filePath string) ([]TokenWordHashTableSerializationUnit, error) {
 
 	var inputFile *os.File
 	var err error
@@ -51,7 +78,7 @@ func ReadSerializedWordHashTableWithCollisionListFromLocalDisk(filePath string) 
 	}()
 
 	decoder := gob.NewDecoder(inputFile)
-	output := []serializedWordHashTableWithCollisionList{}
+	output := []TokenWordHashTableSerializationUnit{}
 
 	err = decoder.Decode(&output)
 	if err != nil {

@@ -19,18 +19,18 @@ type MapOutput struct {
 
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
-	var outputData *data_structures.WordHashTableWithCollisionList
+	var outputData *data_structures.WordTokenHashTable
 	var outputDataDigest string
 	var err error
 
-	outputData = data_structures.BuildWordHashTableWithCollisionList(input.OutputWordHashTableArraySize)
+	outputData = data_structures.BuildWordTokenHashTable(input.OutputWordHashTableArraySize)
 
 	wordScanner := utility.BuildWordScannerFromString(input.InputString)
 
 	for wordScanner.Scan() {
 
 		currentWord := strings.ToLower(wordScanner.Text())
-		if err = outputData.Insert(currentWord); err != nil {
+		if err = outputData.InsertWord(currentWord); err != nil {
 			return err
 		}
 	}
@@ -39,7 +39,9 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 		return err
 	}
 
-	outputData.WriteOnLocalDisk()
+	if err = outputData.WriteOnLocalDisk(); err != nil {
+		return err
+	}
 
 	output.OutputFileDigest = outputDataDigest
 
