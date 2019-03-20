@@ -4,7 +4,7 @@ import "core/data-structures"
 
 func shuffle(input []*data_structures.WordTokenHashTable, output [][]*data_structures.WordTokenList) {
 
-	output := make([][]*data_structures.WordTokenList, uint(len(input)))
+	//output := make([][]*data_structures.WordTokenList, uint(len(input)))
 
 	/*
 		for x := 0; x < core.AvailableWorkersNumber; x++ {

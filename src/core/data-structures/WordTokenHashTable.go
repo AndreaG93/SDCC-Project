@@ -96,5 +96,5 @@ func (obj *WordTokenHashTable) Serialize() WordTokenHashTableSerialized {
 }
 
 func (obj *WordTokenHashTable) extractWordTokenListAt() *WordTokenList {
-
+	return nil
 }

@@ -29,17 +29,9 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 	var digest string
 	var err error
-	var currentWordTokenList *data_structures.WordTokenList
 	var outputWordTokenList *data_structures.WordTokenList
 
-	outputWordTokenList = data_structures.BuildWordTokenList()
-
-	for index := 0; index < len(input.Data); index++ {
-
-		currentWordTokenList = input.Data[index]
-
-		(*outputWordTokenList).Merge(currentWordTokenList)
-	}
+	outputWordTokenList = data_structures.MergeAnArrayOfWordTokenLists(input.Data)
 
 	(outputWordTokenList).Print()
 

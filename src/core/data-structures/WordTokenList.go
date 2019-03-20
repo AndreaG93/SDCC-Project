@@ -135,3 +135,16 @@ func (obj *WordTokenList) Serialize() []WordToken {
 
 	return output
 }
+
+func MergeAnArrayOfWordTokenLists(input []*WordTokenList) *WordTokenList {
+
+	output := BuildWordTokenList()
+
+	for index := 0; index < len(input); index++ {
+
+		currentWordTokenList := input[index]
+		(*output).Merge(currentWordTokenList)
+	}
+
+	return output
+}
