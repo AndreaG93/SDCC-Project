@@ -1,6 +1,7 @@
 package services
 
-type Map struct{}
+type Map struct {
+}
 
 type MapInput struct {
 	InputString                  string
