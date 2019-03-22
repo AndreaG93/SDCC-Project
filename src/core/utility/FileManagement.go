@@ -23,7 +23,7 @@ func WriteToLocalDisk(filename string, data interface{}) error {
 	return nil
 }
 
-func ReadFromLocalDisk(filename string) ([]byte, error) {
+func ReadLocalFile(filename string) ([]byte, error) {
 	return ioutil.ReadFile(filename)
 }
 

@@ -1,10 +1,16 @@
 package services
 
+import (
+	"SDCC-Project-WorkerNode/src/core/data-structures"
+	"SDCC-Project-WorkerNode/src/core/utility"
+	"strings"
+)
+
 type Map struct {
 }
 
 type MapInput struct {
-	InputString                  string
+	InputFileNameString          string
 	OutputWordHashTableArraySize uint
 }
 
@@ -14,32 +20,40 @@ type MapOutput struct {
 
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
-	/*
-		var outputData *data_structures.WordTokenHashTable
-		var outputDataDigest string
-		var err error
+	var err error
+	var rawInputData []byte
+	var inputData string
+	var outputDataStructure *data_structures.WordTokenHashTable
+	var outputDataStructureSerialized data_structures.WordTokenHashTableSerialized
+	var outputDataStructureDigest string
 
-		outputData = data_structures.BuildWordTokenHashTable(input.OutputWordHashTableArraySize)
+	if rawInputData, err = utility.ReadLocalFile(input.InputFileNameString); err != nil {
+		return err
+	}
+	inputData = string(rawInputData)
 
-		wordScanner := utility.BuildWordScannerFromString(input.InputString)
+	outputDataStructure = data_structures.BuildWordTokenHashTable(input.OutputWordHashTableArraySize)
 
-		for wordScanner.Scan() {
+	wordScanner := utility.BuildWordScannerFromString(inputData)
 
-			currentWord := strings.ToLower(wordScanner.Text())
-			if err = outputData.InsertWord(currentWord); err != nil {
-				return err
-			}
-		}
+	for wordScanner.Scan() {
 
-		if outputDataDigest, err = outputData.GetDigest(); err != nil {
+		currentWord := strings.ToLower(wordScanner.Text())
+		if err = outputDataStructure.InsertWord(currentWord); err != nil {
 			return err
 		}
+	}
 
-		if err = outputData.WriteOnLocalDisk(); err != nil {
-			return err
-		}
+	outputDataStructureSerialized = outputDataStructure.Serialize()
 
-		output.OutputFileDigest = outputDataDigest
-	*/
+	if outputDataStructureDigest, err = utility.SHA512(outputDataStructureSerialized); err != nil {
+		return err
+	}
+	if err = utility.WriteToLocalDisk(outputDataStructureDigest, outputDataStructureSerialized); err != nil {
+		return err
+	}
+
+	output.OutputFileDigest = outputDataStructureDigest
+
 	return nil
 }

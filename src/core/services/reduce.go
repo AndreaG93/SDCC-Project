@@ -8,38 +8,43 @@ Description : This file includes RPC-function used to perform "Reduce" services.
 package services
 
 import (
-	"core/data-structures"
-	"core/utility"
+	"SDCC-Project-WorkerNode/src/core/data-structures"
+	"SDCC-Project-WorkerNode/src/core/utility"
 )
 
 type Reduce struct{}
 
-// This structure represent the input of "Reduce" services.
 type ReduceInput struct {
-	Data []*data_structures.WordTokenList
+	InputFileNameString string
 }
 
-// This structure represent the output of "Reduce" services.
 type ReduceOutput struct {
-	Digest string
+	OutputFileDigest string
 }
 
-// Following function represents the published RPC routine used to perform "Reduce" services.
 func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
-	var digest string
 	var err error
-	var outputWordTokenList *data_structures.WordTokenList
+	var inputData data_structures.WordTokenListArray
+	var outputDataStructure *data_structures.WordTokenList
+	var outputDataStructureSerialized data_structures.WordTokenListSerialized
+	var outputDataStructureDigest string
 
-	outputWordTokenList = data_structures.MergeAnArrayOfWordTokenLists(input.Data)
+	if inputData, err = data_structures.ReadWordTokenListArrayFromLocalFile(input.InputFileNameString); err != nil {
+		return nil
+	}
 
-	(outputWordTokenList).Print()
+	outputDataStructure = data_structures.MergeAnArrayOfWordTokenLists(inputData)
+	outputDataStructureSerialized = outputDataStructure.Serialize()
 
-	if digest, err = utility.SHA512((*outputWordTokenList).Serialize()); err != nil {
+	if outputDataStructureDigest, err = utility.SHA512(outputDataStructureSerialized); err != nil {
+		return err
+	}
+	if err = utility.WriteToLocalDisk(outputDataStructureDigest, outputDataStructureSerialized); err != nil {
 		return err
 	}
 
-	(*output).Digest = digest
+	output.OutputFileDigest = outputDataStructureDigest
 
 	return nil
 }

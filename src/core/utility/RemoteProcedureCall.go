@@ -1,7 +1,7 @@
 package utility
 
 import (
-	"core"
+	"SDCC-Project-WorkerNode/src/core"
 	"net"
 	"net/rpc"
 )

@@ -1,7 +1,7 @@
 package services
 
 import (
-	"core/data-structures"
+	"SDCC-Project-WorkerNode/src/core/data-structures"
 	"os"
 	"testing"
 )

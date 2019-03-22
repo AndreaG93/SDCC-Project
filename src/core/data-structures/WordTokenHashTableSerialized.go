@@ -1,7 +1,7 @@
 package data_structures
 
 import (
-	"core/utility"
+	"SDCC-Project-WorkerNode/src/core/utility"
 	"encoding/gob"
 	"os"
 )

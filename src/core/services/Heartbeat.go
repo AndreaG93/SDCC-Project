@@ -1,7 +1,7 @@
 package services
 
 import (
-	"core/utility"
+	"SDCC-Project-WorkerNode/src/core/utility"
 	"encoding/gob"
 	"fmt"
 	"net"

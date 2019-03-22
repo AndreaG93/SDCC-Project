@@ -1,7 +1,7 @@
 package data_structures
 
 import (
-	"core/utility"
+	"SDCC-Project-WorkerNode/src/core/utility"
 	"fmt"
 )
 
@@ -58,6 +58,10 @@ func (obj *WordTokenHashTable) Print() {
 	}
 }
 
+func (obj *WordTokenHashTable) GetWordTokenListAt(index uint) *WordTokenList {
+	return obj.hashTable[index]
+}
+
 func (obj *WordTokenHashTable) Serialize() WordTokenHashTableSerialized {
 
 	var output []WordToken
@@ -93,8 +97,4 @@ func (obj *WordTokenHashTable) Serialize() WordTokenHashTableSerialized {
 	}
 
 	return output
-}
-
-func (obj *WordTokenHashTable) extractWordTokenListAt() *WordTokenList {
-	return nil
 }
