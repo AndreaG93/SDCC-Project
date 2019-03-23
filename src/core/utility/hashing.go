@@ -6,7 +6,9 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"hash/fnv"
+	"os/exec"
 )
 
 // FNV-1a is a not cryptographic hash function:
@@ -28,10 +30,12 @@ func GenerateArrayIndexFromString(inputString string, arraySize uint) (uint, err
 	}
 	defer FNV1AHashAlgorithm.Reset()
 
+	fmt.Println(FNV1AHashAlgorithm.Sum32())
+
 	return uint(FNV1AHashAlgorithm.Sum32()) % arraySize, nil
 }
 
-func SHA512(data interface{}) (string, error) {
+func GenerateDigestOfDataUsingSHA512(data interface{}) (string, error) {
 
 	var buffer bytes.Buffer
 	enc := gob.NewEncoder(&buffer)
@@ -46,4 +50,19 @@ func SHA512(data interface{}) (string, error) {
 	defer SHA512cryptoHashAlgorithm.Reset()
 
 	return hex.EncodeToString(SHA512cryptoHashAlgorithm.Sum(nil)), nil
+}
+
+func GenerateDigestOfFileUsingSHA512(filename string) (string, error) {
+
+	var command *exec.Cmd
+	var commandOutput []byte
+	var commandError error
+
+	command = exec.Command("sha512sum", filename)
+
+	if commandOutput, commandError = command.Output(); commandError != nil {
+		return "", commandError
+	}
+
+	return string(commandOutput[:128]), nil
 }

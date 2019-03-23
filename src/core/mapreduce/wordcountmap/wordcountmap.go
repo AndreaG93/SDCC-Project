@@ -1,38 +1,43 @@
-package services
+package wordcountmap
 
 import (
-	"SDCC-Project-WorkerNode/src/core/data-structures"
+	"SDCC-Project-WorkerNode/src/core/datastructures/wordtokenhashtable"
 	"SDCC-Project-WorkerNode/src/core/utility"
+	"io/ioutil"
 	"strings"
 )
 
 type Map struct {
 }
 
-type MapInput struct {
+type Input struct {
 	InputFileNameString          string
 	OutputWordHashTableArraySize uint
 }
 
-type MapOutput struct {
+type Output struct {
 	OutputFileDigest string
 }
 
-func (x *Map) Execute(input MapInput, output *MapOutput) error {
+func (x *Map) Execute(input Input, output *Output) error {
 
 	var err error
 	var rawInputData []byte
 	var inputData string
-	var outputDataStructure *data_structures.WordTokenHashTable
-	var outputDataStructureSerialized data_structures.WordTokenHashTableSerialized
+
+	var outputDataStructure *wordtokenhashtable.WordTokenHashTable
 	var outputDataStructureDigest string
 
-	if rawInputData, err = utility.ReadLocalFile(input.InputFileNameString); err != nil {
+
+	if rawInputData, err = ioutil.ReadFile(input.InputFileNameString); err != nil {
 		return err
 	}
-	inputData = string(rawInputData)
 
-	outputDataStructure = data_structures.BuildWordTokenHashTable(input.OutputWordHashTableArraySize)
+
+
+	
+
+	outputDataStructure = wordtokenhashtable.New(input.OutputWordHashTableArraySize)
 
 	wordScanner := utility.BuildWordScannerFromString(inputData)
 
@@ -46,7 +51,7 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	outputDataStructureSerialized = outputDataStructure.Serialize()
 
-	if outputDataStructureDigest, err = utility.SHA512(outputDataStructureSerialized); err != nil {
+	if outputDataStructureDigest, err = utility.GenerateDigestOfDataUsingSHA512(outputDataStructureSerialized); err != nil {
 		return err
 	}
 	if err = utility.WriteToLocalDisk(outputDataStructureDigest, outputDataStructureSerialized); err != nil {

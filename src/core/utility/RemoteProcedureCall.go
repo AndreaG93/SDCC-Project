@@ -6,16 +6,16 @@ import (
 	"net/rpc"
 )
 
-func StartRemoteService(serviceType interface{}, servicePort uint) error {
+func StartAcceptingServiceRequest(serviceTypeRequest interface{}, serviceRequestListenPort uint) error {
 
 	var listener net.Listener
 	var err error
 
-	if listener, err = net.Listen(core.DefaultNetwork, "localhost:"+string(servicePort)); err != nil {
+	if listener, err = net.Listen(core.DefaultNetwork, "localhost:"+string(serviceRequestListenPort)); err != nil {
 		return err
 	}
 
-	if err = rpc.Register(serviceType); err != nil {
+	if err = rpc.Register(serviceTypeRequest); err != nil {
 		return err
 	}
 

@@ -1,4 +1,4 @@
-package amazon
+package s3
 
 import (
 	"io/ioutil"
@@ -11,7 +11,7 @@ func Test_AmazonS3(t *testing.T) {
 
 	const (
 		contentOfFile = "test"
-		fileName      = "./test.txt"
+		fileName      = "./input.txt"
 		objectKeyName = "TestKey"
 	)
 

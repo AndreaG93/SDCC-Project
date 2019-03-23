@@ -1,6 +1,8 @@
-package data_structures
+package wordtokenlist
 
 import (
+	"SDCC-Project-WorkerNode/src/core/datastructures/wordtoken"
+	"SDCC-Project-WorkerNode/src/core/utility"
 	"container/list"
 	"fmt"
 	"strings"
@@ -12,7 +14,7 @@ type WordTokenList struct {
 	length                  uint
 }
 
-func BuildWordTokenList() *WordTokenList {
+func New() *WordTokenList {
 
 	output := new(WordTokenList)
 
@@ -23,17 +25,46 @@ func BuildWordTokenList() *WordTokenList {
 	return output
 }
 
-func (obj *WordTokenList) InsertWord(word string) {
-	(*obj).InsertWordToken(BuildWordToken(word, 1))
+func NewFromMerge(input []*WordTokenList) *WordTokenList {
+
+	output := New()
+
+	for index := 0; index < len(input); index++ {
+
+		currentWordTokenList := input[index]
+		(*output).Merge(currentWordTokenList)
+	}
+
+	return output
 }
 
-func (obj *WordTokenList) InsertWordToken(wordToken *WordToken) {
+func Deserialize(input []byte) (*WordTokenList, error) {
+
+	output := New()
+	serializedData := []wordtoken.WordToken{}
+
+	if err := utility.Decode(input, &serializedData); err != nil {
+		return nil, err
+	}
+
+	for index := uint(0); index < uint(len(serializedData)); index++ {
+		(*output).InsertWordToken(&serializedData[index])
+	}
+
+	return output, nil
+}
+
+func (obj *WordTokenList) InsertWord(word string) {
+	(*obj).InsertWordToken(wordtoken.New(word, 1))
+}
+
+func (obj *WordTokenList) InsertWordToken(wordToken *wordtoken.WordToken) {
 
 	wordTokenList := (*obj).wordTokenList
 
 	for e := (*wordTokenList).Front(); e != nil; e = (*e).Next() {
 
-		currentWordToken := (*e).Value.(*WordToken)
+		currentWordToken := (*e).Value.(*wordtoken.WordToken)
 
 		if strings.Compare((*currentWordToken).Word, (*wordToken).Word) == 0 {
 
@@ -61,18 +92,18 @@ func (obj *WordTokenList) Print() {
 
 	for e := (*wordTokenList).Front(); e != nil; e = (*e).Next() {
 
-		currentWordToken := e.Value.(*WordToken)
+		currentWordToken := e.Value.(*wordtoken.WordToken)
 
 		fmt.Println(*currentWordToken)
 	}
 }
 
-func (obj *WordTokenList) WordToken() *WordToken {
+func (obj *WordTokenList) WordToken() *wordtoken.WordToken {
 
-	var output *WordToken
+	var output *wordtoken.WordToken
 
 	currentWordTokenElement := (*obj).currentWordTokenElement
-	output = ((*currentWordTokenElement).Value).(*WordToken)
+	output = ((*currentWordTokenElement).Value).(*wordtoken.WordToken)
 
 	return output
 }
@@ -117,11 +148,11 @@ func (obj *WordTokenList) Merge(input *WordTokenList) {
 	}
 }
 
-func (obj *WordTokenList) Serialize() []WordToken {
+func (obj *WordTokenList) Serialize() ([]byte, error) {
 
 	(*obj).IteratorReset()
 
-	output := make([]WordToken, (*obj).length)
+	output := make([]wordtoken.WordToken, (*obj).length)
 
 	for index := uint(0); index < (*obj).length; index++ {
 
@@ -133,18 +164,9 @@ func (obj *WordTokenList) Serialize() []WordToken {
 		output[index].Occurrences = (*currentWordToken).Occurrences
 	}
 
-	return output
+	return utility.Encode(output)
 }
 
-func MergeAnArrayOfWordTokenLists(input []*WordTokenList) *WordTokenList {
-
-	output := BuildWordTokenList()
-
-	for index := 0; index < len(input); index++ {
-
-		currentWordTokenList := input[index]
-		(*output).Merge(currentWordTokenList)
-	}
-
-	return output
+func (obj *WordTokenList) GetLength() uint {
+	return (*obj).length
 }

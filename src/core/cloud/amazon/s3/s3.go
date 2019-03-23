@@ -1,4 +1,4 @@
-package amazon
+package s3
 
 import (
 	"SDCC-Project-WorkerNode/src/core/utility"
@@ -8,6 +8,72 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"os"
 )
+
+type Client struct {
+	session    *session.Session
+	bucketName string
+	region     string
+}
+
+func New(region string, bucketName string) *Client {
+
+	output := new(Client)
+
+	(*output).session = session.Must(session.NewSession(&aws.Config{
+		Region: aws.String(REGION)},
+	))
+	(*output).region = region
+	(*output).bucketName = bucketName
+
+	return output
+}
+
+func (obj *Client) Upload(inputFilename string, outputFileName string) error {
+
+	var inputFile *os.File
+	var err error
+
+	amazonAWSS3Uploader := s3manager.NewUploader((*obj).session)
+
+	if inputFile, err = os.Open(inputFilename); err != nil {
+		return err
+	}
+	defer func() {
+		utility.CheckError(inputFile.Close())
+	}()
+
+	if _, err = amazonAWSS3Uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String((*obj).bucketName),
+		Key:    aws.String(outputFileName),
+		Body:   inputFile,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *Client) Download(filename string, outputFilename string) error {
+
+	var outputFile *os.File
+	var err error
+
+	amazonAWSS3Downloader := s3manager.NewDownloader((*obj).session)
+
+	if outputFile, err = os.Create(outputFilename); err != nil {
+		return err
+	}
+
+	if _, err = amazonAWSS3Downloader.Download(outputFile, &s3.GetObjectInput{
+		Bucket: aws.String((*obj).bucketName),
+		Key:    aws.String(filename),
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ******************************************************
 
 const (
 	BUCKET_NAME = "graziani-filestorage"

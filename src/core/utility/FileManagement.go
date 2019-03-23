@@ -33,7 +33,7 @@ func WriteToLocalDisk2(data interface{}) error {
 	var outputFileName string
 	var err error
 
-	if outputFileName, err = SHA512(data); err != nil {
+	if outputFileName, err = GenerateDigestOfDataUsingSHA512(data); err != nil {
 		return err
 	}
 	if outputFile, err = os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666); err != nil {

@@ -1,18 +1,18 @@
 package services
 
-import "SDCC-Project-WorkerNode/src/core/data-structures"
+import "SDCC-Project-WorkerNode/src/core/data-structuresttt"
 
-func shuffle(input []*data_structures.WordTokenHashTable, output []*data_structures.WordTokenListArray) {
+func shuffle(input []*data_structuresttt.WordTokenHashTable, output []*data_structuresttt.WordTokenListArray) {
 
 	size := uint(len(input))
 
-	outputDataStructure := make([][]*data_structures.WordTokenList, size)
+	outputDataStructure := make([][]*data_structuresttt.WordTokenList, size)
 
 	for index := uint(0); index < size; index++ {
-		outputDataStructure[index] = data_structures.BuildWordTokenListArray(size)
+		outputDataStructure[index] = data_structuresttt.BuildWordTokenListArray(size)
 	}
 
-	data_structures.WordTokenListArray{}.Built(size)
+	data_structuresttt.WordTokenListArray{}.Built(size)
 
 	/*
 		for x := uint(0); x < size; x++ {

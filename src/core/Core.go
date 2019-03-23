@@ -1,5 +1,6 @@
 package core
 
 const (
-	DefaultNetwork = "tcp"
+	DefaultNetwork         = "tcp"
+	DefaultAmazonAWSRegion = "us-east-1"
 )

@@ -1,7 +1,7 @@
-package data_structures
+package wordtokenlist
 
 import (
-	"fmt"
+	"SDCC-Project-WorkerNode/src/core/datastructures/wordtoken"
 	"log"
 	"strings"
 	"testing"
@@ -9,15 +9,15 @@ import (
 
 func Test_WordTokenList_Inserting(t *testing.T) {
 
-	var currentWordToken *WordToken
+	var currentWordToken *wordtoken.WordToken
 
-	wordTokenList := BuildWordTokenList()
+	wordTokenList := New()
 
-	(*wordTokenList).InsertWordToken(BuildWordToken("Andrea", 5))
-	(*wordTokenList).InsertWordToken(BuildWordToken("Graziani", 30))
-	(*wordTokenList).InsertWordToken(BuildWordToken("Yumi", 26))
-	(*wordTokenList).InsertWordToken(BuildWordToken("Yumi", 4))
-	(*wordTokenList).InsertWordToken(BuildWordToken("Andrea", 5))
+	(*wordTokenList).InsertWordToken(wordtoken.New("Andrea", 5))
+	(*wordTokenList).InsertWordToken(wordtoken.New("Graziani", 30))
+	(*wordTokenList).InsertWordToken(wordtoken.New("Yumi", 26))
+	(*wordTokenList).InsertWordToken(wordtoken.New("Yumi", 4))
+	(*wordTokenList).InsertWordToken(wordtoken.New("Andrea", 5))
 
 	(*wordTokenList).Print()
 
@@ -52,31 +52,44 @@ func Test_WordTokenList_Inserting(t *testing.T) {
 	}
 }
 
-func Test_WordTokenList_Serialization(t *testing.T) {
+func TestWordTokenList_Serialize(t *testing.T) {
 
-	wordTokenList := BuildWordTokenList()
+	var data *WordTokenList
+	var dataSerialized []byte
+	var dataDeserialized *WordTokenList
+	var err error
 
-	(*wordTokenList).InsertWordToken(BuildWordToken("Andrea", 5))
-	(*wordTokenList).InsertWordToken(BuildWordToken("Graziani", 5))
-	(*wordTokenList).InsertWordToken(BuildWordToken("Diana", 5))
+	data = New()
 
-	output := (*wordTokenList).Serialize()
-	fmt.Println(output)
+	(*data).InsertWordToken(wordtoken.New("Andrea", 5))
+	(*data).InsertWordToken(wordtoken.New("Graziani", 5))
+	(*data).InsertWordToken(wordtoken.New("Diana", 5))
+
+	if dataSerialized, err = (*data).Serialize(); err != nil {
+		panic(err)
+	}
+
+	if dataDeserialized, err = Deserialize(dataSerialized); err != nil {
+		panic(err)
+	}
+
+	data.Print()
+	dataDeserialized.Print()
 }
 
 func Test_WordTokenList_WordTokenListMerging(t *testing.T) {
 
-	var currentWordToken *WordToken
+	var currentWordToken *wordtoken.WordToken
 
-	wordTokenList1 := BuildWordTokenList()
-	wordTokenList2 := BuildWordTokenList()
+	wordTokenList1 := New()
+	wordTokenList2 := New()
 
-	(*wordTokenList1).InsertWordToken(BuildWordToken("Andrea", 5))
-	(*wordTokenList1).InsertWordToken(BuildWordToken("Graziani", 30))
-	(*wordTokenList1).InsertWordToken(BuildWordToken("Yumi", 26))
-	(*wordTokenList2).InsertWordToken(BuildWordToken("Andrea", 5))
-	(*wordTokenList2).InsertWordToken(BuildWordToken("Graziani", 30))
-	(*wordTokenList2).InsertWordToken(BuildWordToken("Yumi", 26))
+	(*wordTokenList1).InsertWordToken(wordtoken.New("Andrea", 5))
+	(*wordTokenList1).InsertWordToken(wordtoken.New("Graziani", 30))
+	(*wordTokenList1).InsertWordToken(wordtoken.New("Yumi", 26))
+	(*wordTokenList2).InsertWordToken(wordtoken.New("Andrea", 5))
+	(*wordTokenList2).InsertWordToken(wordtoken.New("Graziani", 30))
+	(*wordTokenList2).InsertWordToken(wordtoken.New("Yumi", 26))
 
 	(*wordTokenList1).Merge(wordTokenList2)
 
