@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+
+  zookeeper1:
+    image: zookeeper_image
+    ports:
+      - "2888:3888"
+    expose:
+      - "2888"
+      - "3888"
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  zookeeper2:
+    image: zookeeper_image
+    ports:
+      - "2888:3888"
+    expose:
+      - "2888"
+      - "3888"
+    deploy:
+      restart_policy:
+        condition: on-failure
