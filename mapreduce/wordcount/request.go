@@ -1,14 +1,17 @@
 package wordcount
 
 import (
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/amazon/s3"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/wordcountfile"
+	"SDCC-Project-WorkerNode/utility"
+	"net/rpc"
 )
 
 type Request struct {
 }
 
 type RequestInput struct {
-	InputFileName   string
 	InputFileDigest string
 }
 
@@ -34,4 +37,25 @@ func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 	}
 
 	return nil
+}
+
+func SendRequest(inputFilename string, actualPrimaryAddressNode string) {
+
+	var inputFileDigest string
+	var err error
+	var rpcClient *rpc.Client
+
+	inputFileDigest, err = utility.GenerateDigestOfFileUsingSHA512(inputFilename)
+	utility.CheckError(err)
+
+	err = (*s3.New()).Upload(inputFilename, inputFileDigest)
+	utility.CheckError(err)
+
+	rpcClient, err = rpc.Dial(system.DefaultNetwork, actualPrimaryAddressNode)
+	utility.CheckError(err)
+
+	requestOutput := new(RequestOutput)
+
+	err = rpcClient.Call("Request.Execute", &RequestInput{inputFileDigest}, requestOutput)
+	utility.CheckError(err)
 }

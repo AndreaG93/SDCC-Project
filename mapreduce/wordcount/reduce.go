@@ -39,10 +39,12 @@ func (x *Reduce) Execute(reduceInput ReduceInput, reduceOutput *ReduceOutput) er
 	if outputSerialized, err = output.Serialize(); err != nil {
 		return err
 	}
+
 	if outputDigest, err = utility.GenerateDigestUsingSHA512(outputSerialized); err != nil {
 		return err
 	}
-	if err = utility.WriteToLocalDisk(outputDigest, outputSerialized); err != nil {
+
+	if err = ioutil.WriteFile(outputDigest, outputSerialized, 0777); err != nil {
 		return err
 	}
 

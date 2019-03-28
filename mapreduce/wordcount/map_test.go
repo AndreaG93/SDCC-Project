@@ -13,4 +13,5 @@ func Test_MapService(t *testing.T) {
 	if err = mapObject.Execute(mapInput, &mapOutput); err != nil {
 		panic(err)
 	}
+
 }

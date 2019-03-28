@@ -13,12 +13,12 @@ const (
 	DefaultArbitraryFaultToleranceLevel = 3
 )
 
-func StartAcceptingServiceRequest(serviceTypeRequest interface{}, serviceRequestListenPort uint) error {
+func StartAcceptingRPCRequest(serviceTypeRequest interface{}, address string) error {
 
 	var listener net.Listener
 	var err error
 
-	if listener, err = net.Listen(DefaultNetwork, "localhost:"+string(serviceRequestListenPort)); err != nil {
+	if listener, err = net.Listen(DefaultNetwork, address); err != nil {
 		return err
 	}
 

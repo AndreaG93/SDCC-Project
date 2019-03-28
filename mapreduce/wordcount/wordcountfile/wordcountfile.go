@@ -1,8 +1,8 @@
 package wordcountfile
 
 import (
-	"SDCC-Project-WorkerNode/cloud/amazon/s3"
-	"SDCC-Project-WorkerNode/cloud/zookeeper"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/amazon/s3"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
 	"SDCC-Project-WorkerNode/utility"
 	"io/ioutil"

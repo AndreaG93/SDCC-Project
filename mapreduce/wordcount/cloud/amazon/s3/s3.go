@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
 	"SDCC-Project-WorkerNode/utility"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -18,7 +19,7 @@ func New() *Client {
 	output := new(Client)
 
 	(*output).session = session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(utility.AmazonAWSRegion)},
+		Region: aws.String(system.AmazonAWSRegion)},
 	))
 
 	return output
@@ -39,7 +40,7 @@ func (obj *Client) Upload(inputFilename string, outputFileName string) error {
 	}()
 
 	if _, err = amazonAWSS3Uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(utility.AmazonS3BucketName),
+		Bucket: aws.String(system.AmazonS3BucketName),
 		Key:    aws.String(outputFileName),
 		Body:   inputFile,
 	}); err != nil {
@@ -60,7 +61,7 @@ func (obj *Client) Download(filename string, outputFilename string) error {
 	}
 
 	if _, err = amazonAWSS3Downloader.Download(outputFile, &s3.GetObjectInput{
-		Bucket: aws.String(utility.AmazonS3BucketName),
+		Bucket: aws.String(system.AmazonS3BucketName),
 		Key:    aws.String(filename),
 	}); err != nil {
 		return err
@@ -75,14 +76,14 @@ func (obj *Client) Delete(objectKey string) error {
 	amazonS3Service := s3.New((*obj).session)
 
 	if _, err = amazonS3Service.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(utility.AmazonS3BucketName),
+		Bucket: aws.String(system.AmazonS3BucketName),
 		Key:    aws.String(objectKey),
 	}); err != nil {
 		return err
 	}
 
 	if err = amazonS3Service.WaitUntilObjectNotExists(&s3.HeadObjectInput{
-		Bucket: aws.String(utility.AmazonS3BucketName),
+		Bucket: aws.String(system.AmazonS3BucketName),
 		Key:    aws.String(objectKey),
 	}); err != nil {
 		return err

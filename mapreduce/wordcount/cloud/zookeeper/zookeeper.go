@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	PrimaryNode = "/primary"
+	PrimaryNode = "/primarynode"
 )
 
 func SetCurrentMasterIPAddress(address string) error {

@@ -49,7 +49,7 @@ func (x *Map) Execute(mapInput MapInput, mapOutput *MapOutput) error {
 	if outputDigest, err = utility.GenerateDigestUsingSHA512(outputSerialized); err != nil {
 		return err
 	}
-	if err = utility.WriteToLocalDisk(outputDigest, outputSerialized); err != nil {
+	if err = ioutil.WriteFile(outputDigest, outputSerialized, 0777); err != nil {
 		return err
 	}
 
