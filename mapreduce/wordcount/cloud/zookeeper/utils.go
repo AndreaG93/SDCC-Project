@@ -31,7 +31,7 @@ func SetZNode(zookeeperConnection *zk.Conn, zNodePath string, data []byte) error
 	return nil
 }
 
-func connectToZookeeperServers(serverPoolAddresses []string) (*zk.Conn, <-chan zk.Event, error) {
+func ConnectToZookeeperServers(serverPoolAddresses []string) (*zk.Conn, <-chan zk.Event, error) {
 
 	zkConnection, zkConnectionChannel, err := zk.Connect(serverPoolAddresses, 5*time.Second)
 	if err != nil {
@@ -75,7 +75,7 @@ func StartLeaderElection(nodeID int) int {
 	var status leaderelection.Status
 	var ok bool
 
-	zkConnection, zkConnectionEventChannel, err = connectToZookeeperServers([]string{"localhost"})
+	zkConnection, zkConnectionEventChannel, err = ConnectToZookeeperServers([]string{"localhost"})
 	utility.CheckError(err)
 
 	err = checkExistenceOrGenerateElectionZNode(zkConnection)

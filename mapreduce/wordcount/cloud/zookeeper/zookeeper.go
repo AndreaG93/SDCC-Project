@@ -49,7 +49,7 @@ func SetCurrentMasterIPAddress(address string) error {
 	return nil
 }
 
-func GetCurrentMasterIPAddress() (string, error) {
+func GetCurrentLeaderIPAddress() (string, error) {
 
 	var zookeeperConnection *zk.Conn
 	var isPathExisting bool

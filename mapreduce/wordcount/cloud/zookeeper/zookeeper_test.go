@@ -1,11 +1,14 @@
 package zookeeper
 
 import (
+	"SDCC-Project-WorkerNode/utility"
+	"fmt"
+	"github.com/samuel/go-zookeeper/zk"
 	"strings"
 	"testing"
 )
 
-func TestSetCurrentMasterIPAddress(t *testing.T) {
+func yyTestSetCurrentMasterIPAddress(t *testing.T) {
 
 	const Data = "Test"
 
@@ -24,4 +27,27 @@ func TestSetCurrentMasterIPAddress(t *testing.T) {
 		panic(err)
 	}
 
+}
+
+func TestPrimaryAddressChange(t *testing.T) {
+
+	var zkLeaderChangeEventChannel <-chan zk.Event
+	var zkConnection *zk.Conn
+	var data []byte
+	var err error
+
+	zkConnection, _, err = connectToZookeeperServers([]string{"localhost"})
+	utility.CheckError(err)
+
+	//checkExistenceOrGenerateZNode(zkConnection, "/current_leader_id", 0)
+
+	for {
+
+		data, _, zkLeaderChangeEventChannel, err = zkConnection.GetW("/current_leader_id")
+		utility.CheckError(err)
+
+		fmt.Println(string(data))
+
+		<-zkLeaderChangeEventChannel
+	}
 }

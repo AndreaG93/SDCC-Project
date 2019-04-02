@@ -5,9 +5,11 @@ import (
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
 	"SDCC-Project-WorkerNode/utility"
-	"encoding/gob"
 	"fmt"
+	"github.com/codeskyblue/heartbeat"
 	"net"
+	"net/http"
+	"net/rpc"
 	"time"
 )
 
@@ -35,40 +37,37 @@ func New(primaryNodeId int, listenUDPPort int) *PrimaryNode {
 	return output
 }
 
-func (obj *PrimaryNode) startToRespondToRPCRequests() {
+func (obj *PrimaryNode) StartWork() {
 
 	go func() {
-		if err := system.StartAcceptingRPCRequest(wordcount.Request{}, (*obj).listenPortForRPC); err != nil {
+		if err := system.StartAcceptingRPCRequest(&wordcount.Request{}, (*obj).listenPortForRPC); err != nil {
 			panic(err)
 		}
 	}()
 }
 
-func sendingHeartbeat(destinationAddress string) {
+func (obj *PrimaryNode) startToSendHeartbeatFromLeader(leaderOfflineEventChannel chan bool) {
 
-	var addressOfUDPEndPoint *net.UDPAddr
-	var socket *net.UDPConn
-	var err error
+	hbs := heartbeat.NewServer("my-secret", 3*time.Second)
 
-	addressOfUDPEndPoint, err = net.ResolveUDPAddr("udp", destinationAddress)
-	utility.CheckError(err)
-
-	socket, err = net.DialUDP("udp", nil, addressOfUDPEndPoint)
-	utility.CheckError(err)
-	defer func() {
-		utility.CheckError(socket.Close())
-	}()
-
-	//ticker := time.NewTicker(500 * time.Millisecond)
-
-	for range time.NewTicker(500 * time.Millisecond).C {
-
-		fmt.Println("Sending beat to ", addressOfUDPEndPoint.IP, ":", addressOfUDPEndPoint.Port)
-
-		enc := gob.NewEncoder(socket)
-		err = enc.Encode("Im here")
-		utility.CheckError(err)
+	hbs.OnDisconnect = func(identifier string) {
+		fmt.Println(identifier, "is offline")
+		leaderOfflineEventChannel <- true
 	}
+	http.Handle("/heartbeatFromLeader", hbs)
+	utility.CheckError(http.ListenAndServe(":7000", nil))
+}
+
+func (obj *PrimaryNode) startToReceiveHeartbeatFromLeader(leaderOfflineEventChannel chan bool) {
+
+	hbs := heartbeat.NewServer("my-secret", 3*time.Second)
+
+	hbs.OnDisconnect = func(identifier string) {
+		fmt.Println(identifier, "is offline")
+		leaderOfflineEventChannel <- true
+	}
+	http.Handle("/heartbeatFromLeader", hbs)
+	utility.CheckError(http.ListenAndServe(":7000", nil))
 }
 
 func (obj *PrimaryNode) startSendingHeartbeatToBackups() {
@@ -76,44 +75,9 @@ func (obj *PrimaryNode) startSendingHeartbeatToBackups() {
 	for index := 0; index < len((*obj).allPrimaryNodeAddresses); index++ {
 
 		if index != (*obj).id {
-			sendingHeartbeat((*obj).allPrimaryNodeAddresses[index])
-		}
-	}
-}
-
-func (obj *PrimaryNode) startReceivingHeartbeatFromLeader(listenUDPPort int, leaderNotRespondingChannel chan bool) {
-
-	var socket *net.UDPConn
-	var timerChannel chan time.Time
-
-	p := make([]byte, 2048)
-	addr := net.UDPAddr{
-		Port: listenUDPPort,
-		IP:   net.ParseIP("localhost"),
-	}
-
-	socket, err := net.ListenUDP("udp", &addr)
-	utility.CheckError(err)
-	defer func() {
-		utility.CheckError(socket.Close())
-	}()
-
-	time.After(time.Second * 2)
-
-	for {
-		select {
-
-		case <-timerChannel:
-
-			fmt.Println("Expired")
-			leaderNotRespondingChannel <- true
-			return
-
-		default:
-			_, _, err = socket.ReadFromUDP(p)
-			utility.CheckError(err)
-			fmt.Println(p)
-			//timer.Reset(time.Second)
+			go func() {
+				system.SendHeartbeat((*obj).allPrimaryNodeAddresses[index])
+			}()
 		}
 	}
 }
@@ -134,7 +98,7 @@ func (obj *PrimaryNode) StartWork() {
 
 			fmt.Println("I'm node id ", (*obj).id, ": i disclose leader id ", (*obj).leaderId)
 
-			go (*obj).startReceivingHeartbeatFromLeader((*obj).listenUDPPort, leaderNotRespondingChannel)
+			go system.ReceivingHeartbeat(leaderNotRespondingChannel, (*obj).listenUDPPort)
 
 			<-leaderNotRespondingChannel
 
@@ -144,10 +108,15 @@ func (obj *PrimaryNode) StartWork() {
 
 		} else {
 
-			//go (*obj).startSendingHeartbeatToBackups()
+			(*obj).startSendingHeartbeatToBackups()
 
-			time.Sleep(time.Second * 5)
+			/*
+				go func() {
+					err := system.StartAcceptingRPCRequest(&wordcount.Request{}, (*obj).listenPortForRPC)
+					utility.CheckError(err)
+				}()
 
+			*/
 		}
 	}
 }

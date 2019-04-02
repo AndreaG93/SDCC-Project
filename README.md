@@ -10,3 +10,5 @@ This repository is a part of an university project. It contains a Go implementat
 2. `go get -u github.com/samuel/go-zookeeper/zk`
 
 3. `go get -u github.com/Comcast/go-leaderelection`
+
+4. `go get -v github.com/codeskyblue/heartbeat`

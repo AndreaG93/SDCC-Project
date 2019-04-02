@@ -10,6 +10,7 @@ const (
 	DefaultNetwork                      = "tcp"
 	AmazonAWSRegion                     = "us-east-1"
 	AmazonS3BucketName                  = "graziani-filestorage"
+	DefaultHeartbeatProtocol            = "udp"
 	DefaultArbitraryFaultToleranceLevel = 3
 )
 
