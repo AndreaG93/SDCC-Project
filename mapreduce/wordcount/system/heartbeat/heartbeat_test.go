@@ -1,21 +1,34 @@
 package heartbeat
 
 import (
-	"sync"
 	"testing"
 )
 
-func TestHeartbeatService(t *testing.T) {
+func Test_SerializationDeserialization(t *testing.T) {
 
-	var wg sync.WaitGroup
+	done := make(chan bool, 1)
 
-	wg.Add(1)
+	commits := map[uint]bool{
+		uint(0): false,
+		uint(1): false,
+	}
 
-	go StartToReceiveHeartbeat()
+	go func() {
 
-	StartToSendHeartbeat("Worker 1", "localhost:7000/heartbeat")
-	StartToSendHeartbeat("Worker 2", "localhost:7000/heartbeat")
-	StartToSendHeartbeat("Worker 3", "localhost:7000/heartbeat")
+		startWorkerNodeHeartBeating(0, "127.0.0.1:5000")
 
-	wg.Wait()
+		startWorkerNodeHeartBeating(0, "127.0.0.1:5000")
+	}()
+
+	go func() {
+
+		startWorkerNodeHeartBeating(1, "127.0.0.1:5000")
+
+	}()
+
+	go func() {
+		StartWorkerNodesHeartBeatingMonitoring(commits)
+	}()
+
+	<-done
 }

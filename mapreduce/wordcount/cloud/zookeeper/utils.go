@@ -67,7 +67,7 @@ func checkExistenceOrGenerateElectionZNode(zkConnection *zk.Conn) error {
 	return checkExistenceOrGenerateZNode(zkConnection, electionZNodeName, zk.FlagSequence|zk.FlagEphemeral)
 }
 
-func StartLeaderElection(nodeID int) int {
+func StartLeaderElection(nodeID uint) uint {
 
 	var err error
 	var zkConnection *zk.Conn
@@ -120,7 +120,7 @@ func StartLeaderElection(nodeID int) int {
 
 			out, _ := strconv.ParseInt(string(output), 10, 0)
 
-			return int(out)
+			return uint(out)
 
 		case <-zkConnectionFailedChannel:
 			fmt.Println("\t\t\tZK connection failed for candidate <", status.CandidateID, ">, exiting")
@@ -144,7 +144,7 @@ func StartLeaderElection(nodeID int) int {
 			if status.Role == leaderelection.Leader {
 				fmt.Println("Leader is: ", nodeID)
 
-				err := SetZNode(zkConnection, electionResponseZNodeName, []byte(string(strconv.Itoa(nodeID))))
+				err := SetZNode(zkConnection, electionResponseZNodeName, []byte(string(strconv.Itoa(int(nodeID)))))
 				utility.CheckError(err)
 
 				election.EndElection() // Terminates the election and signals all followers the election is over.
