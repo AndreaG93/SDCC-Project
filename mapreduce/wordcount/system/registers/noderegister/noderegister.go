@@ -1,4 +1,4 @@
-package nodeidsregister
+package noderegister
 
 import (
 	"sync"
@@ -9,9 +9,8 @@ var once sync.Once
 
 type NodeIDsRegister struct {
 	ipAddresses []string
-
-	primaries []uint
-	workers   []uint
+	primaries   []uint
+	workers     []uint
 }
 
 func GetInstance() *NodeIDsRegister {
@@ -25,8 +24,9 @@ func build() *NodeIDsRegister {
 
 	output := new(NodeIDsRegister)
 
-	(*output).primaries = []uint{0, 1, 2, 3, 4}
+	(*output).primaries = []uint{1, 2, 3, 4}
 	(*output).workers = []uint{5, 6, 7, 8, 9, 10, 11, 12, 13}
+
 	(*output).ipAddresses = []string{"127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1"}
 
 	return output

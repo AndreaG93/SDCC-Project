@@ -1,7 +1,7 @@
 package nodestatusregister
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/nodeidsregister"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/noderegister"
 	"sync"
 )
 
@@ -21,7 +21,7 @@ func GetInstance() *NodeStatusRegister {
 
 func build() *NodeStatusRegister {
 
-	nodeIDsRegister := nodeidsregister.GetInstance()
+	nodeIDsRegister := noderegister.GetInstance()
 
 	output := new(NodeStatusRegister)
 

@@ -5,87 +5,98 @@ import (
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/heartbeat"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/nodeidsregister"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/noderegister"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/timerregister"
+	"SDCC-Project-WorkerNode/utility"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-const (
-	leaderNotElected = -1
-)
+const anyLeaderElected = 0
 
 type PrimaryNode struct {
-	id                      uint
-	leaderId                uint
-	listenPortForRPC        string
-	listenUDPPort           int
+	id       uint
+	leaderId uint
 }
 
-func New(primaryNodeId uint, ì) *PrimaryNode {
+func New(id uint) *PrimaryNode {
 
 	output := new(PrimaryNode)
 
-	(*output).id = primaryNodeId
-	(*output).leaderId = leaderNotElected
-
+	(*output).id = id
+	(*output).leaderId = anyLeaderElected
 	return output
 }
 
-func (obj *PrimaryNode) StartWork(onlinePrimaryNodeRegister map[uint]bool, onlineWorkerNodeRegister map[uint]bool) {
-
-	go func() {
-		if err := system.StartAcceptingRPCRequest(&wordcount.Request{}, (*obj).listenPortForRPC); err != nil {
-			panic(err)
-		}
-	}()
-
-	go func() {
-		heartbeat.WorkerMonitoring()
-	}()
-
-	go func() {
-		(*obj).leaderManagement()
-	}()
+func (obj *PrimaryNode) isLeader() bool {
+	return (*obj).id == (*obj).leaderId
 }
 
-func (obj *PrimaryNode) leaderManagement() {
+func (obj *PrimaryNode) isLeaderNotElected() bool {
+	return (*obj).leaderId == anyLeaderElected
+}
 
-	leaderNotRespondingChannel := make(chan os.Signal, 1)
-	signal.Notify(leaderNotRespondingChannel, syscall.SIGUSR1)
+func (obj *PrimaryNode) StartWork() {
+
+	var err error
+
+	go func() {
+		heartbeat.ReceiveHeartBeats((*obj).id, &(*obj).leaderId)
+	}()
+
+	leaderOfflineChannel := make(chan os.Signal, 1)
+	signal.Notify(leaderOfflineChannel, syscall.SIGUSR1)
+
+	(*obj).leaderId, err = zookeeper.GetCurrentLeaderId()
+	utility.CheckError(err)
 
 	for {
 
-		if (*obj).leaderId == leaderNotElected {
+		if (*obj).isLeaderNotElected() {
 
-			fmt.Println("I'm node id ", (*obj).id, ": i disclose any leader!")
+			fmt.Println("My ID ", (*obj).id, "! -> Any leader elected")
+
 			(*obj).leaderId = zookeeper.StartLeaderElection((*obj).id)
+
 			fmt.Println("Actual leader is ", (*obj).leaderId)
 
-		} else if (*obj).leaderId != (*obj).id {
+		} else if (*obj).isLeader() {
 
-			fmt.Println("I'm node id ", (*obj).id, ": i disclose leader id ", (*obj).leaderId)
-
-			go heartbeat.LeaderMonitoring((*obj).leaderId)
-
-			<-leaderNotRespondingChannel
-
-			fmt.Println("I'm node id ", (*obj).id, ": leader doesn't respond")
-
-			(*obj).leaderId = leaderNotElected
+			(*obj).startWorkAsLeader()
 
 		} else {
 
-			for id := range nodeidsregister.GetInstance().GetPrimaryNodeIDs() {
+			fmt.Println("My ID ", (*obj).id, "! -> Leader's ID ", (*obj).leaderId, "!")
 
-				if uint(id) != (*obj).id {
-					heartbeat.StartHeartBeating((*obj).id, nodeidsregister.GetInstance().GetNodeIpAddress(uint(id)))
-				}
+			go func() {
+				timerregister.GetInstance().StartTimer((*obj).leaderId)
 
-				done := make(chan bool, 1)
-				<-done
-			}
+				fmt.Printf("Timer associated to leader %d expired", (*obj).leaderId)
+
+				err = syscall.Kill(syscall.Getpid(), syscall.SIGUSR1)
+				utility.CheckError(err)
+			}()
+
+			<-leaderOfflineChannel
+
+			fmt.Println("My ID ", (*obj).id, "! -> Leader offline")
+
+			(*obj).leaderId = anyLeaderElected
 		}
 	}
+}
+
+func (obj *PrimaryNode) startWorkAsLeader() {
+
+	primaryNodeIds := noderegister.GetInstance().GetPrimaryNodeIDs()
+
+	for recipientId := uint(1); recipientId < uint(len(primaryNodeIds)); recipientId++ {
+		if recipientId != (*obj).id {
+			go heartbeat.SendHeartBeatsTo((*obj).id, recipientId)
+		}
+	}
+
+	system.StartAcceptingRPCRequest(&wordcount.Request{}, (*obj).id) //utility.CheckError(err)
 }

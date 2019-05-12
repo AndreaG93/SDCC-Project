@@ -1,13 +1,13 @@
 package timerregister
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/nodeidsregister"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/noderegister"
 	"sync"
 	"time"
 )
 
 const (
-	heartBeatingFrequency = 1 * time.Second
+	heartBeatingFrequency = 2 * time.Second
 )
 
 var register *TimerRegister
@@ -26,7 +26,7 @@ func GetInstance() *TimerRegister {
 
 func build() *TimerRegister {
 
-	nodeIDsRegister := nodeidsregister.GetInstance()
+	nodeIDsRegister := noderegister.GetInstance()
 
 	output := new(TimerRegister)
 

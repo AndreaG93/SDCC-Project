@@ -6,87 +6,85 @@ import (
 	"SDCC-Project-WorkerNode/utility"
 	"fmt"
 	"net"
+	"strconv"
 	"syscall"
 	"time"
 )
 
 const (
-	leaderHeartBeatListenPort = 6000
-	workerHeartBeatListenPort = 5000
+	heartBeatsPort = 20000
 )
 
-func LeaderMonitoring(leaderId uint) {
+func SendStoppableHeartBeatsTo(myNodeId uint, recipientNodeId uint, stop *bool) {
 
+	var dataToSend []byte
+	var socket *net.UDPConn
 	var err error
-	var listeningSocket *net.UDPConn
-	var nodeID uint
-	var nodeStatusRegister *nodestatusregister.NodeStatusRegister
-	var timerRegister *timerregister.TimerRegister
 
-	nodeStatusRegister = nodestatusregister.GetInstance()
-	timerRegister = timerregister.GetInstance()
+	//ip, err := net.LookupIP("primary" + strconv.Itoa(recipientNodeId))
+	ip, err := net.LookupIP("localhost")
+	utility.CheckError(err)
 
-	p := make([]byte, 4)
-
-	socketListenAddress := buildSocketListenAddress(leaderHeartBeatListenPort)
-
-	listeningSocket, err = net.ListenUDP("udp", socketListenAddress)
+	recipientUDPAddress, err := net.ResolveUDPAddr("udp", ip[0].String()+":"+strconv.Itoa(heartBeatsPort+int(recipientNodeId)))
 	utility.CheckError(err)
 
 	for {
-		_, _, err = listeningSocket.ReadFromUDP(p)
-		utility.CheckError(err)
-
-		err = utility.Decode(p, &nodeID)
-		utility.CheckError(err)
-
-		if nodeID != leaderId {
-			return
-		} else {
-
-			if nodeStatusRegister.IsNodeOffline(nodeID) {
-
-				nodeStatusRegister.SetNodeStatusAsOnline(nodeID)
-
-				go func() {
-					timerRegister.StartTimer(nodeID)
-
-					err = syscall.Kill(syscall.Getpid(), syscall.SIGUSR1)
-					utility.CheckError(err)
-
-					nodeStatusRegister.SetNodeStatusAsOffline(nodeID)
-				}()
-
-			} else {
-				timerRegister.StopResetAndRestart(nodeID)
-			}
+		socket, err = net.DialUDP("udp", nil, recipientUDPAddress)
+		if err != nil {
+			break
 		}
 	}
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	dataToSend, _ = utility.Encode(myNodeId)
+
+	for _ = range ticker.C {
+
+		if *stop {
+
+			err = socket.Close()
+			utility.CheckError(err)
+
+			return
+		}
+
+		_, err = socket.Write(dataToSend)
+		utility.CheckError(err)
+	}
+
 }
 
-func WorkerMonitoring() {
+func SendHeartBeatsTo(myNodeId uint, recipientNodeId uint) {
 
+	alwaysFalse := false
+	SendStoppableHeartBeatsTo(myNodeId, recipientNodeId, &alwaysFalse)
+}
+
+func ReceiveHeartBeats(myNodeId uint, leaderId *uint) {
+
+	var dataToReceive []byte
 	var err error
-	var listeningSocket *net.UDPConn
+	var socket *net.UDPConn
 	var nodeID uint
-	var nodeStatusRegister *nodestatusregister.NodeStatusRegister
-	var timerRegister *timerregister.TimerRegister
 
-	nodeStatusRegister = nodestatusregister.GetInstance()
-	timerRegister = timerregister.GetInstance()
+	nodeStatusRegister := nodestatusregister.GetInstance()
+	timerRegister := timerregister.GetInstance()
 
-	p := make([]byte, 4)
+	dataToReceive = make([]byte, 4)
 
-	socketListenAddress := buildSocketListenAddress(workerHeartBeatListenPort)
-
-	listeningSocket, err = net.ListenUDP("udp", socketListenAddress)
+	socket, err = net.ListenUDP("udp", buildListenUDPAddress(myNodeId))
 	utility.CheckError(err)
 
+	defer func() {
+		err = socket.Close()
+		utility.CheckError(err)
+	}()
+
 	for {
-		_, _, err = listeningSocket.ReadFromUDP(p)
+		_, _, err = socket.ReadFromUDP(dataToReceive)
 		utility.CheckError(err)
 
-		err = utility.Decode(p, &nodeID)
+		err = utility.Decode(dataToReceive, &nodeID)
 		utility.CheckError(err)
 
 		if nodeStatusRegister.IsNodeOffline(nodeID) {
@@ -98,6 +96,13 @@ func WorkerMonitoring() {
 
 				fmt.Printf("Timer associated to %d expired", nodeID)
 				nodeStatusRegister.SetNodeStatusAsOffline(nodeID)
+
+				if (*leaderId) == nodeID {
+
+					err = syscall.Kill(syscall.Getpid(), syscall.SIGUSR1)
+					utility.CheckError(err)
+				}
+
 			}()
 
 		} else {
@@ -106,44 +111,15 @@ func WorkerMonitoring() {
 	}
 }
 
-func StartHeartBeating(id uint, sendingSocketAddress string) {
-
-	var dataToSend []byte
-	var socket *net.UDPConn
-	var err error
-
-	dataToSend, _ = utility.Encode(id)
-
-	sendingUDPSocketAddress, err := net.ResolveUDPAddr("udp", sendingSocketAddress)
-	utility.CheckError(err)
-
-	socket, err = net.DialUDP("udp", nil, sendingUDPSocketAddress)
-	utility.CheckError(err)
-
-	defer func() {
-		utility.CheckError(socket.Close())
-	}()
-
-	done := make(chan bool, 1)
-
-	ticker := time.NewTicker(500 * time.Millisecond)
-	go func(done chan bool) {
-		for _ = range ticker.C {
-
-			_, err = socket.Write(dataToSend)
-			utility.CheckError(err)
-		}
-	}(done)
-
-	<-done
-}
-
-func buildSocketListenAddress(port int) *net.UDPAddr {
+func buildListenUDPAddress(myNodeId uint) *net.UDPAddr {
 
 	listeningAddress := new(net.UDPAddr)
 
-	(*listeningAddress).Port = port
-	(*listeningAddress).IP = net.ParseIP("127.0.0.1")
+	ip, err := net.LookupIP("localhost")
+	utility.CheckError(err)
+
+	(*listeningAddress).Port = heartBeatsPort + int(myNodeId)
+	(*listeningAddress).IP = net.ParseIP(ip[0].String())
 
 	return listeningAddress
 }

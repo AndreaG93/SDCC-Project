@@ -84,7 +84,7 @@ func StartLeaderElection(nodeID uint) uint {
 	err = checkExistenceOrGenerateZNode(zkConnection, electionResponseZNodeName, 0)
 	utility.CheckError(err)
 
-	election, err := leaderelection.NewElection(zkConnection, electionZNodeName, string(nodeID))
+	election, err := leaderelection.NewElection(zkConnection, electionResponseZNodeName, string(nodeID))
 	utility.CheckError(err)
 
 	zkConnectionFailedChannel := make(chan bool)
@@ -113,7 +113,6 @@ func StartLeaderElection(nodeID uint) uint {
 
 		case <-dd:
 
-			fmt.Println("ho capito")
 			election.Resign()
 
 			output, _, _ := zkConnection.Get(electionResponseZNodeName)
@@ -147,7 +146,7 @@ func StartLeaderElection(nodeID uint) uint {
 				err := SetZNode(zkConnection, electionResponseZNodeName, []byte(string(strconv.Itoa(int(nodeID)))))
 				utility.CheckError(err)
 
-				election.EndElection() // Terminates the election and signals all followers the election is over.
+				election.EndElection()
 				return nodeID
 
 			}

@@ -2,6 +2,7 @@ package zookeeper
 
 import (
 	"github.com/samuel/go-zookeeper/zk"
+	"strconv"
 	"time"
 )
 
@@ -47,6 +48,23 @@ func SetCurrentMasterIPAddress(address string) error {
 	}
 
 	return nil
+}
+
+func GetCurrentLeaderId() (uint, error) {
+
+	var zookeeperConnection *zk.Conn
+	var err error
+
+	if zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second); err != nil {
+		return 0, err
+	}
+
+	output, _, _ := zookeeperConnection.Get(electionResponseZNodeName)
+
+	out, _ := strconv.ParseInt(string(output), 10, 0)
+
+	return uint(out), nil
+
 }
 
 func GetCurrentLeaderIPAddress() (string, error) {
