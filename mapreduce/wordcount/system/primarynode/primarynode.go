@@ -4,14 +4,12 @@ import (
 	"SDCC-Project-WorkerNode/mapreduce/wordcount"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/heartbeat"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/network"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/noderegister"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/registers/timerregister"
 	"SDCC-Project-WorkerNode/utility"
 	"fmt"
 	"os"
 	"os/signal"
-	"syscall"
 )
 
 const anyLeaderElected = 0
@@ -41,16 +39,17 @@ func (obj *PrimaryNode) isLeaderNotElected() bool {
 func (obj *PrimaryNode) StartWork() {
 
 	var err error
-
-	go func() {
-		heartbeat.ReceiveHeartBeats((*obj).id, &(*obj).leaderId)
-	}()
+	var alreadyRegister bool
 
 	leaderOfflineChannel := make(chan os.Signal, 1)
-	signal.Notify(leaderOfflineChannel, syscall.SIGUSR1)
+	signal.Notify(leaderOfflineChannel, network.SignalToTellOfflineNode)
 
 	(*obj).leaderId, err = zookeeper.GetCurrentLeaderId()
 	utility.CheckError(err)
+
+	alreadyRegister = false
+
+	(*obj).leaderId, _ = zookeeper.GetCurrentLeaderId()
 
 	for {
 
@@ -70,14 +69,8 @@ func (obj *PrimaryNode) StartWork() {
 
 			fmt.Println("My ID ", (*obj).id, "! -> Leader's ID ", (*obj).leaderId, "!")
 
-			go func() {
-				timerregister.GetInstance().StartTimer((*obj).leaderId)
-
-				fmt.Printf("Timer associated to leader %d expired", (*obj).leaderId)
-
-				err = syscall.Kill(syscall.Getpid(), syscall.SIGUSR1)
-				utility.CheckError(err)
-			}()
+			network.ReceiveHeartbeatFromLeaderNode((*obj).id, &(*obj).leaderId, alreadyRegister)
+			alreadyRegister = true
 
 			<-leaderOfflineChannel
 
@@ -94,7 +87,7 @@ func (obj *PrimaryNode) startWorkAsLeader() {
 
 	for recipientId := uint(1); recipientId < uint(len(primaryNodeIds)); recipientId++ {
 		if recipientId != (*obj).id {
-			go heartbeat.SendHeartBeatsTo((*obj).id, recipientId)
+			network.SendHeartbeatToPrimaryBackup((*obj).id, recipientId)
 		}
 	}
 
