@@ -1,94 +1,52 @@
 package zookeeper
 
 import (
+	"SDCC-Project-WorkerNode/utility"
 	"github.com/samuel/go-zookeeper/zk"
-	"strconv"
 	"time"
 )
 
 const (
-	PrimaryNode = "/primarynode"
+	PrimaryNode         = "/primarynode"
+	leaderZookeeperPath = "/leader"
 )
 
-func SetCurrentMasterIPAddress(address string) error {
+func Init() {
 
 	var zookeeperConnection *zk.Conn
-	var actualStat *zk.Stat
 	var isPathExisting bool
 	var err error
 
-	if zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second); err != nil {
-		return err
-	}
+	zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second)
+	utility.CheckError(err)
 
-	if isPathExisting, _, err = zookeeperConnection.Exists(PrimaryNode); err != nil {
-		return err
-	}
+	isPathExisting, _, err = zookeeperConnection.Exists(leaderZookeeperPath)
+	utility.CheckError(err)
 
 	if !isPathExisting {
 
-		if _, err := zookeeperConnection.Create(PrimaryNode, nil, 0, zk.WorldACL(zk.PermAll)); err != nil {
-			return err
-		}
-
-		if _, err := zookeeperConnection.Set(PrimaryNode, []byte(address), 0); err != nil {
-			return err
-		}
-
-	} else {
-
-		if _, actualStat, err = zookeeperConnection.Get(PrimaryNode); err != nil {
-			return err
-		}
-
-		if _, err := zookeeperConnection.Set(PrimaryNode, []byte(address), actualStat.Version); err != nil {
-			return err
-		}
+		_, err := zookeeperConnection.Create(leaderZookeeperPath, nil, 0, zk.WorldACL(zk.PermAll))
+		utility.CheckError(err)
 
 	}
-
-	return nil
 }
 
-func GetCurrentLeaderId() (uint, error) {
+func SetActualClusterLeaderAddress(address string) {
 
 	var zookeeperConnection *zk.Conn
+	var actualStat *zk.Stat
 	var err error
 
-	if zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second); err != nil {
-		return 0, err
-	}
+	zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second)
+	utility.CheckError(err)
 
-	output, _, _ := zookeeperConnection.Get(electionResponseZNodeName)
+	_, actualStat, err = zookeeperConnection.Get(leaderZookeeperPath)
+	utility.CheckError(err)
 
-	out, _ := strconv.ParseInt(string(output), 10, 0)
-
-	return uint(out), nil
-
+	_, err = zookeeperConnection.Set(leaderZookeeperPath, []byte(address), actualStat.Version)
+	utility.CheckError(err)
 }
 
-func GetCurrentLeaderIPAddress() (string, error) {
+func GetActualClusterLeaderAddress() {
 
-	var zookeeperConnection *zk.Conn
-	var isPathExisting bool
-	var rawOutput []byte
-	var err error
-
-	if zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second); err != nil {
-		return "", err
-	}
-
-	if isPathExisting, _, err = zookeeperConnection.Exists(PrimaryNode); err != nil || !isPathExisting {
-		return "", err
-	}
-
-	if rawOutput, _, err = zookeeperConnection.Get(PrimaryNode); err != nil {
-		return "", err
-	}
-
-	return string(rawOutput), nil
-}
-
-func GetLocalClusterWorkerPopulation() uint {
-	return 10
 }

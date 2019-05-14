@@ -15,11 +15,9 @@ func yyTestSetCurrentMasterIPAddress(t *testing.T) {
 	var output string
 	var err error
 
-	if err = SetCurrentMasterIPAddress(Data); err != nil {
-		panic(err)
-	}
+	SetActualClusterLeaderAddress(Data)
 
-	if output, err = GetCurrentMasterIPAddress(); err != nil {
+	if output, err = GetA(); err != nil {
 		panic(err)
 	}
 
