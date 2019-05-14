@@ -47,6 +47,17 @@ func SetActualClusterLeaderAddress(address string) {
 	utility.CheckError(err)
 }
 
-func GetActualClusterLeaderAddress() {
+func GetActualClusterLeaderAddress() string {
 
+	var zookeeperConnection *zk.Conn
+	var output []byte
+	var err error
+
+	zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second)
+	utility.CheckError(err)
+
+	output, _, err = zookeeperConnection.Get(leaderZookeeperPath)
+	utility.CheckError(err)
+
+	return string(output)
 }
