@@ -4,6 +4,7 @@ import (
 	"SDCC-Project-WorkerNode/consensus/http"
 	"SDCC-Project-WorkerNode/consensus/raft/raftnode"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/heartbeat"
 	"SDCC-Project-WorkerNode/utility"
 	"bytes"
 	"encoding/json"
@@ -55,6 +56,8 @@ func Start(nodeId string, raftBindAddress string, joinAddress string, httpAddres
 
 				zookeeper.SetActualClusterLeaderAddress(raftNode.Leader())
 				fmt.Printf("Actual Leader ID %s \n", nodeId)
+
+				heartbeat.ReceiveHeartBeatFromWorkers()
 			}
 
 			<-raftNode.LeaderCh()

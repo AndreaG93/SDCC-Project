@@ -36,15 +36,15 @@ func (obj *PrimaryNode) StartWork() {
 	startNewElection := make(chan bool, 1)
 	waitEndElection := make(chan bool, 1)
 
-	go heartbeatleader.LeaderElection((*obj).id, startNewElection, waitEndElection)
+	go heartbeat.LeaderElection((*obj).id, startNewElection, waitEndElection)
 
-	go heartbeatleader.Receive((*obj).id, startNewElection, waitEndElection)
+	go heartbeat.Receive((*obj).id, startNewElection, waitEndElection)
 
 	primaryNodeIds := noderegister.GetInstance().GetPrimaryNodeIDs()
 
 	for recipientId := uint(1); recipientId < uint(len(primaryNodeIds)); recipientId++ {
 		if recipientId != (*obj).id {
-			go heartbeatleader.Send((*obj).id, recipientId, startNewElection, waitEndElection)
+			go heartbeat.Send((*obj).id, recipientId, startNewElection, waitEndElection)
 		}
 	}
 
