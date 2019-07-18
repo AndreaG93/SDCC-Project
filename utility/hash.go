@@ -4,7 +4,6 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"hash/fnv"
 	"os/exec"
 )
@@ -28,19 +27,17 @@ func GenerateArrayIndexFromString(inputString string, arraySize uint) (uint, err
 	}
 	defer FNV1AHashAlgorithm.Reset()
 
-	fmt.Println(FNV1AHashAlgorithm.Sum32())
-
 	return uint(FNV1AHashAlgorithm.Sum32()) % arraySize, nil
 }
 
-func GenerateDigestUsingSHA512(data []byte) (string, error) {
+func GenerateDigestUsingSHA512(data []byte) string {
 
-	if _, err := SHA512cryptoHashAlgorithm.Write(data); err != nil {
-		return "", err
-	}
+	_, err := SHA512cryptoHashAlgorithm.Write(data)
+	CheckError(err)
+
 	defer SHA512cryptoHashAlgorithm.Reset()
 
-	return hex.EncodeToString(SHA512cryptoHashAlgorithm.Sum(nil)), nil
+	return hex.EncodeToString(SHA512cryptoHashAlgorithm.Sum(nil))
 }
 
 func GenerateDigestOfFileUsingSHA512(filename string) (string, error) {

@@ -1,4 +1,4 @@
-package primarynode
+package Primary
 
 import (
 	"testing"

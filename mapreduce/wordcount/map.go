@@ -1,9 +1,9 @@
 package wordcount
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtokenhashtable"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/DataStructures/wordtokenhashtable"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/Register/Worker/WorkerMapRegister"
 	"SDCC-Project-WorkerNode/utility"
-	"io/ioutil"
 	"strings"
 )
 
@@ -11,49 +11,41 @@ type Map struct {
 }
 
 type MapInput struct {
-	InputFileNameString          string
-	OutputWordHashTableArraySize uint
+	Input          string
+	MapCardinality uint
 }
 
 type MapOutput struct {
-	OutputFileDigest string
+	Digest string
 }
 
-func (x *Map) Execute(mapInput MapInput, mapOutput *MapOutput) error {
+func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	var err error
-	var rawInput []byte
-	var output *wordtokenhashtable.WordTokenHashTable
-	var outputSerialized []byte
-	var outputDigest string
+	var data *wordtokenhashtable.WordTokenHashTable
 
-	if rawInput, err = ioutil.ReadFile(mapInput.InputFileNameString); err != nil {
-		return err
-	}
+	data = wordtokenhashtable.New(input.MapCardinality)
 
-	output = wordtokenhashtable.New(mapInput.OutputWordHashTableArraySize)
-
-	wordScanner := utility.BuildWordScannerFromString(string(rawInput))
+	wordScanner := utility.BuildWordScannerFromString(input.Input)
 
 	for wordScanner.Scan() {
 
 		currentWord := strings.ToLower(wordScanner.Text())
-		if err = output.InsertWord(currentWord); err != nil {
+		if err = data.InsertWord(currentWord); err != nil {
 			return err
 		}
 	}
 
-	if outputSerialized, err = output.Serialize(); err != nil {
-		return err
-	}
-	if outputDigest, err = utility.GenerateDigestUsingSHA512(outputSerialized); err != nil {
-		return err
-	}
-	if err = ioutil.WriteFile(outputDigest, outputSerialized, 0777); err != nil {
+	rawData, err := data.Serialize()
+	if err != nil {
 		return err
 	}
 
-	mapOutput.OutputFileDigest = outputDigest
+	digest := utility.GenerateDigestUsingSHA512(rawData)
+
+	WorkerMapRegister.GetInstance().Set(digest, rawData)
+
+	output.Digest = digest
 
 	return nil
 }

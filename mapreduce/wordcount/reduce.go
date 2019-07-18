@@ -1,54 +1,39 @@
 package wordcount
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtokenlist"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtokenlistgroup"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/DataStructures/wordtokenlistgroup"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/system/Register/Worker/WorkerReduceRegister"
 	"SDCC-Project-WorkerNode/utility"
-	"io/ioutil"
 )
 
 type Reduce struct{}
 
 type ReduceInput struct {
-	InputFileNameString string
+	data []byte
 }
 
 type ReduceOutput struct {
-	OutputFileDigest string
+	digest string
 }
 
-func (x *Reduce) Execute(reduceInput ReduceInput, reduceOutput *ReduceOutput) error {
+func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 	var err error
-	var rawInput []byte
-	var input *wordtokenlistgroup.WordTokenListGroup
-	var output *wordtokenlist.WordTokenList
-	var outputSerialized []byte
-	var outputDigest string
 
-	if rawInput, err = ioutil.ReadFile(reduceInput.InputFileNameString); err != nil {
+	tokenListGroup, err := wordtokenlistgroup.Deserialize(input.data)
+	if err != nil {
 		return err
 	}
 
-	if input, err = wordtokenlistgroup.Deserialize(rawInput); err != nil {
-		return err
-	}
+	data := tokenListGroup.Merge()
 
-	output = input.Merge()
+	rawData, err := data.Serialize()
 
-	if outputSerialized, err = output.Serialize(); err != nil {
-		return err
-	}
+	digest := utility.GenerateDigestUsingSHA512(rawData)
 
-	if outputDigest, err = utility.GenerateDigestUsingSHA512(outputSerialized); err != nil {
-		return err
-	}
+	WorkerReduceRegister.GetInstance().Set(digest, rawData)
 
-	if err = ioutil.WriteFile(outputDigest, outputSerialized, 0777); err != nil {
-		return err
-	}
-
-	reduceOutput.OutputFileDigest = outputDigest
+	output.digest = digest
 
 	return nil
 }

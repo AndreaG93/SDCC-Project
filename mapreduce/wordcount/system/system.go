@@ -17,7 +17,7 @@ const (
 	RPCPort = 30000
 )
 
-func StartAcceptingRPCRequest(serviceTypeRequest interface{}, nodeId uint) {
+func StartAcceptingRPCRequest(serviceTypeRequest interface{}, nodeId int) {
 
 	var listener net.Listener
 

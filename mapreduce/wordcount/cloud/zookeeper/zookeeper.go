@@ -7,58 +7,84 @@ import (
 )
 
 const (
-	PrimaryNode         = "/primarynode"
-	leaderZookeeperPath = "/leader"
+	ActualLeaderZNodePath = "/leader"
+	lockerTimeout         = 1 * time.Minute
+	zkSessionTimeOut      = 20 * time.Second
 )
 
-func Init() {
+type Client struct {
+	zooKeeperConnection *zk.Conn
+	zooKeeperLock       *zk.Lock
+}
 
-	var zookeeperConnection *zk.Conn
-	var isPathExisting bool
+func New(zooKeeperServerPoolAddresses []string) *Client {
+
+	var err error
+	output := new(Client)
+
+	(*output).zooKeeperConnection, _, err = zk.Connect(zooKeeperServerPoolAddresses, zkSessionTimeOut)
+	(*output).zooKeeperLock = nil
+	utility.CheckError(err)
+
+	return output
+}
+
+func (obj *Client) CheckZNodeExistence(zNodePath string) bool {
+
+	var output bool
 	var err error
 
-	zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second)
+	output, _, err = (*obj).zooKeeperConnection.Exists(zNodePath)
 	utility.CheckError(err)
 
-	isPathExisting, _, err = zookeeperConnection.Exists(leaderZookeeperPath)
+	return output
+}
+
+func (obj *Client) CreateZNode(zNodePath string) {
+
+	_, err := (*obj).zooKeeperConnection.Create(zNodePath, nil, 0, zk.WorldACL(zk.PermAll))
 	utility.CheckError(err)
 
-	if !isPathExisting {
+}
 
-		_, err := zookeeperConnection.Create(leaderZookeeperPath, nil, 0, zk.WorldACL(zk.PermAll))
+func (obj *Client) RemoveZNode(zNodePath string) {
+
+	var zNodeExistence bool
+	var actualStat *zk.Stat
+	var err error
+
+	zNodeExistence, actualStat, err = (*obj).zooKeeperConnection.Exists(zNodePath)
+	utility.CheckError(err)
+
+	if zNodeExistence {
+
+		err := (*obj).zooKeeperConnection.Delete(zNodePath, actualStat.Version)
 		utility.CheckError(err)
 
 	}
 }
 
-func SetActualClusterLeaderAddress(address string) {
+func (obj *Client) SetZNodeData(zNodePath string, data []byte) {
 
-	var zookeeperConnection *zk.Conn
 	var actualStat *zk.Stat
 	var err error
 
-	zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second)
+	_, actualStat, err = (*obj).zooKeeperConnection.Get(zNodePath)
 	utility.CheckError(err)
 
-	_, actualStat, err = zookeeperConnection.Get(leaderZookeeperPath)
+	_, err = (*obj).zooKeeperConnection.Set(zNodePath, data, actualStat.Version)
 	utility.CheckError(err)
 
-	_, err = zookeeperConnection.Set(leaderZookeeperPath, []byte(address), actualStat.Version)
-	utility.CheckError(err)
 }
 
-func GetActualClusterLeaderAddress() (string, <-chan zk.Event) {
+func (obj *Client) GetZNodeData(zNodePath string) ([]byte, <-chan zk.Event) {
 
-	var zookeeperConnection *zk.Conn
-	var outputWatchEvent <-chan zk.Event
-	var output []byte
-	var err error
-
-	zookeeperConnection, _, err = zk.Connect([]string{"localhost"}, time.Second)
+	outputData, _, outputWatchEvent, err := (*obj).zooKeeperConnection.GetW(zNodePath)
 	utility.CheckError(err)
 
-	output, _, outputWatchEvent, err = zookeeperConnection.GetW(leaderZookeeperPath)
-	utility.CheckError(err)
+	return outputData, outputWatchEvent
+}
 
-	return string(output), outputWatchEvent
+func (obj *Client) CloseConnection() {
+	(*obj).zooKeeperConnection.Close()
 }

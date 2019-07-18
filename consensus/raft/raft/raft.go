@@ -3,7 +3,6 @@ package raft
 import (
 	"SDCC-Project-WorkerNode/consensus/http"
 	"SDCC-Project-WorkerNode/consensus/raft/raftnode"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
 	"SDCC-Project-WorkerNode/mapreduce/wordcount/heartbeat"
 	"SDCC-Project-WorkerNode/utility"
 	"bytes"
@@ -21,9 +20,10 @@ const (
 
 func Start(nodeId string, raftBindAddress string, joinAddress string, httpAddress string, bootstrapCluster bool) {
 
-	if bootstrapCluster {
-		zookeeper.Init()
-	}
+	/*
+		if bootstrapCluster {
+			zookeeper.Init()
+		}*/
 
 	var err error
 
@@ -54,7 +54,7 @@ func Start(nodeId string, raftBindAddress string, joinAddress string, httpAddres
 
 			if raftNode.IsLeader() {
 
-				zookeeper.SetActualClusterLeaderAddress(raftNode.Leader())
+				//zookeeper.SetActualClusterLeaderAddress(raftNode.Leader())
 				fmt.Printf("Actual Leader ID %s \n", nodeId)
 
 				heartbeat.ReceiveHeartBeatFromWorkers()

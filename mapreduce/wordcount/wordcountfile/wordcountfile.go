@@ -1,9 +1,7 @@
 package wordcountfile
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/amazon/s3"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
+	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/amazon"
 	"SDCC-Project-WorkerNode/utility"
 	"io/ioutil"
 	"os"
@@ -58,10 +56,10 @@ func New(filename string) (*WordCountFile, error) {
 	return output, nil
 }
 
-func (obj *WordCountFile) DownloadFromCloud() error {
+func (obj *WordCountFile) DownloadFromCloud() {
 
-	s3Client := s3.New()
-	return (*s3Client).Download((*obj).Name, (*obj).FullPath)
+	s3Client := amazon.New()
+	(*s3Client).Download((*obj).Name, (*obj).FullPath)
 }
 
 func (obj *WordCountFile) Split() error {
@@ -71,7 +69,7 @@ func (obj *WordCountFile) Split() error {
 	var averageChunkSize int64
 	var err error
 
-	parts := zookeeper.GetLocalClusterWorkerPopulation() / system.DefaultArbitraryFaultToleranceLevel
+	parts := 6 // zookeeper.GetLocalClusterWorkerPopulation() / system.DefaultArbitraryFaultToleranceLevel
 
 	if inputFile, err = os.Open((*obj).FullPath); err != nil {
 		return err

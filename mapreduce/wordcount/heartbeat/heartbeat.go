@@ -1,7 +1,6 @@
 package heartbeat
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/cloud/zookeeper"
 	"fmt"
 	"github.com/codeskyblue/heartbeat"
 	"github.com/samuel/go-zookeeper/zk"
@@ -43,7 +42,7 @@ func SendHeartBeatToLeader(senderNodeId uint) {
 
 	for {
 
-		leaderAddress, leaderWatcher = zookeeper.GetActualClusterLeaderAddress()
+		//leaderAddress, leaderWatcher = zookeeper.GetActualClusterLeaderAddress()
 
 		result := strings.Split(leaderAddress, ":")
 

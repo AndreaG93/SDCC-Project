@@ -1,51 +1,30 @@
 package zookeeper
 
 import (
-	"SDCC-Project-WorkerNode/utility"
-	"fmt"
-	"github.com/samuel/go-zookeeper/zk"
 	"strings"
 	"testing"
 )
 
-func yyTestSetCurrentMasterIPAddress(t *testing.T) {
+const (
+	testData      = "test"
+	testZNodePath = "/test"
+)
 
-	const Data = "Test"
+func Test_zookeeperBasicOperations(t *testing.T) {
 
-	var output string
-	var err error
+	zooKeeperClient := New([]string{"localhost:2181"})
 
-	SetActualClusterLeaderAddress(Data)
-
-	if output, err = GetA(); err != nil {
-		panic(err)
+	if !(*zooKeeperClient).CheckZNodeExistence(testZNodePath) {
+		(*zooKeeperClient).CreateZNode(testZNodePath)
 	}
 
-	if strings.Compare(Data, output) != 0 {
-		panic(err)
+	(*zooKeeperClient).SetZNodeData(testZNodePath, []byte(testData))
+
+	dataReceived, _ := (*zooKeeperClient).GetZNodeData(testZNodePath)
+
+	if strings.Compare(testData, string(dataReceived)) != 0 {
+		panic("Error")
 	}
 
-}
-
-func TestPrimaryAddressChange(t *testing.T) {
-
-	var zkLeaderChangeEventChannel <-chan zk.Event
-	var zkConnection *zk.Conn
-	var data []byte
-	var err error
-
-	zkConnection, _, err = connectToZookeeperServers([]string{"localhost"})
-	utility.CheckError(err)
-
-	//checkExistenceOrGenerateZNode(zkConnection, "/current_leader_id", 0)
-
-	for {
-
-		data, _, zkLeaderChangeEventChannel, err = zkConnection.GetW("/current_leader_id")
-		utility.CheckError(err)
-
-		fmt.Println(string(data))
-
-		<-zkLeaderChangeEventChannel
-	}
+	(*zooKeeperClient).RemoveZNode(testZNodePath)
 }

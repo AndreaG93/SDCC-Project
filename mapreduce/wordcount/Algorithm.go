@@ -1,0 +1,5 @@
+package wordcount
+
+func start() {
+
+}
