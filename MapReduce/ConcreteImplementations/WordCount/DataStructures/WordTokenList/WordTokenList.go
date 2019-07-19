@@ -1,8 +1,8 @@
-package wordtokenlist
+package WordTokenList
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtoken"
-	"SDCC-Project-WorkerNode/utility"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordToken"
+	"SDCC-Project/utility"
 	"container/list"
 	"fmt"
 	"strings"
@@ -28,7 +28,7 @@ func New() *WordTokenList {
 func Deserialize(input []byte) (*WordTokenList, error) {
 
 	output := New()
-	serializedData := []wordtoken.WordToken{}
+	serializedData := []WordToken.WordToken{}
 
 	if err := utility.Decode(input, &serializedData); err != nil {
 		return nil, err
@@ -42,16 +42,16 @@ func Deserialize(input []byte) (*WordTokenList, error) {
 }
 
 func (obj *WordTokenList) InsertWord(word string) {
-	(*obj).InsertWordToken(wordtoken.New(word, 1))
+	(*obj).InsertWordToken(WordToken.New(word, 1))
 }
 
-func (obj *WordTokenList) InsertWordToken(wordToken *wordtoken.WordToken) {
+func (obj *WordTokenList) InsertWordToken(wordToken *WordToken.WordToken) {
 
 	wordTokenList := (*obj).wordTokenList
 
 	for e := (*wordTokenList).Front(); e != nil; e = (*e).Next() {
 
-		currentWordToken := (*e).Value.(*wordtoken.WordToken)
+		currentWordToken := (*e).Value.(*WordToken.WordToken)
 
 		if strings.Compare((*currentWordToken).Word, (*wordToken).Word) == 0 {
 
@@ -79,18 +79,18 @@ func (obj *WordTokenList) Print() {
 
 	for e := (*wordTokenList).Front(); e != nil; e = (*e).Next() {
 
-		currentWordToken := e.Value.(*wordtoken.WordToken)
+		currentWordToken := e.Value.(*WordToken.WordToken)
 
 		fmt.Println(*currentWordToken)
 	}
 }
 
-func (obj *WordTokenList) WordToken() *wordtoken.WordToken {
+func (obj *WordTokenList) WordToken() *WordToken.WordToken {
 
-	var output *wordtoken.WordToken
+	var output *WordToken.WordToken
 
 	currentWordTokenElement := (*obj).currentWordTokenElement
-	output = ((*currentWordTokenElement).Value).(*wordtoken.WordToken)
+	output = ((*currentWordTokenElement).Value).(*WordToken.WordToken)
 
 	return output
 }
@@ -139,7 +139,7 @@ func (obj *WordTokenList) Serialize() ([]byte, error) {
 
 	(*obj).IteratorReset()
 
-	output := make([]wordtoken.WordToken, (*obj).length)
+	output := make([]WordToken.WordToken, (*obj).length)
 
 	for index := uint(0); index < (*obj).length; index++ {
 

@@ -1,7 +1,7 @@
-package wordtokenlist
+package WordTokenList
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtoken"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordToken"
 	"log"
 	"strings"
 	"testing"
@@ -9,15 +9,15 @@ import (
 
 func Test_WordTokenList_Inserting(t *testing.T) {
 
-	var currentWordToken *wordtoken.WordToken
+	var currentWordToken *WordToken.WordToken
 
 	wordTokenList := New()
 
-	(*wordTokenList).InsertWordToken(wordtoken.New("Andrea", 5))
-	(*wordTokenList).InsertWordToken(wordtoken.New("Graziani", 30))
-	(*wordTokenList).InsertWordToken(wordtoken.New("Yumi", 26))
-	(*wordTokenList).InsertWordToken(wordtoken.New("Yumi", 4))
-	(*wordTokenList).InsertWordToken(wordtoken.New("Andrea", 5))
+	(*wordTokenList).InsertWordToken(WordToken.New("Andrea", 5))
+	(*wordTokenList).InsertWordToken(WordToken.New("Graziani", 30))
+	(*wordTokenList).InsertWordToken(WordToken.New("Yumi", 26))
+	(*wordTokenList).InsertWordToken(WordToken.New("Yumi", 4))
+	(*wordTokenList).InsertWordToken(WordToken.New("Andrea", 5))
 
 	(*wordTokenList).Print()
 
@@ -61,9 +61,9 @@ func TestWordTokenList_Serialize(t *testing.T) {
 
 	data = New()
 
-	(*data).InsertWordToken(wordtoken.New("Andrea", 5))
-	(*data).InsertWordToken(wordtoken.New("Graziani", 5))
-	(*data).InsertWordToken(wordtoken.New("Diana", 5))
+	(*data).InsertWordToken(WordToken.New("Andrea", 5))
+	(*data).InsertWordToken(WordToken.New("Graziani", 5))
+	(*data).InsertWordToken(WordToken.New("Diana", 5))
 
 	if dataSerialized, err = (*data).Serialize(); err != nil {
 		panic(err)
@@ -79,17 +79,17 @@ func TestWordTokenList_Serialize(t *testing.T) {
 
 func Test_WordTokenList_WordTokenListMerging(t *testing.T) {
 
-	var currentWordToken *wordtoken.WordToken
+	var currentWordToken *WordToken.WordToken
 
 	wordTokenList1 := New()
 	wordTokenList2 := New()
 
-	(*wordTokenList1).InsertWordToken(wordtoken.New("Andrea", 5))
-	(*wordTokenList1).InsertWordToken(wordtoken.New("Graziani", 30))
-	(*wordTokenList1).InsertWordToken(wordtoken.New("Yumi", 26))
-	(*wordTokenList2).InsertWordToken(wordtoken.New("Andrea", 5))
-	(*wordTokenList2).InsertWordToken(wordtoken.New("Graziani", 30))
-	(*wordTokenList2).InsertWordToken(wordtoken.New("Yumi", 26))
+	(*wordTokenList1).InsertWordToken(WordToken.New("Andrea", 5))
+	(*wordTokenList1).InsertWordToken(WordToken.New("Graziani", 30))
+	(*wordTokenList1).InsertWordToken(WordToken.New("Yumi", 26))
+	(*wordTokenList2).InsertWordToken(WordToken.New("Andrea", 5))
+	(*wordTokenList2).InsertWordToken(WordToken.New("Graziani", 30))
+	(*wordTokenList2).InsertWordToken(WordToken.New("Yumi", 26))
 
 	(*wordTokenList1).Merge(wordTokenList2)
 

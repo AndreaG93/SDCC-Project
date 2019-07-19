@@ -1,4 +1,4 @@
-package wordtoken
+package WordToken
 
 type WordToken struct {
 	Word        string

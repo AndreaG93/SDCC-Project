@@ -1,15 +1,15 @@
-package wordtokenlistgroup
+package WordTokenListGroup
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtoken"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtokenhashtable"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtokenlist"
-	"SDCC-Project-WorkerNode/utility"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordToken"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenHashTable"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenList"
+	"SDCC-Project/utility"
 	"fmt"
 )
 
 type WordTokenListGroup struct {
-	group           []*wordtokenlist.WordTokenList
+	group           []*WordTokenList.WordTokenList
 	size            uint
 	totalPopulation uint
 }
@@ -26,22 +26,22 @@ func New(size uint) *WordTokenListGroup {
 
 	(*output).totalPopulation = 0
 	(*output).size = uint(size)
-	(*output).group = make([]*wordtokenlist.WordTokenList, (*output).size)
+	(*output).group = make([]*WordTokenList.WordTokenList, (*output).size)
 
 	for index := uint(0); index < (*output).size; index++ {
-		(*output).group[0] = wordtokenlist.New()
+		(*output).group[0] = WordTokenList.New()
 	}
 
 	return output
 }
 
-func NewFrom(input []*wordtokenhashtable.WordTokenHashTable, groupIndex uint) *WordTokenListGroup {
+func NewFrom(input []*WordTokenHashTable.WordTokenHashTable, groupIndex uint) *WordTokenListGroup {
 
 	output := new(WordTokenListGroup)
 
 	(*output).totalPopulation = 0
 	(*output).size = uint(len(input))
-	(*output).group = make([]*wordtokenlist.WordTokenList, (*output).size)
+	(*output).group = make([]*WordTokenList.WordTokenList, (*output).size)
 
 	for index := uint(0); index < (*output).size; index++ {
 		(*output).group[index] = input[index].GetWordTokenListAt(groupIndex)
@@ -54,8 +54,8 @@ func NewFrom(input []*wordtokenhashtable.WordTokenHashTable, groupIndex uint) *W
 func Deserialize(input []byte) (*WordTokenListGroup, error) {
 
 	var output *WordTokenListGroup
-	var currentWordToken *wordtoken.WordToken
-	var currentWordTokenList *wordtokenlist.WordTokenList
+	var currentWordToken *WordToken.WordToken
+	var currentWordTokenList *WordTokenList.WordTokenList
 
 	serializedData := []wordTokenListGroupSerializationUnit{}
 
@@ -68,7 +68,7 @@ func Deserialize(input []byte) (*WordTokenListGroup, error) {
 	for index := uint(1); index < uint(len(serializedData)); index++ {
 
 		currentWordTokenList = output.group[serializedData[index].membershipListIndexAndGroupSize]
-		currentWordToken = wordtoken.New(serializedData[index].word, serializedData[index].occurrences)
+		currentWordToken = WordToken.New(serializedData[index].word, serializedData[index].occurrences)
 
 		currentWordTokenList.InsertWordToken(currentWordToken)
 	}
@@ -78,8 +78,8 @@ func Deserialize(input []byte) (*WordTokenListGroup, error) {
 
 func (obj *WordTokenListGroup) Serialize() ([]byte, error) {
 
-	var currentWordToken *wordtoken.WordToken
-	var currentWordTokenList *wordtokenlist.WordTokenList
+	var currentWordToken *WordToken.WordToken
+	var currentWordTokenList *WordTokenList.WordTokenList
 	var output []wordTokenListGroupSerializationUnit
 	var outputIndex uint
 
@@ -105,9 +105,9 @@ func (obj *WordTokenListGroup) Serialize() ([]byte, error) {
 	return utility.Encode(output)
 }
 
-func (obj *WordTokenListGroup) Merge() *wordtokenlist.WordTokenList {
+func (obj *WordTokenListGroup) Merge() *WordTokenList.WordTokenList {
 
-	output := wordtokenlist.New()
+	output := WordTokenList.New()
 
 	for index := uint(0); index < (*obj).size; index++ {
 
@@ -120,7 +120,7 @@ func (obj *WordTokenListGroup) Merge() *wordtokenlist.WordTokenList {
 
 func (obj *WordTokenListGroup) Print() {
 
-	var currentList *wordtokenlist.WordTokenList
+	var currentList *WordTokenList.WordTokenList
 
 	for index := uint(0); index < uint(len((*obj).group)); index++ {
 

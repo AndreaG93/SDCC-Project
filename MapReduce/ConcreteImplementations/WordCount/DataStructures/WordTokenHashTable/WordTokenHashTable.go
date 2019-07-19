@@ -1,14 +1,14 @@
-package wordtokenhashtable
+package WordTokenHashTable
 
 import (
-	"SDCC-Project/mapreduce/wordcount/DataStructures/wordtoken"
-	"SDCC-Project/mapreduce/wordcount/DataStructures/wordtokenlist"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordToken"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenList"
 	"SDCC-Project/utility"
 	"fmt"
 )
 
 type WordTokenHashTable struct {
-	hashTable     []*wordtokenlist.WordTokenList
+	hashTable     []*WordTokenList.WordTokenList
 	hashTableSize uint
 }
 
@@ -16,11 +16,11 @@ func New(size uint) *WordTokenHashTable {
 
 	output := new(WordTokenHashTable)
 
-	(*output).hashTable = make([]*wordtokenlist.WordTokenList, size)
+	(*output).hashTable = make([]*WordTokenList.WordTokenList, size)
 	(*output).hashTableSize = size
 
 	for index := uint(0); index < size; index++ {
-		(*output).hashTable[index] = wordtokenlist.New()
+		(*output).hashTable[index] = WordTokenList.New()
 	}
 
 	return output
@@ -29,9 +29,9 @@ func New(size uint) *WordTokenHashTable {
 func Deserialize(input []byte) (*WordTokenHashTable, error) {
 
 	var output *WordTokenHashTable
-	var currentWordToken *wordtoken.WordToken
+	var currentWordToken *WordToken.WordToken
 
-	serializedData := []wordtoken.WordToken{}
+	serializedData := []WordToken.WordToken{}
 
 	if err := utility.Decode(input, &serializedData); err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func Deserialize(input []byte) (*WordTokenHashTable, error) {
 
 	for index := uint(1); index < uint(len(serializedData)); index++ {
 
-		currentWordToken = wordtoken.New(serializedData[index].Word, serializedData[index].Occurrences)
+		currentWordToken = WordToken.New(serializedData[index].Word, serializedData[index].Occurrences)
 		if err := (*output).InsertWordToken(currentWordToken); err != nil {
 			return nil, err
 		}
@@ -51,11 +51,11 @@ func Deserialize(input []byte) (*WordTokenHashTable, error) {
 	return output, nil
 }
 
-func (obj *WordTokenHashTable) InsertWordToken(wordToken *wordtoken.WordToken) error {
+func (obj *WordTokenHashTable) InsertWordToken(wordToken *WordToken.WordToken) error {
 
 	var index uint
 	var err error
-	var currentWordTokenList *wordtokenlist.WordTokenList
+	var currentWordTokenList *WordTokenList.WordTokenList
 
 	if index, err = utility.GenerateArrayIndexFromString((*wordToken).Word, (*obj).hashTableSize); err != nil {
 		return err
@@ -69,12 +69,12 @@ func (obj *WordTokenHashTable) InsertWordToken(wordToken *wordtoken.WordToken) e
 
 func (obj *WordTokenHashTable) InsertWord(word string) error {
 
-	return (*obj).InsertWordToken(wordtoken.New(word, 1))
+	return (*obj).InsertWordToken(WordToken.New(word, 1))
 }
 
 func (obj *WordTokenHashTable) Print() {
 
-	var currentList *wordtokenlist.WordTokenList
+	var currentList *WordTokenList.WordTokenList
 
 	for index := uint(0); index < (*obj).hashTableSize; index++ {
 
@@ -85,15 +85,15 @@ func (obj *WordTokenHashTable) Print() {
 	}
 }
 
-func (obj *WordTokenHashTable) GetWordTokenListAt(index uint) *wordtokenlist.WordTokenList {
+func (obj *WordTokenHashTable) GetWordTokenListAt(index uint) *WordTokenList.WordTokenList {
 	return obj.hashTable[index]
 }
 
 func (obj *WordTokenHashTable) Serialize() ([]byte, error) {
 
-	var output []wordtoken.WordToken
-	var currentWordTokenList *wordtokenlist.WordTokenList
-	var currentWordToken *wordtoken.WordToken
+	var output []WordToken.WordToken
+	var currentWordTokenList *WordTokenList.WordTokenList
+	var currentWordToken *WordToken.WordToken
 	totalNumberOfWordToken := uint(0)
 
 	for index := uint(0); index < (*obj).hashTableSize; index++ {
@@ -102,7 +102,7 @@ func (obj *WordTokenHashTable) Serialize() ([]byte, error) {
 		totalNumberOfWordToken += (*currentWordTokenList).GetLength()
 	}
 
-	output = make([]wordtoken.WordToken, totalNumberOfWordToken+1)
+	output = make([]WordToken.WordToken, totalNumberOfWordToken+1)
 	output[0].Word = ""
 	output[0].Occurrences = (*obj).hashTableSize
 

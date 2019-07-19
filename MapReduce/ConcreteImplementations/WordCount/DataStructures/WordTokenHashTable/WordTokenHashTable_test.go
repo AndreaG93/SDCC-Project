@@ -1,4 +1,4 @@
-package wordtokenhashtable
+package WordTokenHashTable
 
 import (
 	"testing"
