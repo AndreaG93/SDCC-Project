@@ -1,9 +1,9 @@
 package wordtokenhashtable
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtoken"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/datastructures/wordtokenlist"
-	"SDCC-Project-WorkerNode/utility"
+	"SDCC-Project/mapreduce/wordcount/DataStructures/wordtoken"
+	"SDCC-Project/mapreduce/wordcount/DataStructures/wordtokenlist"
+	"SDCC-Project/utility"
 	"fmt"
 )
 

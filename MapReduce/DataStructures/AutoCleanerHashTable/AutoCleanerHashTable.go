@@ -1,4 +1,4 @@
-package DataStructures
+package AutoCleanerHashTable
 
 import (
 	"time"

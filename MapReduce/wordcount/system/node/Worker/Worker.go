@@ -1,8 +1,8 @@
 package Worker
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount"
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
+	"SDCC-Project/mapreduce/wordcount"
+	"SDCC-Project/mapreduce/wordcount/system"
 	"fmt"
 	"sync"
 )
