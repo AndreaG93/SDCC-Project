@@ -1,8 +1,7 @@
-package wordcount
+package Task
 
 import (
 	"SDCC-Project/MapReduce/Data"
-	"SDCC-Project/MapReduce/InputData"
 	"SDCC-Project/MapReduce/Registry/WorkerResultsRegister"
 )
 

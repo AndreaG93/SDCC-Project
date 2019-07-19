@@ -1,10 +1,9 @@
-package system
+package MapReduce
 
 import (
-	"SDCC-Project-WorkerNode/utility"
+	"SDCC-Project/utility"
 	"net"
 	"net/rpc"
-	"strconv"
 )
 
 const (
@@ -17,11 +16,11 @@ const (
 	RPCPort = 30000
 )
 
-func StartAcceptingRPCRequest(serviceTypeRequest interface{}, nodeId int) {
+func StartAcceptingRPCRequest(serviceTypeRequest interface{}, address string) {
 
 	var listener net.Listener
 
-	listener, _ = net.Listen(DefaultNetwork, "localhost"+":"+strconv.Itoa(RPCPort+int(nodeId)))
+	listener, _ = net.Listen("tcp", address)
 	rpc.Register(serviceTypeRequest)
 
 	defer func() {

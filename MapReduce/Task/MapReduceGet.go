@@ -1,4 +1,4 @@
-package wordcount
+package Task
 
 import "SDCC-Project/MapReduce/Registry/WorkerResultsRegister"
 

@@ -1,9 +1,8 @@
-package BFTMapTask
+package Task
 
 import (
 	"SDCC-Project/MapReduce/Data"
 	"SDCC-Project/MapReduce/Registry/WorkersResponsesRegistry"
-	"SDCC-Project/MapReduce/wordcount"
 	"SDCC-Project/utility"
 	"net/rpc"
 )
@@ -13,7 +12,7 @@ type workerReply struct {
 	workerAddress string
 }
 
-type BFTMapTask struct {
+type BFTMapOrReduceService struct {
 	workersReplyChannel chan workerReply
 	killTaskChannel     chan bool
 	faultToleranceLevel int
@@ -23,9 +22,9 @@ type BFTMapTask struct {
 	inputSplit          Data.Split
 }
 
-func New(inputSplit Data.Split, faultToleranceLevel int, workersAddresses []string) *BFTMapTask {
+func NewBFTMapReduce(inputSplit Data.Split, faultToleranceLevel int, workersAddresses []string) *BFTMapOrReduceService {
 
-	output := new(BFTMapTask)
+	output := new(BFTMapOrReduceService)
 
 	(*output).workersReplyChannel = make(chan workerReply)
 	(*output).killTaskChannel = make(chan bool)
@@ -41,7 +40,7 @@ func New(inputSplit Data.Split, faultToleranceLevel int, workersAddresses []stri
 /**
  * This function is used to execute a 'Byzantine Fault Tolerant' Map-Task.
  */
-func (obj *BFTMapTask) Execute() (string, []string) {
+func (obj *BFTMapOrReduceService) Execute() (string, []string) {
 
 	defer close((*obj).workersReplyChannel)
 	defer close((*obj).killTaskChannel)
@@ -56,7 +55,7 @@ func (obj *BFTMapTask) Execute() (string, []string) {
 	return (*obj).repliesRegistry.GetMostMatchedWorkerResponse()
 }
 
-func (obj *BFTMapTask) startListeningWorkersReplies() {
+func (obj *BFTMapOrReduceService) startListeningWorkersReplies() {
 
 	numberOfReply := 0
 
@@ -74,26 +73,25 @@ func (obj *BFTMapTask) startListeningWorkersReplies() {
 	}
 }
 
-func (obj *BFTMapTask) executeSingleMapTaskReplica() {
+func (obj *BFTMapOrReduceService) executeSingleMapTaskReplica() {
 
-	var mapTaskInput wordcount.MapInput
-	var mapTaskOutput wordcount.MapOutput
+	var input MapReduceInput
+	var output MapReduceOutput
 
 	address := (*obj).workersAddresses[(*obj).currentWorkerID]
 
 	worker, err := rpc.Dial("tcp", address)
 	utility.CheckError(err)
 
-	mapTaskInput.Input = (*obj).inputSplit
-	mapTaskInput.MapCardinality = 5
+	input.InputData = (*obj).inputSplit
 
-	err = worker.Call("Map.Execute", &mapTaskInput, &mapTaskOutput)
+	err = worker.Call("Map.Execute", &input, &output)
 
 	if err != nil {
 
 		output := new(workerReply)
 		(*output).workerAddress = address
-		(*output).digest = mapTaskOutput.Digest
+		(*output).digest = output.digest
 
 		(*obj).workersReplyChannel <- *output
 	}

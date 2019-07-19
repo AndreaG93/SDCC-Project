@@ -8,8 +8,16 @@ import (
 )
 
 type RawInput struct {
-	mapCardinality int64
-	fileDigest     string
+	MapCardinality int64
+	FileDigest     string
+}
+
+func (obj *RawInput) MapOutputRawDataToReduceInputData(mapOutputRawData [][]byte) []Data.Split {
+	panic("implement me")
+}
+
+func (obj *RawInput) ReduceOutputRawDataToFinalOutput(ReduceOutputRawData [][]byte) []Data.Split {
+	panic("implement me")
 }
 
 func (obj *RawInput) Split() []Data.Split {
@@ -22,9 +30,9 @@ func (obj *RawInput) SplitInputFile() ([]string, error) {
 	var fileInfo os.FileInfo
 	var err error
 
-	output := make([]string, (*obj).mapCardinality)
+	output := make([]string, (*obj).MapCardinality)
 
-	if inputFile, err = os.Open((*obj).fileDigest); err != nil {
+	if inputFile, err = os.Open((*obj).FileDigest); err != nil {
 		return nil, err
 	}
 	defer func() {
@@ -34,7 +42,7 @@ func (obj *RawInput) SplitInputFile() ([]string, error) {
 		return nil, err
 	}
 
-	averageChunkSize := fileInfo.Size() / (*obj).mapCardinality
+	averageChunkSize := fileInfo.Size() / (*obj).MapCardinality
 	readByte := make([]byte, 1)
 
 	for index, currentStartByte, currentEndByte := int64(0), int64(0), averageChunkSize; ; {

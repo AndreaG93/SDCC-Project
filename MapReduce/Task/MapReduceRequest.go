@@ -1,8 +1,7 @@
-package wordcount
+package Task
 
 import (
 	"SDCC-Project/MapReduce/Data"
-	"SDCC-Project/MapReduce/Task/BFTMapTask"
 	"SDCC-Project/utility"
 	"net/rpc"
 	"sync"
@@ -12,7 +11,7 @@ type MapReduceRequest struct {
 }
 
 type MapReduceRequestInput struct {
-	inputData Data.RawInput
+	InputData Data.RawInput
 }
 
 type MapReduceRequestOutput struct {
@@ -21,31 +20,43 @@ type MapReduceRequestOutput struct {
 
 func (x *MapReduceRequest) Execute(input MapReduceRequestInput, output *MapReduceRequestOutput) error {
 
-	var myWaitGroup sync.WaitGroup
-
 	workerAddress := []string{"127.0.0.1:10000", "127.0.0.1:10001", "127.0.0.1:10002", "127.0.0.1:10003", "127.0.0.1:10004"}
-	faultToleranceLevel := 1
+	faultToleranceLevel := 2
 
-	splits := input.inputData.Split()
-	mapTaskOutput := make([][]byte, len(splits))
+	splits := input.InputData.Split()
+
+	mapTaskOutput := performCurrentTask(splits, faultToleranceLevel, workerAddress)
+
+	splits = input.InputData.MapOutputRawDataToReduceInputData(mapTaskOutput)
+
+	reduceTaskOutput := performCurrentTask(splits, faultToleranceLevel, workerAddress)
+
+	input.InputData.ReduceOutputRawDataToFinalOutput(reduceTaskOutput)
+
+	return nil
+}
+
+func performCurrentTask(splits []Data.Split, faultToleranceLevel int, workerAddress []string) [][]byte {
+
+	var myWaitGroup sync.WaitGroup
+	output := make([][]byte, len(splits))
 
 	for index := range splits {
 
 		myWaitGroup.Add(1)
 
 		go func(x int) {
-			task := BFTMapTask.New(splits[index], faultToleranceLevel, workerAddress)
+			task := NewBFTMapReduce(splits[index], faultToleranceLevel, workerAddress)
 			digest, workerAddresses := task.Execute()
 
-			mapTaskOutput[x] = retrieveDataFromWorker(digest, workerAddresses)
+			output[x] = retrieveDataFromWorker(digest, workerAddresses)
 
 			myWaitGroup.Done()
 		}(index)
 	}
 
 	myWaitGroup.Wait()
-
-	return nil
+	return output
 }
 
 func retrieveDataFromWorker(digest string, workersAddresses []string) []byte {
