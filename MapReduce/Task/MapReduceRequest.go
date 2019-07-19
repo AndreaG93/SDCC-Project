@@ -1,7 +1,7 @@
 package Task
 
 import (
-	"SDCC-Project/MapReduce/Data"
+	"SDCC-Project/MapReduce/Input"
 	"SDCC-Project/utility"
 	"net/rpc"
 	"sync"
@@ -11,7 +11,7 @@ type MapReduceRequest struct {
 }
 
 type MapReduceRequestInput struct {
-	InputData Data.RawInput
+	InputData Input.ApplicationInput
 }
 
 type MapReduceRequestOutput struct {
@@ -20,23 +20,27 @@ type MapReduceRequestOutput struct {
 
 func (x *MapReduceRequest) Execute(input MapReduceRequestInput, output *MapReduceRequestOutput) error {
 
-	workerAddress := []string{"127.0.0.1:10000", "127.0.0.1:10001", "127.0.0.1:10002", "127.0.0.1:10003", "127.0.0.1:10004"}
+	workerAddress := []string{"127.0.0.1:12001", "127.0.0.1:12002", "127.0.0.1:12003", "127.0.0.1:12004", "127.0.0.1:12005", "127.0.0.1:12006"}
 	faultToleranceLevel := 2
 
-	splits := input.InputData.Split()
+	splits, err := input.InputData.Split()
+	if err != nil {
+		return err
+	}
 
 	mapTaskOutput := performCurrentTask(splits, faultToleranceLevel, workerAddress)
 
-	splits = input.InputData.MapOutputRawDataToReduceInputData(mapTaskOutput)
+	splits = input.InputData.Shuffle(mapTaskOutput)
+	return nil
 
 	reduceTaskOutput := performCurrentTask(splits, faultToleranceLevel, workerAddress)
 
-	input.InputData.ReduceOutputRawDataToFinalOutput(reduceTaskOutput)
+	input.InputData.CollectResults(reduceTaskOutput)
 
 	return nil
 }
 
-func performCurrentTask(splits []Data.Split, faultToleranceLevel int, workerAddress []string) [][]byte {
+func performCurrentTask(splits []Input.MiddleInput, faultToleranceLevel int, workerAddress []string) [][]byte {
 
 	var myWaitGroup sync.WaitGroup
 	output := make([][]byte, len(splits))

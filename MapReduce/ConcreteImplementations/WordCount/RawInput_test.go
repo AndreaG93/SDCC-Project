@@ -15,7 +15,7 @@ func Test_MapService(t *testing.T) {
 
 	rawInput := RawInput{10, "../../../test-input-data/input.txt"}
 
-	output, err := rawInput.SplitInputFile()
+	output, err := rawInput.Split()
 	if err != nil {
 		panic(err)
 	}

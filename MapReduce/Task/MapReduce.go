@@ -1,7 +1,7 @@
 package Task
 
 import (
-	"SDCC-Project/MapReduce/Data"
+	"SDCC-Project/MapReduce/Input"
 	"SDCC-Project/MapReduce/Registry/WorkerResultsRegister"
 )
 
@@ -9,7 +9,7 @@ type MapReduce struct {
 }
 
 type MapReduceInput struct {
-	InputData Data.Split
+	InputData Input.MiddleInput
 }
 
 type MapReduceOutput struct {

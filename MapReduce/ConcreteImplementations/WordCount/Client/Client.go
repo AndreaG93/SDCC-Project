@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount"
 	"SDCC-Project/MapReduce/Task"
 	"SDCC-Project/utility"
+	"encoding/gob"
 	"net/rpc"
 )
 
@@ -18,9 +19,11 @@ func SendRequest(digestFile string, primaryNodeAddress string) {
 
 	input.InputData = inputData
 
+	gob.Register(WordCount.RawInput{})
+
 	client, err := rpc.Dial("tcp", primaryNodeAddress)
 	utility.CheckError(err)
 
-	err = client.Call("Task.MapReduceRequest", input, output)
+	err = client.Call("MapReduceRequest.Execute", &input, &output)
 	utility.CheckError(err)
 }

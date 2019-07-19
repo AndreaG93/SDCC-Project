@@ -6,14 +6,14 @@ import (
 )
 
 type ReduceInput struct {
-	data []byte
+	Data []byte
 }
 
 func (obj *ReduceInput) PerformTask() (string, []byte, error) {
 
 	var err error
 
-	tokenListGroup, err := WordTokenListGroup.Deserialize((*obj).data)
+	tokenListGroup, err := WordTokenListGroup.Deserialize((*obj).Data)
 	if err != nil {
 		return "", nil, err
 	}

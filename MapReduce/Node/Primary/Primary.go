@@ -2,7 +2,9 @@ package Primary
 
 import (
 	"SDCC-Project/MapReduce"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount"
 	"SDCC-Project/MapReduce/Task"
+	"encoding/gob"
 )
 
 type Primary struct {
@@ -20,5 +22,6 @@ func New(id int, mapReduceRequestRPCAddress string) *Primary {
 }
 
 func (obj *Primary) StartWork() {
-	MapReduce.StartAcceptingRPCRequest(Task.MapReduceRequest{}, (*obj).mapReduceRequestRPCAddress)
+	gob.Register(WordCount.RawInput{})
+	MapReduce.StartAcceptingRPCRequest(&Task.MapReduceRequest{}, (*obj).mapReduceRequestRPCAddress)
 }

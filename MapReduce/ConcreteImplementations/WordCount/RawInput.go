@@ -1,7 +1,7 @@
 package WordCount
 
 import (
-	"SDCC-Project/MapReduce/Data"
+	"SDCC-Project/MapReduce/Input"
 	"SDCC-Project/utility"
 	"os"
 	"strings"
@@ -12,27 +12,23 @@ type RawInput struct {
 	FileDigest     string
 }
 
-func (obj *RawInput) MapOutputRawDataToReduceInputData(mapOutputRawData [][]byte) []Data.Split {
+func (obj RawInput) Shuffle(rawData [][]byte) []Input.MiddleInput {
 	panic("implement me")
 }
 
-func (obj *RawInput) ReduceOutputRawDataToFinalOutput(ReduceOutputRawData [][]byte) []Data.Split {
+func (obj RawInput) ReduceOutputRawDataToFinalOutput(rawData [][]byte) string {
 	panic("implement me")
 }
 
-func (obj *RawInput) Split() []Data.Split {
-	return nil
-}
-
-func (obj *RawInput) SplitInputFile() ([]string, error) {
+func (obj RawInput) Split() ([]string, error) {
 
 	var inputFile *os.File
 	var fileInfo os.FileInfo
 	var err error
 
-	output := make([]string, (*obj).MapCardinality)
+	output := make([]string, (obj).MapCardinality)
 
-	if inputFile, err = os.Open((*obj).FileDigest); err != nil {
+	if inputFile, err = os.Open((obj).FileDigest); err != nil {
 		return nil, err
 	}
 	defer func() {
@@ -42,7 +38,7 @@ func (obj *RawInput) SplitInputFile() ([]string, error) {
 		return nil, err
 	}
 
-	averageChunkSize := fileInfo.Size() / (*obj).MapCardinality
+	averageChunkSize := fileInfo.Size() / (obj).MapCardinality
 	readByte := make([]byte, 1)
 
 	for index, currentStartByte, currentEndByte := int64(0), int64(0), averageChunkSize; ; {

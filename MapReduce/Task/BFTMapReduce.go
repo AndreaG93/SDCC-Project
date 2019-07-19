@@ -1,7 +1,7 @@
 package Task
 
 import (
-	"SDCC-Project/MapReduce/Data"
+	"SDCC-Project/MapReduce/Input"
 	"SDCC-Project/MapReduce/Registry/WorkersResponsesRegistry"
 	"SDCC-Project/utility"
 	"net/rpc"
@@ -19,10 +19,10 @@ type BFTMapOrReduceService struct {
 	currentWorkerID     int
 	workersAddresses    []string
 	repliesRegistry     *WorkersResponsesRegistry.WorkersResponsesRegistry
-	inputSplit          Data.Split
+	inputSplit          Input.MiddleInput
 }
 
-func NewBFTMapReduce(inputSplit Data.Split, faultToleranceLevel int, workersAddresses []string) *BFTMapOrReduceService {
+func NewBFTMapReduce(inputSplit Input.MiddleInput, faultToleranceLevel int, workersAddresses []string) *BFTMapOrReduceService {
 
 	output := new(BFTMapOrReduceService)
 
