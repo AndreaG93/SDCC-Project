@@ -45,14 +45,29 @@ func (obj *BFTMapOrReduceService) Execute() (string, []string) {
 	defer close((*obj).workersReplyChannel)
 	defer close((*obj).killTaskChannel)
 
-	go (*obj).startListeningWorkersReplies()
+	numberOfReply := 0
 
 	for ; (*obj).currentWorkerID <= (*obj).faultToleranceLevel; (*obj).currentWorkerID++ {
-		go (*obj).executeSingleMapTaskReplica()
+		go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
 	}
 
-	<-(*obj).killTaskChannel
-	return (*obj).repliesRegistry.GetMostMatchedWorkerResponse()
+	for {
+		select {
+
+		case reply := <-(*obj).workersReplyChannel:
+
+			(*obj).repliesRegistry.AddWorkerResponse(reply.digest, reply.workerAddress)
+			numberOfReply++
+
+			if numberOfReply >= (*obj).faultToleranceLevel+1 {
+				(*obj).currentWorkerID++
+				go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
+			}
+
+		case <-(*obj).killTaskChannel:
+			return (*obj).repliesRegistry.GetMostMatchedWorkerResponse()
+		}
+	}
 }
 
 func (obj *BFTMapOrReduceService) startListeningWorkersReplies() {
@@ -68,24 +83,23 @@ func (obj *BFTMapOrReduceService) startListeningWorkersReplies() {
 		numberOfReply++
 
 		if numberOfReply >= (*obj).faultToleranceLevel+1 {
-			go (*obj).executeSingleMapTaskReplica()
+			(*obj).currentWorkerID++
+			go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
 		}
 	}
 }
 
-func (obj *BFTMapOrReduceService) executeSingleMapTaskReplica() {
+func executeSingleMapTaskReplica(middleInput Input.MiddleInput, address string, reply chan workerReply) {
 
 	var input MapReduceInput
 	var output MapReduceOutput
 
-	address := (*obj).workersAddresses[(*obj).currentWorkerID]
-
 	worker, err := rpc.Dial("tcp", address)
 	utility.CheckError(err)
 
-	input.InputData = (*obj).inputSplit
+	input.InputData = middleInput
 
-	err = worker.Call("Map.Execute", &input, &output)
+	err = worker.Call("MapReduce.Execute", &input, &output)
 
 	if err != nil {
 
@@ -93,6 +107,6 @@ func (obj *BFTMapOrReduceService) executeSingleMapTaskReplica() {
 		(*output).workerAddress = address
 		(*output).digest = output.digest
 
-		(*obj).workersReplyChannel <- *output
+		reply <- *output
 	}
 }

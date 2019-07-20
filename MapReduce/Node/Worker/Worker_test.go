@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_primary2(t *testing.T) {
+func Test_Worker(t *testing.T) {
 
 	worker1 := New(1, "127.0.0.1:12001", "127.0.0.1:13001")
 	worker2 := New(2, "127.0.0.1:12002", "127.0.0.1:13002")

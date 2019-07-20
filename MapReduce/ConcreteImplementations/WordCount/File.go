@@ -7,20 +7,42 @@ import (
 	"strings"
 )
 
-type RawInput struct {
-	MapCardinality int64
+type File struct {
+	MapCardinality uint
 	FileDigest     string
 }
 
-func (obj RawInput) Shuffle(rawData [][]byte) []Input.MiddleInput {
+func (obj File) Split() ([]Input.MiddleInput, error) {
+
+	// TODO
+	// File get from AWS
+
+	output := make([]Input.MiddleInput, obj.MapCardinality)
+
+	splits, err := obj.splitFile()
+	utility.CheckError(err)
+
+	for index, split := range splits {
+
+		inputForMapTask := new(MapInput)
+		(*inputForMapTask).MapCardinality = obj.MapCardinality
+		(*inputForMapTask).Input = split
+
+		output[index] = *inputForMapTask
+	}
+
+	return output, nil
+}
+
+func (obj File) Shuffle(rawDataFromMapTask [][]byte) []Input.MiddleInput {
 	panic("implement me")
 }
 
-func (obj RawInput) ReduceOutputRawDataToFinalOutput(rawData [][]byte) string {
+func (obj File) CollectResults(rawDataFromReduceTask [][]byte) string {
 	panic("implement me")
 }
 
-func (obj RawInput) Split() ([]string, error) {
+func (obj File) splitFile() ([]string, error) {
 
 	var inputFile *os.File
 	var fileInfo os.FileInfo
@@ -38,7 +60,7 @@ func (obj RawInput) Split() ([]string, error) {
 		return nil, err
 	}
 
-	averageChunkSize := fileInfo.Size() / (obj).MapCardinality
+	averageChunkSize := fileInfo.Size() / int64((obj).MapCardinality)
 	readByte := make([]byte, 1)
 
 	for index, currentStartByte, currentEndByte := int64(0), int64(0), averageChunkSize; ; {

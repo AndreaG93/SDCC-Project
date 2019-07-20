@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hash/fnv"
 	"os/exec"
+	"sync"
 )
 
 // FNV-1a is a not cryptographic hash function:
@@ -15,6 +16,8 @@ var FNV1AHashAlgorithm = fnv.New32a()
 
 // Secure Hash Algorithm...
 var SHA512cryptoHashAlgorithm = sha512.New()
+
+var mutex = &sync.Mutex{}
 
 func GenerateArrayIndexFromString(inputString string, arraySize uint) (uint, error) {
 
@@ -32,12 +35,15 @@ func GenerateArrayIndexFromString(inputString string, arraySize uint) (uint, err
 
 func GenerateDigestUsingSHA512(data []byte) string {
 
+	mutex.Lock()
 	_, err := SHA512cryptoHashAlgorithm.Write(data)
 	CheckError(err)
 
-	defer SHA512cryptoHashAlgorithm.Reset()
+	output := hex.EncodeToString(SHA512cryptoHashAlgorithm.Sum(nil))
+	SHA512cryptoHashAlgorithm.Reset()
+	mutex.Unlock()
 
-	return hex.EncodeToString(SHA512cryptoHashAlgorithm.Sum(nil))
+	return output
 }
 
 func GenerateDigestOfFileUsingSHA512(filename string) (string, error) {

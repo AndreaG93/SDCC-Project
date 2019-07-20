@@ -2,7 +2,9 @@ package Worker
 
 import (
 	"SDCC-Project/MapReduce"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount"
 	"SDCC-Project/MapReduce/Task"
+	"encoding/gob"
 )
 
 type Worker struct {
@@ -22,6 +24,8 @@ func New(id int, mapReduceRPCAddress string, mapReduceGetRPCAddress string) *Wor
 }
 
 func (obj *Worker) StartWork() {
+
+	gob.Register(WordCount.MapInput{})
 
 	go MapReduce.StartAcceptingRPCRequest(&Task.MapReduce{}, (*obj).mapReduceRPCAddress)
 	MapReduce.StartAcceptingRPCRequest(&Task.MapReduceGet{}, (*obj).mapReduceGetRPCAddress)

@@ -13,9 +13,9 @@ var err error
 
 func Test_MapService(t *testing.T) {
 
-	rawInput := RawInput{10, "../../../test-input-data/input.txt"}
+	rawInput := File{10, "../../../test-input-data/input.txt"}
 
-	output, err := rawInput.Split()
+	output, err := rawInput.splitFile()
 	if err != nil {
 		panic(err)
 	}

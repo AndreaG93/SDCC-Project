@@ -11,13 +11,13 @@ type MapInput struct {
 	MapCardinality uint
 }
 
-func (obj *MapInput) PerformTask() (string, []byte, error) {
+func (obj MapInput) PerformTask() (string, []byte, error) {
 
 	var err error
 	var data *WordTokenHashTable.WordTokenHashTable
 
-	data = WordTokenHashTable.New((*obj).MapCardinality)
-	wordScanner := utility.BuildWordScannerFromString((*obj).Input)
+	data = WordTokenHashTable.New(obj.MapCardinality)
+	wordScanner := utility.BuildWordScannerFromString(obj.Input)
 
 	for wordScanner.Scan() {
 

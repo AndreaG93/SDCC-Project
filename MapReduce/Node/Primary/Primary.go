@@ -22,6 +22,7 @@ func New(id int, mapReduceRequestRPCAddress string) *Primary {
 }
 
 func (obj *Primary) StartWork() {
-	gob.Register(WordCount.RawInput{})
+	gob.Register(WordCount.File{})
+	gob.Register(WordCount.MapInput{})
 	MapReduce.StartAcceptingRPCRequest(&Task.MapReduceRequest{}, (*obj).mapReduceRequestRPCAddress)
 }
