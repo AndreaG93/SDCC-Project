@@ -15,9 +15,9 @@ type WordTokenListGroup struct {
 }
 
 type wordTokenListGroupSerializationUnit struct {
-	word                            string
-	occurrences                     uint
-	membershipListIndexAndGroupSize uint
+	Word                            string
+	Occurrences                     uint
+	MembershipListIndexAndGroupSize uint
 }
 
 func New(size uint) *WordTokenListGroup {
@@ -29,7 +29,7 @@ func New(size uint) *WordTokenListGroup {
 	(*output).group = make([]*WordTokenList.WordTokenList, (*output).size)
 
 	for index := uint(0); index < (*output).size; index++ {
-		(*output).group[0] = WordTokenList.New()
+		(*output).group[index] = WordTokenList.New()
 	}
 
 	return output
@@ -63,12 +63,12 @@ func Deserialize(input []byte) (*WordTokenListGroup, error) {
 		return nil, err
 	}
 
-	output = New(serializedData[0].membershipListIndexAndGroupSize)
+	output = New(serializedData[0].MembershipListIndexAndGroupSize)
 
 	for index := uint(1); index < uint(len(serializedData)); index++ {
 
-		currentWordTokenList = output.group[serializedData[index].membershipListIndexAndGroupSize]
-		currentWordToken = WordToken.New(serializedData[index].word, serializedData[index].occurrences)
+		currentWordTokenList = output.group[serializedData[index].MembershipListIndexAndGroupSize]
+		currentWordToken = WordToken.New(serializedData[index].Word, serializedData[index].Occurrences)
 
 		currentWordTokenList.InsertWordToken(currentWordToken)
 	}
@@ -83,12 +83,12 @@ func (obj *WordTokenListGroup) Serialize() ([]byte, error) {
 	var output []wordTokenListGroupSerializationUnit
 	var outputIndex uint
 
-	outputIndex = uint(0)
+	outputIndex = uint(1)
 	output = make([]wordTokenListGroupSerializationUnit, (*obj).totalPopulation+1)
 
-	output[0].membershipListIndexAndGroupSize = (*obj).size
+	output[0].MembershipListIndexAndGroupSize = (*obj).size
 
-	for index := uint(1); index < (*obj).size; index++ {
+	for index := uint(0); index < (*obj).size; index++ {
 
 		currentWordTokenList = (*obj).group[index]
 
@@ -96,9 +96,10 @@ func (obj *WordTokenListGroup) Serialize() ([]byte, error) {
 
 			currentWordToken = currentWordTokenList.WordToken()
 
-			output[outputIndex].occurrences = (*currentWordToken).Occurrences
-			output[outputIndex].word = (*currentWordToken).Word
-			output[outputIndex].membershipListIndexAndGroupSize = index
+			output[outputIndex].Occurrences = (*currentWordToken).Occurrences
+			output[outputIndex].Word = (*currentWordToken).Word
+			output[outputIndex].MembershipListIndexAndGroupSize = index
+			outputIndex++
 		}
 	}
 

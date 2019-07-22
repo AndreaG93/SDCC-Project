@@ -9,11 +9,11 @@ type ReduceInput struct {
 	Data []byte
 }
 
-func (obj *ReduceInput) PerformTask() (string, []byte, error) {
+func (obj ReduceInput) PerformTask() (string, []byte, error) {
 
 	var err error
 
-	tokenListGroup, err := WordTokenListGroup.Deserialize((*obj).Data)
+	tokenListGroup, err := WordTokenListGroup.Deserialize((obj).Data)
 	if err != nil {
 		return "", nil, err
 	}

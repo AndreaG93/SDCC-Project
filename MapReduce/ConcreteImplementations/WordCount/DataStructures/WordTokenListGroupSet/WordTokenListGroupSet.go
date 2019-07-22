@@ -20,7 +20,6 @@ func New(input []*WordTokenHashTable.WordTokenHashTable) *WordTokenListGroupSet 
 	for index := uint(0); index < (*output).size; index++ {
 
 		(*output).set[index] = WordTokenListGroup.NewFrom(input, index)
-
 	}
 
 	return output

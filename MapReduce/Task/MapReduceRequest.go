@@ -4,7 +4,6 @@ import (
 	"SDCC-Project/MapReduce/Input"
 	"SDCC-Project/utility"
 	"net/rpc"
-	"sync"
 )
 
 type MapReduceRequest struct {
@@ -31,7 +30,6 @@ func (x *MapReduceRequest) Execute(input MapReduceRequestInput, output *MapReduc
 	mapTaskOutput := performCurrentTask(splits, faultToleranceLevel, workerAddress)
 
 	splits = input.InputData.Shuffle(mapTaskOutput)
-	return nil
 
 	reduceTaskOutput := performCurrentTask(splits, faultToleranceLevel, workerAddress)
 
@@ -42,24 +40,31 @@ func (x *MapReduceRequest) Execute(input MapReduceRequestInput, output *MapReduc
 
 func performCurrentTask(splits []Input.MiddleInput, faultToleranceLevel int, workerAddress []string) [][]byte {
 
-	var myWaitGroup sync.WaitGroup
+	//var myWaitGroup sync.WaitGroup
 	output := make([][]byte, len(splits))
 
 	for index := range splits {
 
-		myWaitGroup.Add(1)
+		task := NewBFTMapReduce(splits[index], faultToleranceLevel, workerAddress)
+		digest, workerAddresses := task.Execute()
 
-		go func(x int) {
-			task := NewBFTMapReduce(splits[index], faultToleranceLevel, workerAddress)
-			digest, workerAddresses := task.Execute()
+		output[index] = retrieveDataFromWorker(digest, workerAddresses)
 
-			output[x] = retrieveDataFromWorker(digest, workerAddresses)
+		//myWaitGroup.Add(1)
+		/*
+			go func(x int) {
+				task := NewBFTMapReduce(splits[index], faultToleranceLevel, workerAddress)
+				digest, workerAddresses := task.Execute()
 
-			myWaitGroup.Done()
-		}(index)
+				output[x] = retrieveDataFromWorker(digest, workerAddresses)
+
+				myWaitGroup.Done()
+			}(index)
+		*/
+
 	}
 
-	myWaitGroup.Wait()
+	//myWaitGroup.Wait()
 	return output
 }
 
@@ -81,8 +86,8 @@ func retrieveDataFromWorker(digest string, workersAddresses []string) []byte {
 			utility.CheckError(worker.Close())
 		}()
 
-		err = worker.Call("Services.MapReduceGet", &input, &output)
-		if err != nil {
+		err = worker.Call("MapReduceGet.Execute", &input, &output)
+		if err == nil {
 			return output.Data
 		}
 	}

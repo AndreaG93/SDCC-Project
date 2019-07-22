@@ -26,6 +26,7 @@ func New(id int, mapReduceRPCAddress string, mapReduceGetRPCAddress string) *Wor
 func (obj *Worker) StartWork() {
 
 	gob.Register(WordCount.MapInput{})
+	gob.Register(WordCount.ReduceInput{})
 
 	go MapReduce.StartAcceptingRPCRequest(&Task.MapReduce{}, (*obj).mapReduceRPCAddress)
 	MapReduce.StartAcceptingRPCRequest(&Task.MapReduceGet{}, (*obj).mapReduceGetRPCAddress)

@@ -14,7 +14,6 @@ type workerReply struct {
 
 type BFTMapOrReduceService struct {
 	workersReplyChannel chan workerReply
-	killTaskChannel     chan bool
 	faultToleranceLevel int
 	currentWorkerID     int
 	workersAddresses    []string
@@ -27,11 +26,10 @@ func NewBFTMapReduce(inputSplit Input.MiddleInput, faultToleranceLevel int, work
 	output := new(BFTMapOrReduceService)
 
 	(*output).workersReplyChannel = make(chan workerReply)
-	(*output).killTaskChannel = make(chan bool)
 	(*output).faultToleranceLevel = faultToleranceLevel
 	(*output).currentWorkerID = 0
 	(*output).workersAddresses = workersAddresses
-	(*output).repliesRegistry = WorkersResponsesRegistry.New((*output).faultToleranceLevel, (*output).killTaskChannel)
+	(*output).repliesRegistry = WorkersResponsesRegistry.New((*output).faultToleranceLevel + 1)
 	(*output).inputSplit = inputSplit
 
 	return output
@@ -43,7 +41,6 @@ func NewBFTMapReduce(inputSplit Input.MiddleInput, faultToleranceLevel int, work
 func (obj *BFTMapOrReduceService) Execute() (string, []string) {
 
 	defer close((*obj).workersReplyChannel)
-	defer close((*obj).killTaskChannel)
 
 	numberOfReply := 0
 
@@ -51,23 +48,21 @@ func (obj *BFTMapOrReduceService) Execute() (string, []string) {
 		go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
 	}
 
-	for {
-		select {
+	for reply := range (*obj).workersReplyChannel {
 
-		case reply := <-(*obj).workersReplyChannel:
+		if (*obj).repliesRegistry.AddWorkerResponse(reply.digest, reply.workerAddress) {
+			break
+		}
 
-			(*obj).repliesRegistry.AddWorkerResponse(reply.digest, reply.workerAddress)
-			numberOfReply++
+		numberOfReply++
 
-			if numberOfReply >= (*obj).faultToleranceLevel+1 {
-				(*obj).currentWorkerID++
-				go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
-			}
-
-		case <-(*obj).killTaskChannel:
-			return (*obj).repliesRegistry.GetMostMatchedWorkerResponse()
+		if numberOfReply >= (*obj).faultToleranceLevel+1 {
+			(*obj).currentWorkerID++
+			go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
 		}
 	}
+
+	return (*obj).repliesRegistry.GetMostMatchedWorkerResponse()
 }
 
 func (obj *BFTMapOrReduceService) startListeningWorkersReplies() {
@@ -91,21 +86,21 @@ func (obj *BFTMapOrReduceService) startListeningWorkersReplies() {
 
 func executeSingleMapTaskReplica(middleInput Input.MiddleInput, address string, reply chan workerReply) {
 
-	var input MapReduceInput
-	var output MapReduceOutput
+	var workerInput MapReduceInput
+	var workerOutput MapReduceOutput
 
 	worker, err := rpc.Dial("tcp", address)
 	utility.CheckError(err)
 
-	input.InputData = middleInput
+	workerInput.InputData = middleInput
 
-	err = worker.Call("MapReduce.Execute", &input, &output)
+	err = worker.Call("MapReduce.Execute", &workerInput, &workerOutput)
 
-	if err != nil {
+	if err == nil {
 
 		output := new(workerReply)
 		(*output).workerAddress = address
-		(*output).digest = output.digest
+		(*output).digest = workerOutput.Digest
 
 		reply <- *output
 	}

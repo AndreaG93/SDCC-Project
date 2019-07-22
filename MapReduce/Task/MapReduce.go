@@ -2,6 +2,7 @@ package Task
 
 import (
 	"SDCC-Project/MapReduce/Input"
+	"SDCC-Project/MapReduce/Registry/WorkerMutex"
 	"SDCC-Project/MapReduce/Registry/WorkerResultsRegister"
 )
 
@@ -23,7 +24,9 @@ func (x *MapReduce) Execute(input MapReduceInput, output *MapReduceOutput) error
 		return err
 	}
 
+	WorkerMutex.GetInstance().Lock()
 	WorkerResultsRegister.GetInstance().Set(digest, rawData)
+	WorkerMutex.GetInstance().Unlock()
 
 	output.Digest = digest
 

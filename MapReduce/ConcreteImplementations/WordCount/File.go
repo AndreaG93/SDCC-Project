@@ -1,6 +1,9 @@
 package WordCount
 
 import (
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenHashTable"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenList"
+	"SDCC-Project/MapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenListGroupSet"
 	"SDCC-Project/MapReduce/Input"
 	"SDCC-Project/utility"
 	"os"
@@ -35,11 +38,51 @@ func (obj File) Split() ([]Input.MiddleInput, error) {
 }
 
 func (obj File) Shuffle(rawDataFromMapTask [][]byte) []Input.MiddleInput {
-	panic("implement me")
+
+	var err error
+
+	output := make([]Input.MiddleInput, obj.MapCardinality)
+	hashTables := make([]*WordTokenHashTable.WordTokenHashTable, len(output))
+
+	for index := 0; index < len(rawDataFromMapTask); index++ {
+
+		currentRawData := rawDataFromMapTask[index]
+
+		hashTables[index], err = WordTokenHashTable.Deserialize(currentRawData)
+		utility.CheckError(err)
+	}
+
+	set := WordTokenListGroupSet.New(hashTables)
+
+	for index := 0; index < len(rawDataFromMapTask); index++ {
+
+		currentReduceInput := new(ReduceInput)
+
+		group := set.GetGroup(uint(index))
+		currentReduceInput.Data, err = group.Serialize()
+		utility.CheckError(err)
+
+		output[index] = currentReduceInput
+	}
+
+	return output
 }
 
 func (obj File) CollectResults(rawDataFromReduceTask [][]byte) string {
-	panic("implement me")
+
+	finalOutput := WordTokenList.New()
+
+	for _, rawData := range rawDataFromReduceTask {
+
+		data, err := WordTokenList.Deserialize(rawData)
+		utility.CheckError(err)
+
+		finalOutput.Merge(data)
+	}
+
+	finalOutput.Print()
+
+	return ""
 }
 
 func (obj File) splitFile() ([]string, error) {

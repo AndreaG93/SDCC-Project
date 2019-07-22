@@ -1,19 +1,17 @@
 package WorkersResponsesRegistry
 
 type WorkersResponsesRegistry struct {
-	workersResponses                 map[string][]string
-	requiredNumberOfMatches          int
-	isRequiredNumberOfMatchesReached chan bool
-	mostMatchedWorkerResponseDigest  string
+	workersResponses                map[string][]string
+	requiredNumberOfMatches         int
+	mostMatchedWorkerResponseDigest string
 }
 
-func New(requiredNumberOfMatches int, isRequiredNumberOfMatchesReached chan bool) *WorkersResponsesRegistry {
+func New(requiredNumberOfMatches int) *WorkersResponsesRegistry {
 
 	output := new(WorkersResponsesRegistry)
 
 	(*output).workersResponses = make(map[string][]string)
 	(*output).requiredNumberOfMatches = requiredNumberOfMatches
-	(*output).isRequiredNumberOfMatchesReached = isRequiredNumberOfMatchesReached
 
 	return output
 }
@@ -30,7 +28,6 @@ func (obj *WorkersResponsesRegistry) AddWorkerResponse(digest string, workerAddr
 
 	if len((*obj).workersResponses[digest]) == (*obj).requiredNumberOfMatches {
 		(*obj).mostMatchedWorkerResponseDigest = digest
-		(*obj).isRequiredNumberOfMatchesReached <- true
 		return true
 	}
 
