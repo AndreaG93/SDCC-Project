@@ -40,7 +40,6 @@ func (x *MapReduceRequest) Execute(input MapReduceRequestInput, output *MapReduc
 
 func performCurrentTask(splits []Input.MiddleInput, faultToleranceLevel int, workerAddress []string) [][]byte {
 
-	//var myWaitGroup sync.WaitGroup
 	output := make([][]byte, len(splits))
 
 	for index := range splits {
@@ -49,22 +48,8 @@ func performCurrentTask(splits []Input.MiddleInput, faultToleranceLevel int, wor
 		digest, workerAddresses := task.Execute()
 
 		output[index] = retrieveDataFromWorker(digest, workerAddresses)
-
-		//myWaitGroup.Add(1)
-		/*
-			go func(x int) {
-				task := NewBFTMapReduce(splits[index], faultToleranceLevel, workerAddress)
-				digest, workerAddresses := task.Execute()
-
-				output[x] = retrieveDataFromWorker(digest, workerAddresses)
-
-				myWaitGroup.Done()
-			}(index)
-		*/
-
 	}
 
-	//myWaitGroup.Wait()
 	return output
 }
 

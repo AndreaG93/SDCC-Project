@@ -26,5 +26,5 @@ func Test_zookeeperBasicOperations(t *testing.T) {
 		panic("Error")
 	}
 
-	(*zooKeeperClient).RemoveZNode(testZNodePath)
+	//(*zooKeeperClient).RemoveZNode(testZNodePath)
 }

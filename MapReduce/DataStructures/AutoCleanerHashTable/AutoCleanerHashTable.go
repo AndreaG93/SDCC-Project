@@ -28,7 +28,7 @@ func (obj *AutoCleanerHashTable) Set(key string, data []byte) {
 
 	(*obj).hashTable[key] = data
 
-	//go (*obj).automaticClean(key)
+	go (*obj).automaticClean(key)
 }
 
 func (obj *AutoCleanerHashTable) automaticClean(digest string) {

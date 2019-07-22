@@ -1,7 +1,7 @@
 package zookeeper
 
 import (
-	"SDCC-Project-WorkerNode/utility"
+	"SDCC-Project/utility"
 	"github.com/samuel/go-zookeeper/zk"
 	"time"
 )
