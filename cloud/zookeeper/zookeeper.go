@@ -2,14 +2,15 @@ package zookeeper
 
 import (
 	"SDCC-Project/utility"
+	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"time"
 )
 
 const (
-	ActualLeaderZNodePath = "/leader"
-	lockerTimeout         = 1 * time.Minute
-	zkSessionTimeOut      = 20 * time.Second
+	membershipZNodeRootPath = "/membership"
+	ActualLeaderZNodePath   = "/leader"
+	zkSessionTimeOut        = 20 * time.Second
 )
 
 type Client struct {
@@ -24,7 +25,12 @@ func New(zooKeeperServerPoolAddresses []string) *Client {
 
 	(*output).zooKeeperConnection, _, err = zk.Connect(zooKeeperServerPoolAddresses, zkSessionTimeOut)
 	(*output).zooKeeperLock = nil
+
 	utility.CheckError(err)
+
+	if !(*output).CheckZNodeExistence(membershipZNodeRootPath) {
+		(*output).CreateZNode(membershipZNodeRootPath, 0)
+	}
 
 	return output
 }
@@ -40,9 +46,9 @@ func (obj *Client) CheckZNodeExistence(zNodePath string) bool {
 	return output
 }
 
-func (obj *Client) CreateZNode(zNodePath string) {
+func (obj *Client) CreateZNode(zNodePath string, flags int32) {
 
-	_, err := (*obj).zooKeeperConnection.Create(zNodePath, nil, 0, zk.WorldACL(zk.PermAll))
+	_, err := (*obj).zooKeeperConnection.Create(zNodePath, nil, flags, zk.WorldACL(zk.PermAll))
 	utility.CheckError(err)
 
 }
@@ -62,6 +68,19 @@ func (obj *Client) RemoveZNode(zNodePath string) {
 		utility.CheckError(err)
 
 	}
+}
+
+func (obj *Client) registerNodeMembership(nodeID int) {
+
+	zNodeFullPath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, nodeID)
+	(*obj).CreateZNode(zNodeFullPath, zk.FlagEphemeral)
+}
+
+func (obj *Client) getMembershipZNodeData() ([]string, <-chan zk.Event) {
+
+	data, _, channel, err := (*obj).zooKeeperConnection.ChildrenW(membershipZNodeRootPath)
+	utility.CheckError(err)
+	return data, channel
 }
 
 func (obj *Client) SetZNodeData(zNodePath string, data []byte) {
