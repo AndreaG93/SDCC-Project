@@ -1,7 +1,7 @@
 package main
 
 import (
-	"SDCC-Project/MapReduce/Node/Worker"
+	"SDCC-Project/BFTMapReduce/Node/Worker"
 	"SDCC-Project/utility"
 	"os"
 	"strconv"

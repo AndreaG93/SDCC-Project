@@ -17,7 +17,7 @@ docker run --name some-zookeeper --network host --restart always -d zookeeper
 
 
 # docker exec zookeeper_server_2 /bin/zkServer.sh start
-# docker exec -it zookeeper_server_1 /bin/bash
+# docker exec -it some-zookeeper /bin/bash
 # docker exec -it primary1 /go/primarynode
 # zkCli.sh
 

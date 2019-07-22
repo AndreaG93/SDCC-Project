@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/utility"
 	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
+	"strconv"
 	"time"
 )
 
@@ -70,19 +71,6 @@ func (obj *Client) RemoveZNode(zNodePath string) {
 	}
 }
 
-func (obj *Client) registerNodeMembership(nodeID int) {
-
-	zNodeFullPath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, nodeID)
-	(*obj).CreateZNode(zNodeFullPath, zk.FlagEphemeral)
-}
-
-func (obj *Client) getMembershipZNodeData() ([]string, <-chan zk.Event) {
-
-	data, _, channel, err := (*obj).zooKeeperConnection.ChildrenW(membershipZNodeRootPath)
-	utility.CheckError(err)
-	return data, channel
-}
-
 func (obj *Client) SetZNodeData(zNodePath string, data []byte) {
 
 	var actualStat *zk.Stat
@@ -106,4 +94,46 @@ func (obj *Client) GetZNodeData(zNodePath string) ([]byte, <-chan zk.Event) {
 
 func (obj *Client) CloseConnection() {
 	(*obj).zooKeeperConnection.Close()
+}
+
+func (obj *Client) GetMembersInternetAddress() map[int]string {
+
+	members, _ := (*obj).GetMembersList()
+	membersInternetAddress := make(map[int]string)
+
+	for _, element := range members {
+
+		path := fmt.Sprintf("%s/%s", membershipZNodeRootPath, element)
+		rawData, _ := (*obj).GetZNodeData(path)
+		memberID, err := strconv.Atoi(element)
+		utility.CheckError(err)
+
+		membersInternetAddress[memberID] = string(rawData)
+	}
+
+	return membersInternetAddress
+}
+
+func (obj *Client) GetMembersList() ([]string, <-chan zk.Event) {
+
+	data, _, channel, err := (*obj).zooKeeperConnection.ChildrenW(membershipZNodeRootPath)
+	utility.CheckError(err)
+	return data, channel
+}
+
+func (obj *Client) RegisterNodeMembership(nodeID int, internetAddress string) {
+
+	path := fmt.Sprintf("%s/%d", membershipZNodeRootPath, nodeID)
+
+	if !(*obj).CheckZNodeExistence(path) {
+		(*obj).CreateZNode(path, zk.FlagEphemeral)
+	}
+
+	(*obj).SetZNodeData(path, []byte(internetAddress))
+}
+
+func (obj *Client) KeepConnectionAlive() {
+
+	_, channel := (*obj).GetZNodeData("/")
+	<-channel
 }

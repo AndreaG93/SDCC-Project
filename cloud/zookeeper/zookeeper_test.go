@@ -35,7 +35,7 @@ func Test_membershipWatcher(t *testing.T) {
 	zooKeeperClient := New([]string{"localhost:2181"})
 
 	for {
-		data, watcher := zooKeeperClient.getMembershipZNodeData()
+		data, watcher := zooKeeperClient.GetMembersList()
 		fmt.Println(data)
 		<-watcher
 		fmt.Println("There are some changes...")
@@ -45,8 +45,7 @@ func Test_membershipWatcher(t *testing.T) {
 func Test_ephemeralNodes(t *testing.T) {
 
 	zooKeeperClient := New([]string{"localhost:2181"})
-	(*zooKeeperClient).registerNodeMembership(1)
 
-	_, channel := (*zooKeeperClient).GetZNodeData("/")
-	<-channel
+	(*zooKeeperClient).RegisterNodeMembership(1, testData)
+	(*zooKeeperClient).KeepConnectionAlive()
 }
