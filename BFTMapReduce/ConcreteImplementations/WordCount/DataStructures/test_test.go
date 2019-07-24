@@ -6,6 +6,7 @@ import (
 	"SDCC-Project/BFTMapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenListGroup"
 	"SDCC-Project/BFTMapReduce/ConcreteImplementations/WordCount/DataStructures/WordTokenListGroupSet"
 	"SDCC-Project/utility"
+	"fmt"
 	"testing"
 )
 
@@ -63,4 +64,10 @@ func Test_Serialize(t *testing.T) {
 	}
 
 	finalOutput.Print()
+}
+
+func Test_fff(t *testing.T) {
+	i := 1234414
+	c := byte(i)
+	fmt.Println(c) //12
 }

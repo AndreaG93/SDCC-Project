@@ -21,7 +21,7 @@ type ElectionResponse struct {
 func (obj *Client) initializationElectionResource() {
 
 	if !(*obj).CheckZNodeExistence(electionZNodePath) {
-		(*obj).CreateZNode(electionZNodePath, int32(0))
+		(*obj).CreateZNode(electionZNodePath, nil, int32(0))
 	}
 }
 

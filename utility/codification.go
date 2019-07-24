@@ -31,3 +31,39 @@ func Decode(inputData []byte, outputType interface{}) error {
 
 	return nil
 }
+
+func MatrixToArray(data [][]byte) []byte {
+
+	dataStructureLength := len(data)
+	output := make([]byte, 1)
+
+	output[0] = byte(dataStructureLength)
+
+	for _, dataUnit := range data {
+
+		length := len(dataUnit)
+		output = append(output, byte(length))
+		output = append(output, dataUnit[:]...)
+	}
+
+	return output
+}
+
+func ArrayToMatrix(data []byte) [][]byte {
+
+	dataStructureLength := int(data[0])
+	output := make([][]byte, dataStructureLength)
+
+	outputIndex := 0
+	for index := 1; index < len(data); {
+
+		length := int(data[index])
+
+		subData := data[(index + 1) : (index+1)+length]
+		output[outputIndex] = subData
+		outputIndex++
+		index = index + length + 1
+	}
+
+	return output
+}

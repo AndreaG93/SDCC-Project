@@ -3,6 +3,7 @@ package Task
 import (
 	"SDCC-Project/BFTMapReduce"
 	"SDCC-Project/BFTMapReduce/Input"
+	"SDCC-Project/BFTMapReduce/clientrequest"
 	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
 	"fmt"
@@ -24,7 +25,10 @@ type MapReduceRequestOutput struct {
 
 func (x *MapReduceRequest) Execute(input MapReduceRequestInput, output *MapReduceRequestOutput) error {
 
+	clientRequest := clientrequest.New("test")
+
 	zookeeperClient := zookeeper.New([]string{"localhost:2181"})
+
 	internetAddressTable := zookeeperClient.GetMembersInternetAddress()
 	zookeeperClient.CloseConnection()
 
@@ -37,9 +41,15 @@ func (x *MapReduceRequest) Execute(input MapReduceRequestInput, output *MapReduc
 
 	mapTaskOutput := performCurrentTask(splits, faultToleranceLevel, internetAddressTable)
 
+	clientRequest.MakeSnapshot(utility.MatrixToArray(mapTaskOutput))
+
+	_, snapshot := clientRequest.GetSnapshot("test")
+	mapTaskOutput = utility.ArrayToMatrix(snapshot)
+
 	splits = input.InputData.Shuffle(mapTaskOutput)
 
 	reduceTaskOutput := performCurrentTask(splits, faultToleranceLevel, internetAddressTable)
+	clientRequest.MakeSnapshot(utility.MatrixToArray(reduceTaskOutput))
 
 	input.InputData.CollectResults(reduceTaskOutput)
 

@@ -30,7 +30,7 @@ func New(zooKeeperServerPoolAddresses []string) *Client {
 	utility.CheckError(err)
 
 	if !(*output).CheckZNodeExistence(membershipZNodeRootPath) {
-		(*output).CreateZNode(membershipZNodeRootPath, 0)
+		(*output).CreateZNode(membershipZNodeRootPath, nil, 0)
 	}
 
 	return output
@@ -47,11 +47,10 @@ func (obj *Client) CheckZNodeExistence(zNodePath string) bool {
 	return output
 }
 
-func (obj *Client) CreateZNode(zNodePath string, flags int32) {
+func (obj *Client) CreateZNode(zNodePath string, data []byte, flags int32) {
 
-	_, err := (*obj).zooKeeperConnection.Create(zNodePath, nil, flags, zk.WorldACL(zk.PermAll))
+	_, err := (*obj).zooKeeperConnection.Create(zNodePath, data, flags, zk.WorldACL(zk.PermAll))
 	utility.CheckError(err)
-
 }
 
 func (obj *Client) RemoveZNode(zNodePath string) {
@@ -132,7 +131,7 @@ func (obj *Client) RegisterNodeMembership(nodeID int, internetAddress string) {
 	path := fmt.Sprintf("%s/%d", membershipZNodeRootPath, nodeID)
 
 	if !(*obj).CheckZNodeExistence(path) {
-		(*obj).CreateZNode(path, zk.FlagEphemeral)
+		(*obj).CreateZNode(path, nil, zk.FlagEphemeral)
 	}
 
 	(*obj).SetZNodeData(path, []byte(internetAddress))
@@ -142,4 +141,11 @@ func (obj *Client) KeepConnectionAlive() {
 
 	_, channel := (*obj).GetZNodeData("/")
 	<-channel
+}
+
+func (obj *Client) GetChildrenList(zNodePath string) []string {
+
+	output, _, err := (*obj).zooKeeperConnection.Children(zNodePath)
+	utility.CheckError(err)
+	return output
 }

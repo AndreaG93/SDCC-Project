@@ -1,14 +1,16 @@
 package Client
 
 import (
+	"SDCC-Project/BFTMapReduce"
 	"SDCC-Project/BFTMapReduce/ConcreteImplementations/WordCount"
 	"SDCC-Project/BFTMapReduce/Task"
 	"SDCC-Project/utility"
 	"encoding/gob"
+	"fmt"
 	"net/rpc"
 )
 
-func SendRequest(digestFile string, primaryNodeAddress string) {
+func SendRequest(digestFile string, internetAddress string) {
 
 	input := new(Task.MapReduceRequestInput)
 	output := new(Task.MapReduceRequestOutput)
@@ -21,7 +23,9 @@ func SendRequest(digestFile string, primaryNodeAddress string) {
 
 	gob.Register(WordCount.File{})
 
-	client, err := rpc.Dial("tcp", primaryNodeAddress)
+	currentLeaderPublicInternetAddress := fmt.Sprintf("%s:%d", internetAddress, BFTMapReduce.MapReduceRequestRPCBasePort+1)
+
+	client, err := rpc.Dial("tcp", currentLeaderPublicInternetAddress)
 	utility.CheckError(err)
 
 	err = client.Call("MapReduceRequest.Execute", &input, &output)

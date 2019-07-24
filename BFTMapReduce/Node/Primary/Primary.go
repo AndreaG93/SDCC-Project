@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/BFTMapReduce"
 	"SDCC-Project/BFTMapReduce/ConcreteImplementations/WordCount"
 	"SDCC-Project/BFTMapReduce/Task"
+	"SDCC-Project/BFTMapReduce/clientrequest"
 	"SDCC-Project/cloud/zookeeper"
 	"encoding/gob"
 	"fmt"
@@ -38,6 +39,8 @@ func (obj *Primary) StartWork() {
 	gob.Register(WordCount.File{})
 	gob.Register(WordCount.MapInput{})
 	gob.Register(WordCount.ReduceInput{})
+
+	clientrequest.InitializationClientsRequestsPath((*obj).zookeeperClient)
 
 	BFTMapReduce.StartAcceptingRPCRequest(&Task.MapReduceRequest{}, (*obj).mapReduceRequestRPCAddress)
 }
