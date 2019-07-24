@@ -11,7 +11,7 @@ import (
 const (
 	membershipZNodeRootPath = "/membership"
 	ActualLeaderZNodePath   = "/leader"
-	zkSessionTimeOut        = 20 * time.Second
+	zkSessionTimeOut        = 10 * time.Second
 )
 
 type Client struct {
@@ -90,6 +90,12 @@ func (obj *Client) GetZNodeData(zNodePath string) ([]byte, <-chan zk.Event) {
 	utility.CheckError(err)
 
 	return outputData, outputWatchEvent
+}
+
+func (obj *Client) GetZNodeWatcher(zNodePath string) <-chan zk.Event {
+
+	_, output := (*obj).GetZNodeData(zNodePath)
+	return output
 }
 
 func (obj *Client) CloseConnection() {

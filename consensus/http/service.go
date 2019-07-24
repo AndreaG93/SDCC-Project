@@ -3,7 +3,7 @@
 package httpd
 
 import (
-	"SDCC-Project-WorkerNode/consensus/raft/raftnode"
+	"SDCC-Project/consensus/raft/raftnode"
 	"encoding/json"
 	"log"
 	"net"

@@ -9,8 +9,6 @@ import (
 	"fmt"
 )
 
-const ()
-
 type Worker struct {
 	id                     int
 	internetAddress        string

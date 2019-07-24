@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	MapReduceRPCBasePort    = 20000
-	MapReduceGetRPCBasePort = 30000
+	MapReduceRPCBasePort        = 20000
+	MapReduceGetRPCBasePort     = 30000
+	MapReduceRequestRPCBasePort = 40000
 
 	DefaultNetwork     = "tcp"
 	AmazonAWSRegion    = "us-east-1"

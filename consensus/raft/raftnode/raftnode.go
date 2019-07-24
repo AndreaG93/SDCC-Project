@@ -1,15 +1,14 @@
 package raftnode
 
 import (
-	"SDCC-Project-WorkerNode/utility"
+	"SDCC-Project/utility"
 	"fmt"
+	"github.com/hashicorp/raft"
+	"github.com/hashicorp/raft-boltdb"
 	"io"
 	"net"
 	"os"
 	"time"
-
-	"github.com/hashicorp/raft"
-	"github.com/hashicorp/raft-boltdb"
 )
 
 const (
