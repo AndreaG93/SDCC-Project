@@ -1,10 +1,10 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenListGroupSet"
+	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/utility"
 	"os"
 	"strings"
@@ -28,9 +28,9 @@ func (obj Input) GetTypeName() string {
 	return "Input"
 }
 
-func (obj Input) Split() ([]aftmapreduce.TransientData, error) {
+func (obj Input) Split() ([]data.TransientData, error) {
 
-	output := make([]aftmapreduce.TransientData, obj.MapCardinality)
+	output := make([]data.TransientData, obj.MapCardinality)
 
 	splits, err := obj.splitFile()
 	utility.CheckError(err)
@@ -47,11 +47,11 @@ func (obj Input) Split() ([]aftmapreduce.TransientData, error) {
 	return output, nil
 }
 
-func (obj Input) Shuffle(rawDataFromMapTask [][]byte) []aftmapreduce.TransientData {
+func (obj Input) Shuffle(rawDataFromMapTask [][]byte) []data.TransientData {
 
 	var err error
 
-	output := make([]aftmapreduce.TransientData, obj.MapCardinality)
+	output := make([]data.TransientData, obj.MapCardinality)
 	hashTables := make([]*WordTokenHashTable.WordTokenHashTable, len(output))
 
 	for index := 0; index < len(rawDataFromMapTask); index++ {
@@ -102,8 +102,13 @@ func (obj Input) splitFile() ([]string, error) {
 	var err error
 
 	output := make([]string, (obj).MapCardinality)
+	/*
+		if inputFile, err = os.Open((obj).FileDigest); err != nil {
+			return nil, err
+		}
 
-	if inputFile, err = os.Open((obj).FileDigest); err != nil {
+	*/
+	if inputFile, err = os.Open("../../../test-input-data/input1.txt"); err != nil {
 		return nil, err
 	}
 	defer func() {

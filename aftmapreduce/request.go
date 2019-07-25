@@ -2,6 +2,7 @@ package aftmapreduce
 
 import (
 	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount"
+	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/registries/zookeeperclient"
 	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
@@ -9,8 +10,12 @@ import (
 )
 
 const (
-	PendingRequestsZNodePath  = "/PendingClientRequests"
-	CompleteRequestsZNodePath = "/CompleteClientRequests"
+	PendingRequestsZNodePath  = "/pending-requests"
+	CompleteRequestsZNodePath = "/complete-requests"
+	StatusZNodeName           = "status"
+	TransientDataZNodeName    = "transient-data"
+	RequestDataZNodeName      = "request-data"
+	RequestDataTypeZNodeName  = "request-data-type"
 	InitialPhase              = "0"
 	AfterMapPhase             = "1"
 	AfterReducePhase          = "2"
@@ -26,7 +31,7 @@ type Request struct {
 	zookeeperClient         *zookeeper.Client
 }
 
-func NewRequest(clientData *ClientData) *Request {
+func NewRequest(clientData *data.ClientData) *Request {
 
 	output := new(Request)
 
@@ -36,19 +41,19 @@ func NewRequest(clientData *ClientData) *Request {
 	(*output).pendingRequestZNodePath = fmt.Sprintf("%s/%s", PendingRequestsZNodePath, (*output).digest)
 	(*output).finalOutputZNodePath = fmt.Sprintf("%s/%s", CompleteRequestsZNodePath, (*output).digest)
 
-	(*output).transientDataZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, "data")
-	(*output).requestStatusZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, "status")
+	(*output).transientDataZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, TransientDataZNodeName)
+	(*output).requestStatusZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, StatusZNodeName)
+
+	(*output).clientDataTypeZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, RequestDataTypeZNodeName)
 
 	if !(*output).zookeeperClient.CheckZNodeExistence((*output).pendingRequestZNodePath) {
 
-		(*output).zookeeperClient.CreateZNode((*output).pendingRequestZNodePath, nil, int32(0))
+		(*output).zookeeperClient.CreateZNode((*output).pendingRequestZNodePath, (*clientData).ToByte(), int32(0))
 		(*output).zookeeperClient.CreateZNode((*output).requestStatusZNodePath, []byte(InitialPhase), int32(0))
 		(*output).zookeeperClient.CreateZNode((*output).transientDataZNodePath, nil, int32(0))
 		(*output).zookeeperClient.CreateZNode((*output).finalOutputZNodePath, nil, int32(0))
+		(*output).zookeeperClient.CreateZNode((*output).clientDataTypeZNodePath, []byte((*clientData).GetTypeName()), int32(0))
 	}
-
-	(*output).zookeeperClient.SetZNodeData((*output).pendingRequestZNodePath, (*clientData).ToByte())
-	(*output).zookeeperClient.SetZNodeData((*output).clientDataTypeZNodePath, []byte((*clientData).GetTypeName()))
 
 	return output
 }
@@ -79,7 +84,7 @@ func (obj *Request) GetDataFromCheckpoint() []byte {
 	return output
 }
 
-func (obj *Request) getClientData() *ClientData {
+func (obj *Request) getClientData() *data.ClientData {
 	return getClientDataFromName((*obj).zookeeperClient, (*obj).pendingRequestZNodePath, (*obj).clientDataTypeZNodePath)
 }
 
@@ -108,7 +113,7 @@ func GetPendingClientsRequests(zookeeperClient *zookeeper.Client) []*Request {
 	for index, clientRequestName := range pendingClientRequests {
 
 		zNodePathRawClientData := fmt.Sprintf("%s/%s", PendingRequestsZNodePath, clientRequestName)
-		zNodePathClientDataType := fmt.Sprintf("%s/%s", zNodePathRawClientData, "ClientDataType")
+		zNodePathClientDataType := fmt.Sprintf("%s/%s", zNodePathRawClientData, RequestDataTypeZNodeName)
 
 		clientData := getClientDataFromName(zookeeperClient, zNodePathRawClientData, zNodePathClientDataType)
 
@@ -119,20 +124,22 @@ func GetPendingClientsRequests(zookeeperClient *zookeeper.Client) []*Request {
 
 }
 
-func getClientDataFromName(zookeeperClient *zookeeper.Client, zNodePathRawClientData string, zNodePathClientDataType string) *ClientData {
+func getClientDataFromName(zookeeperClient *zookeeper.Client, zNodePathRawClientData string, zNodePathClientDataType string) *data.ClientData {
 
-	var output ClientData
+	var output data.ClientData
 
 	rawClientData, _ := zookeeperClient.GetZNodeData(zNodePathRawClientData)
 	clientDataType, _ := zookeeperClient.GetZNodeData(zNodePathClientDataType)
 
-	switch string(clientDataType) {
-	case AfterReducePhase:
-		output = wordcount.Input{}
-		utility.CheckError(utility.Decode(rawClientData, output))
+	typeName := string(clientDataType)
+
+	switch typeName {
+	case "Input":
+		raw := wordcount.Input{}
+		utility.CheckError(utility.Decode(rawClientData, &raw))
+
+		output = raw
 	}
 
 	return &output
-
-	return nil
 }

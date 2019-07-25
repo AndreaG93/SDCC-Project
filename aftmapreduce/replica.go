@@ -1,6 +1,7 @@
 package aftmapreduce
 
 import (
+	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/registries/WorkerMutex"
 	"SDCC-Project/aftmapreduce/registries/WorkerResultsRegister"
 )
@@ -9,7 +10,7 @@ type Replica struct {
 }
 
 type ReplicaInput struct {
-	Data TransientData
+	Data data.TransientData
 }
 
 type ReplicaOutput struct {

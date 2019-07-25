@@ -1,4 +1,4 @@
-package aftmapreduce
+package data
 
 type TransientData interface {
 	PerformTask() (string, []byte, error)

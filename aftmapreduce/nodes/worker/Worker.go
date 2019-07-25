@@ -3,7 +3,6 @@ package worker
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount"
-	"SDCC-Project/aftmapreduce/task"
 	"SDCC-Project/cloud/zookeeper"
 	"encoding/gob"
 	"fmt"
@@ -35,8 +34,8 @@ func (obj *Worker) StartWork() {
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
 
-	go aftmapreduce.StartAcceptingRPCRequest(&task.MapReduce{}, (*obj).mapReduceRPCAddress)
-	go aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.MapReduceGet{}, (*obj).mapReduceGetRPCAddress)
+	go aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.Replica{}, (*obj).mapReduceRPCAddress)
+	go aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.DataRetriever{}, (*obj).mapReduceGetRPCAddress)
 
 	(*obj).zookeeperClient.RegisterNodeMembership((*obj).id, (*obj).internetAddress)
 	(*obj).zookeeperClient.KeepConnectionAlive()

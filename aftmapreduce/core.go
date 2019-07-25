@@ -1,6 +1,7 @@
 package aftmapreduce
 
 import (
+	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/registries/zookeeperclient"
 	"SDCC-Project/utility"
 	"fmt"
@@ -45,7 +46,7 @@ func ManageClientRequest(request *Request) {
 	}
 }
 
-func performCurrentTask(splits []TransientData, faultToleranceLevel int, workersInternetAddress map[int]string) [][]byte {
+func performCurrentTask(splits []data.TransientData, faultToleranceLevel int, workersInternetAddress map[int]string) [][]byte {
 
 	mapReduceInternetAddresses := make([]string, len(workersInternetAddress))
 

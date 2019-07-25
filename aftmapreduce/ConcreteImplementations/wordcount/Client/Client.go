@@ -11,14 +11,14 @@ import (
 
 func SendRequest(digestFile string, internetAddress string) {
 
-	input := new(aftmapreduce.MapReduceRequestInput)
-	output := new(aftmapreduce.MapReduceRequestOutput)
+	input := new(aftmapreduce.EntryPointInput)
+	output := new(aftmapreduce.EntryPointOutput)
 
 	inputData := new(wordcount.Input)
-	(*inputData).FileDigest = digestFile
+	(*inputData).FileDigest = "test"
 	(*inputData).MapCardinality = 5
 
-	input.InputData = inputData
+	input.Data = inputData
 
 	gob.Register(wordcount.Input{})
 
@@ -27,6 +27,6 @@ func SendRequest(digestFile string, internetAddress string) {
 	client, err := rpc.Dial("tcp", currentLeaderPublicInternetAddress)
 	utility.CheckError(err)
 
-	err = client.Call("MapReduceRequest.Execute", &input, &output)
+	err = client.Call("EntryPoint.Execute", &input, &output)
 	utility.CheckError(err)
 }

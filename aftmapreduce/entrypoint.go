@@ -1,10 +1,12 @@
 package aftmapreduce
 
+import "SDCC-Project/aftmapreduce/data"
+
 type EntryPoint struct {
 }
 
 type EntryPointInput struct {
-	Data ClientData
+	Data data.ClientData
 }
 
 type EntryPointOutput struct {

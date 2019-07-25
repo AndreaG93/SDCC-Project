@@ -1,6 +1,7 @@
 package aftmapreduce
 
 import (
+	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/registries/WorkersResponsesRegistry"
 	"SDCC-Project/utility"
 	"net/rpc"
@@ -17,10 +18,10 @@ type Task struct {
 	currentWorkerID     int
 	workersAddresses    []string
 	repliesRegistry     *WorkersResponsesRegistry.WorkersResponsesRegistry
-	inputSplit          TransientData
+	inputSplit          data.TransientData
 }
 
-func NewTask(inputSplit TransientData, faultToleranceLevel int, workersAddresses []string) *Task {
+func NewTask(inputSplit data.TransientData, faultToleranceLevel int, workersAddresses []string) *Task {
 
 	output := new(Task)
 
@@ -83,7 +84,7 @@ func (obj *Task) startListeningWorkersReplies() {
 	}
 }
 
-func executeSingleMapTaskReplica(middleInput TransientData, address string, reply chan workerReply) {
+func executeSingleMapTaskReplica(middleInput data.TransientData, address string, reply chan workerReply) {
 
 	var workerInput ReplicaInput
 	var workerOutput ReplicaOutput
@@ -93,7 +94,7 @@ func executeSingleMapTaskReplica(middleInput TransientData, address string, repl
 
 	workerInput.Data = middleInput
 
-	err = worker.Call("SingleMapReduceReplica.Execute", &workerInput, &workerOutput)
+	err = worker.Call("Replica.Execute", &workerInput, &workerOutput)
 
 	if err == nil {
 
