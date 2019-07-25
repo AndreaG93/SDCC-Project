@@ -1,8 +1,8 @@
 package main
 
 import (
-	"SDCC-Project/BFTMapReduce/Node/Primary"
-	"SDCC-Project/BFTMapReduce/Node/Worker"
+	"SDCC-Project/aftmapreduce/nodes/primary"
+	"SDCC-Project/aftmapreduce/nodes/worker"
 	"SDCC-Project/utility"
 	"os"
 	"strconv"
@@ -16,12 +16,12 @@ func main() {
 	nodeClass := os.Args[2]
 	nodePublicIP := os.Args[3]
 
-	if nodeClass == "Primary" {
+	if nodeClass == "primary" {
 
-		Primary.New(nodeID, nodePublicIP).StartWork()
+		primary.New(nodeID, nodePublicIP).StartWork()
 
-	} else if nodeClass == "Worker" {
+	} else if nodeClass == "worker" {
 
-		Worker.New(nodeID, nodePublicIP).StartWork()
+		worker.New(nodeID, nodePublicIP).StartWork()
 	}
 }
