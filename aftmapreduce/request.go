@@ -32,7 +32,7 @@ type Request struct {
 }
 
 func NewRequest(clientData *data.ClientData) *Request {
-
+	/*gfdgfdgd*/
 	output := new(Request)
 
 	(*output).digest = (*clientData).GetDigest()
