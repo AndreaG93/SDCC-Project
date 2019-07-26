@@ -2,7 +2,7 @@ package primary
 
 import (
 	"SDCC-Project/aftmapreduce"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount"
+	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/registries/zookeeperclient"
 	"SDCC-Project/cloud/zookeeper"
 	"encoding/gob"

@@ -1,8 +1,8 @@
 package aftmapreduce
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount"
 	"SDCC-Project/aftmapreduce/data"
+	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/registries/zookeeperclient"
 	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
@@ -43,7 +43,6 @@ func NewRequest(clientData *data.ClientData) *Request {
 
 	(*output).transientDataZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, TransientDataZNodeName)
 	(*output).requestStatusZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, StatusZNodeName)
-
 	(*output).clientDataTypeZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, RequestDataTypeZNodeName)
 
 	if !(*output).zookeeperClient.CheckZNodeExistence((*output).pendingRequestZNodePath) {
@@ -74,6 +73,7 @@ func (obj *Request) Checkpoint(data []byte) {
 
 		(*obj).zookeeperClient.RemoveZNode((*obj).requestStatusZNodePath)
 		(*obj).zookeeperClient.RemoveZNode((*obj).transientDataZNodePath)
+		(*obj).zookeeperClient.RemoveZNode((*obj).clientDataTypeZNodePath)
 		(*obj).zookeeperClient.RemoveZNode((*obj).pendingRequestZNodePath)
 	}
 }

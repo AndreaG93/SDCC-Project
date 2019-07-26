@@ -40,7 +40,8 @@ func ManageClientRequest(request *Request) {
 			continue
 
 		case AfterReducePhase:
-			(*clientData).CollectResults(transientData)
+			finalOutput := (*clientData).CollectResults(transientData)
+			request.Checkpoint(finalOutput)
 			return
 		}
 	}

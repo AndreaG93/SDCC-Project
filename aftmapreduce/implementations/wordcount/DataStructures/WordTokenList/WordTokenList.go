@@ -1,7 +1,7 @@
 package WordTokenList
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordToken"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordToken"
 	"SDCC-Project/utility"
 	"container/list"
 	"fmt"

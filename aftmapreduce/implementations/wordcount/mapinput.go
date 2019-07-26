@@ -1,7 +1,7 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenHashTable"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/utility"
 	"strings"
 )

@@ -1,8 +1,8 @@
 package WordTokenListGroupSet
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenHashTable"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenListGroup"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenHashTable"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroup"
 )
 
 type WordTokenListGroupSet struct {

@@ -2,7 +2,6 @@ package aftmapreduce
 
 import (
 	"SDCC-Project/aftmapreduce/data"
-	"SDCC-Project/aftmapreduce/registries/WorkerMutex"
 	"SDCC-Project/aftmapreduce/registries/WorkerResultsRegister"
 )
 
@@ -24,10 +23,7 @@ func (x *Replica) Execute(input ReplicaInput, output *ReplicaOutput) error {
 		return err
 	}
 
-	WorkerMutex.GetInstance().Lock()
 	WorkerResultsRegister.GetInstance().Set(digest, rawData)
-	WorkerMutex.GetInstance().Unlock()
-
 	output.Digest = digest
 
 	return nil

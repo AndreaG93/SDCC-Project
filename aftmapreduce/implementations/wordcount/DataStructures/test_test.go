@@ -1,10 +1,10 @@
 package DataStructures
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenHashTable"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenList"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenListGroup"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenListGroupSet"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenHashTable"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroup"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroupSet"
 	"SDCC-Project/utility"
 	"fmt"
 	"testing"

@@ -10,5 +10,5 @@ type ClientData interface {
 	GetTypeName() string
 	Split() ([]TransientData, error)
 	Shuffle(rawDataFromMapTask [][]byte) []TransientData
-	CollectResults(rawDataFromReduceTask [][]byte) string
+	CollectResults(rawDataFromReduceTask [][]byte) []byte
 }

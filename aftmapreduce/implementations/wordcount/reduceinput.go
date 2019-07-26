@@ -1,7 +1,7 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenListGroup"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroup"
 	"SDCC-Project/utility"
 )
 
@@ -19,7 +19,6 @@ func (obj ReduceInput) PerformTask() (string, []byte, error) {
 	}
 
 	data := tokenListGroup.Merge()
-
 	rawData, err := data.Serialize()
 
 	digest := utility.GenerateDigestUsingSHA512(rawData)

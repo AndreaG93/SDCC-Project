@@ -1,11 +1,12 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenHashTable"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenList"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenListGroupSet"
 	"SDCC-Project/aftmapreduce/data"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenHashTable"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroupSet"
 	"SDCC-Project/utility"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -78,7 +79,7 @@ func (obj Input) Shuffle(rawDataFromMapTask [][]byte) []data.TransientData {
 	return output
 }
 
-func (obj Input) CollectResults(rawDataFromReduceTask [][]byte) string {
+func (obj Input) CollectResults(rawDataFromReduceTask [][]byte) []byte {
 
 	finalOutput := WordTokenList.New()
 
@@ -86,13 +87,15 @@ func (obj Input) CollectResults(rawDataFromReduceTask [][]byte) string {
 
 		data, err := WordTokenList.Deserialize(rawData)
 		utility.CheckError(err)
-
+		data.Print()
 		finalOutput.Merge(data)
 	}
-
+	fmt.Println("---------")
 	finalOutput.Print()
+	output, err := finalOutput.Serialize()
+	utility.CheckError(err)
 
-	return ""
+	return output
 }
 
 func (obj Input) splitFile() ([]string, error) {

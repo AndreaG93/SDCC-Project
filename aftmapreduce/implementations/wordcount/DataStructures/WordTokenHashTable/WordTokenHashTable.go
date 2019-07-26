@@ -1,8 +1,8 @@
 package WordTokenHashTable
 
 import (
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordToken"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount/DataStructures/WordTokenList"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordToken"
+	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/utility"
 	"fmt"
 )

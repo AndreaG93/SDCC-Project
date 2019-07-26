@@ -2,7 +2,7 @@ package worker
 
 import (
 	"SDCC-Project/aftmapreduce"
-	"SDCC-Project/aftmapreduce/ConcreteImplementations/wordcount"
+	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/cloud/zookeeper"
 	"encoding/gob"
 	"fmt"
