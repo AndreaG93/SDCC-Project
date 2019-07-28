@@ -1,0 +1,6 @@
+FROM golang:latest
+
+COPY ./go/src/SDCC-Project /go/src/SDCC-Project
+
+RUN go get -u github.com/samuel/go-zookeeper/zk
+RUN go install -v /go/src/SDCC-Project/main/node.go

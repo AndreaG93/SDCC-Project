@@ -20,7 +20,6 @@ func (obj ReduceInput) PerformTask() (string, []byte, error) {
 
 	data := tokenListGroup.Merge()
 	rawData, err := data.Serialize()
-
 	digest := utility.GenerateDigestUsingSHA512(rawData)
 
 	return digest, rawData, nil

@@ -23,3 +23,6 @@ docker run --name some-zookeeper --network host --restart always -d zookeeper
 
 
 #docker stop zookeeper_server_3
+
+
+docker build --file DockerFile.PrimaryNode --tag SDCC_Project_PrimaryNode_image .

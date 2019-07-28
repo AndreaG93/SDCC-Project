@@ -17,6 +17,8 @@ func ManageClientRequest(request *Request) {
 	faultToleranceLevel := 2
 	clientData := request.getClientData()
 
+	transientData = nil
+
 	for {
 
 		internetAddressesOfAvailableWorkers := zookeeperclient.GetInstance().GetMembersInternetAddress()
@@ -33,13 +35,23 @@ func ManageClientRequest(request *Request) {
 
 		case AfterMapPhase:
 
+			if transientData == nil {
+				transientData = utility.ArrayToMatrix(request.GetDataFromCheckpoint())
+			}
+
 			splits := (*clientData).Shuffle(transientData)
 
-			transientData := performCurrentTask(splits, faultToleranceLevel, internetAddressesOfAvailableWorkers)
+			transientData = performCurrentTask(splits, faultToleranceLevel, internetAddressesOfAvailableWorkers)
 			request.Checkpoint(utility.MatrixToArray(transientData))
+
 			continue
 
 		case AfterReducePhase:
+
+			if transientData == nil {
+				transientData = utility.ArrayToMatrix(request.GetDataFromCheckpoint())
+			}
+
 			finalOutput := (*clientData).CollectResults(transientData)
 			request.Checkpoint(finalOutput)
 			return
@@ -92,12 +104,10 @@ func retrieveDataFromWorker(digest string, workersAddresses []string) []byte {
 			continue
 		}
 
-		defer func() {
-			utility.CheckError(worker.Close())
-		}()
-
 		err = worker.Call("DataRetriever.Execute", &input, &output)
+		utility.CheckError(worker.Close())
 		if err == nil {
+
 			return output.Data
 		}
 	}

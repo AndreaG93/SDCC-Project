@@ -6,7 +6,6 @@ import (
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroupSet"
 	"SDCC-Project/utility"
-	"fmt"
 	"os"
 	"strings"
 )
@@ -87,11 +86,9 @@ func (obj Input) CollectResults(rawDataFromReduceTask [][]byte) []byte {
 
 		data, err := WordTokenList.Deserialize(rawData)
 		utility.CheckError(err)
-		data.Print()
 		finalOutput.Merge(data)
 	}
-	fmt.Println("---------")
-	finalOutput.Print()
+
 	output, err := finalOutput.Serialize()
 	utility.CheckError(err)
 
