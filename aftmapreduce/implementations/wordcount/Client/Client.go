@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
+	"SDCC-Project/cloud/amazon"
 	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
 	"encoding/gob"
@@ -41,15 +42,24 @@ func printResult(rawData []byte) {
 	result.Print()
 }
 
-func StartWork(digest string, internetAddress string) {
+func StartWork(filename string, internetAddress string) {
 
 	var rawData []byte
 	var watcher <-chan zk.Event
+
+	digest, err := utility.GenerateDigestOfFileUsingSHA512(filename)
+	if err != nil {
+		panic(err)
+	}
 
 	zookeeperClient := zookeeper.New([]string{"localhost:2181"})
 	path := fmt.Sprintf("%s/%s", aftmapreduce.CompleteRequestsZNodePath, digest)
 
 	if !zookeeperClient.CheckZNodeExistence(path) {
+
+		S3Client := amazon.New()
+		S3Client.Upload(filename, digest)
+
 		sendRequest(digest, internetAddress)
 		_, watcher = zookeeperClient.GetZNodeData(path)
 		<-watcher

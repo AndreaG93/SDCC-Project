@@ -35,9 +35,6 @@ func NewTask(inputSplit data.TransientData, faultToleranceLevel int, workersAddr
 	return output
 }
 
-/**
- * This function is used to execute a 'Byzantine Fault Tolerant' Map-task.
- */
 func (obj *Task) Execute() (string, []string) {
 
 	defer close((*obj).workersReplyChannel)

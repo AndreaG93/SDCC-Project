@@ -3,8 +3,7 @@ package primary
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/implementations/wordcount"
-	"SDCC-Project/aftmapreduce/registries/zookeeperclient"
-	"SDCC-Project/cloud/zookeeper"
+	"SDCC-Project/aftmapreduce/node"
 	"encoding/gob"
 	"fmt"
 )
@@ -12,16 +11,17 @@ import (
 type Primary struct {
 	id                         int
 	mapReduceRequestRPCAddress string
-	zookeeperClient            *zookeeper.Client
 	isLeader                   chan bool
 }
 
 func New(id int, internetAddress string) *Primary {
 
 	output := new(Primary)
+
+	node.Initialize(id, "Primary")
+
 	(*output).id = id
 	(*output).mapReduceRequestRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceRequestRPCBasePort+id)
-	(*output).zookeeperClient = zookeeperclient.GetInstance()
 	(*output).isLeader = make(chan bool)
 
 	return output
@@ -29,20 +29,19 @@ func New(id int, internetAddress string) *Primary {
 
 func (obj *Primary) StartWork() {
 
-	go (*obj).zookeeperClient.RunAsLeaderCandidate((*obj).isLeader)
+	go node.GetZookeeperClient().RunAsLeaderCandidate((*obj).isLeader)
 
 	<-(*obj).isLeader
 
-	fmt.Println("I'm LEADER")
+	node.GetLogger().PrintMessage("I'm leader")
 
 	gob.Register(wordcount.Input{})
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
 
-	aftmapreduce.InitNeededZNodePathsToManageClientsRequests((*obj).zookeeperClient)
-	pendingClientsRequests := aftmapreduce.GetPendingClientsRequests((*obj).zookeeperClient)
+	aftmapreduce.InitNeededZNodePathsToManageClientsRequests()
 
-	for _, item := range pendingClientsRequests {
+	for _, item := range aftmapreduce.GetPendingClientsRequests() {
 		go aftmapreduce.ManageClientRequest(item)
 	}
 

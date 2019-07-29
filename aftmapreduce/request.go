@@ -3,7 +3,7 @@ package aftmapreduce
 import (
 	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/implementations/wordcount"
-	"SDCC-Project/aftmapreduce/registries/zookeeperclient"
+	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
 	"fmt"
@@ -36,7 +36,7 @@ func NewRequest(clientData *data.ClientData) *Request {
 	output := new(Request)
 
 	(*output).digest = (*clientData).GetDigest()
-	(*output).zookeeperClient = zookeeperclient.GetInstance()
+	(*output).zookeeperClient = node.GetZookeeperClient()
 
 	(*output).pendingRequestZNodePath = fmt.Sprintf("%s/%s", PendingRequestsZNodePath, (*output).digest)
 	(*output).finalOutputZNodePath = fmt.Sprintf("%s/%s", CompleteRequestsZNodePath, (*output).digest)
@@ -94,7 +94,9 @@ func (obj *Request) getStatus() string {
 	return string(output)
 }
 
-func InitNeededZNodePathsToManageClientsRequests(zookeeperClient *zookeeper.Client) {
+func InitNeededZNodePathsToManageClientsRequests() {
+
+	zookeeperClient := node.GetZookeeperClient()
 
 	if !(*zookeeperClient).CheckZNodeExistence(PendingRequestsZNodePath) {
 		(*zookeeperClient).CreateZNode(PendingRequestsZNodePath, nil, 0)
@@ -105,7 +107,9 @@ func InitNeededZNodePathsToManageClientsRequests(zookeeperClient *zookeeper.Clie
 	}
 }
 
-func GetPendingClientsRequests(zookeeperClient *zookeeper.Client) []*Request {
+func GetPendingClientsRequests() []*Request {
+
+	zookeeperClient := node.GetZookeeperClient()
 
 	pendingClientRequests := zookeeperClient.GetChildrenList(PendingRequestsZNodePath)
 	output := make([]*Request, len(pendingClientRequests))

@@ -2,7 +2,7 @@ package aftmapreduce
 
 import (
 	"SDCC-Project/aftmapreduce/data"
-	"SDCC-Project/aftmapreduce/registries/zookeeperclient"
+	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/utility"
 	"fmt"
 	"net/rpc"
@@ -21,10 +21,12 @@ func ManageClientRequest(request *Request) {
 
 	for {
 
-		internetAddressesOfAvailableWorkers := zookeeperclient.GetInstance().GetMembersInternetAddress()
+		internetAddressesOfAvailableWorkers := node.GetZookeeperClient().GetMembersInternetAddress()
 
 		switch request.getStatus() {
 		case InitialPhase:
+
+			node.GetLogger().PrintMessage(fmt.Sprintf("Enter into 'InitialPhase' for request ID: %s", request.digest))
 
 			splits, err := (*clientData).Split()
 			utility.CheckError(err)
@@ -34,6 +36,8 @@ func ManageClientRequest(request *Request) {
 			continue
 
 		case AfterMapPhase:
+
+			node.GetLogger().PrintMessage(fmt.Sprintf("Enter into 'AfterMapPhase' for request ID: %s", request.digest))
 
 			if transientData == nil {
 				transientData = utility.ArrayToMatrix(request.GetDataFromCheckpoint())
@@ -48,12 +52,16 @@ func ManageClientRequest(request *Request) {
 
 		case AfterReducePhase:
 
+			node.GetLogger().PrintMessage(fmt.Sprintf("Enter into 'AfterReducePhase' for request ID: %s", request.digest))
+
 			if transientData == nil {
 				transientData = utility.ArrayToMatrix(request.GetDataFromCheckpoint())
 			}
 
 			finalOutput := (*clientData).CollectResults(transientData)
 			request.Checkpoint(finalOutput)
+
+			node.GetLogger().PrintMessage(fmt.Sprintf("Request ID %s satisfied", request.digest))
 			return
 		}
 	}

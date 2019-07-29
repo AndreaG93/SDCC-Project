@@ -5,7 +5,9 @@ import (
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroupSet"
+	"SDCC-Project/cloud/amazon"
 	"SDCC-Project/utility"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -102,18 +104,17 @@ func (obj Input) splitFile() ([]string, error) {
 	var err error
 
 	output := make([]string, (obj).MapCardinality)
-	/*
-		if inputFile, err = os.Open((obj).FileDigest); err != nil {
-			return nil, err
-		}
 
-	*/
-	if inputFile, err = os.Open("../../../test-input-data/input1.txt"); err != nil {
-		return nil, err
-	}
+	inputFile, err = ioutil.TempFile("", (obj).FileDigest)
+	utility.CheckError(err)
+
 	defer func() {
-		utility.CheckError(inputFile.Close())
+		utility.CheckError(os.Remove(inputFile.Name()))
 	}()
+
+	amazonS3Client := amazon.New()
+	amazonS3Client.Download((obj).FileDigest, inputFile)
+
 	if fileInfo, err = inputFile.Stat(); err != nil {
 		return nil, err
 	}

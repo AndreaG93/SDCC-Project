@@ -1,13 +1,17 @@
 package amazon
 
 import (
-	"SDCC-Project-WorkerNode/mapreduce/wordcount/system"
-	"SDCC-Project-WorkerNode/utility"
+	"SDCC-Project/utility"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"os"
+)
+
+const (
+	AmazonAWSRegion    = "us-east-1"
+	AmazonS3BucketName = "graziani-filestorage"
 )
 
 type S3Client struct {
@@ -19,7 +23,7 @@ func New() *S3Client {
 	output := new(S3Client)
 
 	(*output).session = session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(system.AmazonAWSRegion)},
+		Region: aws.String(AmazonAWSRegion)},
 	))
 
 	return output
@@ -40,25 +44,19 @@ func (obj *S3Client) Upload(inputFilename string, key string) {
 	}()
 
 	_, err = amazonAWSS3Uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(system.AmazonS3BucketName),
+		Bucket: aws.String(AmazonS3BucketName),
 		Key:    aws.String(key),
 		Body:   inputFile,
 	})
 	utility.CheckError(err)
 }
 
-func (obj *S3Client) Download(key string, outputFilename string) {
-
-	var outputFile *os.File
-	var err error
+func (obj *S3Client) Download(key string, outputFile *os.File) {
 
 	amazonAWSS3Downloader := s3manager.NewDownloader((*obj).session)
 
-	outputFile, err = os.Create(outputFilename)
-	utility.CheckError(err)
-
-	_, err = amazonAWSS3Downloader.Download(outputFile, &s3.GetObjectInput{
-		Bucket: aws.String(system.AmazonS3BucketName),
+	_, err := amazonAWSS3Downloader.Download(outputFile, &s3.GetObjectInput{
+		Bucket: aws.String(AmazonS3BucketName),
 		Key:    aws.String(key),
 	})
 	utility.CheckError(err)
@@ -70,13 +68,13 @@ func (obj *S3Client) Delete(key string) {
 	amazonS3Service := s3.New((*obj).session)
 
 	_, err = amazonS3Service.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(system.AmazonS3BucketName),
+		Bucket: aws.String(AmazonS3BucketName),
 		Key:    aws.String(key),
 	})
 	utility.CheckError(err)
 
 	err = amazonS3Service.WaitUntilObjectNotExists(&s3.HeadObjectInput{
-		Bucket: aws.String(system.AmazonS3BucketName),
+		Bucket: aws.String(AmazonS3BucketName),
 		Key:    aws.String(key),
 	})
 	utility.CheckError(err)
