@@ -13,10 +13,9 @@ const (
 
 func Test_zookeeperBasicOperations(t *testing.T) {
 
-	zooKeeperClient := New([]string{"localhost:2181"})
-
+	zooKeeperClient := New([]string{"3.87.219.134:2181", "3.94.62.19:2181", "54.243.4.159:2181"})
 	if !(*zooKeeperClient).CheckZNodeExistence(testZNodePath) {
-		(*zooKeeperClient).CreateZNode(testZNodePath, 0)
+		(*zooKeeperClient).CreateZNode(testZNodePath, nil, int32(0))
 	}
 
 	(*zooKeeperClient).SetZNodeData(testZNodePath, []byte(testData))

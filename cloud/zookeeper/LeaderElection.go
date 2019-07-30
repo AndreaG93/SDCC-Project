@@ -2,6 +2,7 @@ package zookeeper
 
 import (
 	"SDCC-Project/utility"
+	"errors"
 	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"sort"
@@ -25,9 +26,9 @@ func (obj *Client) initializationElectionResource() {
 	}
 }
 
-func (obj *Client) createProposalsZNode() string {
+func (obj *Client) createProposalsZNode(internetAddress string) string {
 
-	path, err := (*obj).zooKeeperConnection.Create(proposalZNodePath, nil, zk.FlagEphemeral|zk.FlagSequence, zk.WorldACL(zk.PermAll))
+	path, err := (*obj).zooKeeperConnection.Create(proposalZNodePath, []byte(internetAddress), zk.FlagEphemeral|zk.FlagSequence, zk.WorldACL(zk.PermAll))
 	utility.CheckError(err)
 
 	return strings.Split(path, "/")[2]
@@ -42,10 +43,23 @@ func (obj *Client) getCandidates() []string {
 	return output
 }
 
-func (obj *Client) RunAsLeaderCandidate(responseChannel chan bool) {
+func (obj *Client) GetCurrentLeaderInternetAddress() (string, error) {
+
+	candidates := (*obj).getCandidates()
+	if len(candidates) == 0 {
+		return "", errors.New("no leader candidate")
+	}
+
+	leaderZNodePath := fmt.Sprintf("%s%s", proposalZNodePath, candidates[0])
+
+	output, _ := (*obj).GetZNodeData(leaderZNodePath)
+	return string(output), nil
+}
+
+func (obj *Client) RunAsLeaderCandidate(responseChannel chan bool, internetAddress string) {
 
 	(*obj).initializationElectionResource()
-	myProposal := (*obj).createProposalsZNode()
+	myProposal := (*obj).createProposalsZNode(internetAddress)
 	fmt.Println("My proposal is ", myProposal)
 
 	for {

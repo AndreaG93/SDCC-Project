@@ -29,7 +29,7 @@ func New(id int, internetAddress string) *Primary {
 
 func (obj *Primary) StartWork() {
 
-	go node.GetZookeeperClient().RunAsLeaderCandidate((*obj).isLeader)
+	go node.GetZookeeperClient().RunAsLeaderCandidate((*obj).isLeader, (*obj).mapReduceRequestRPCAddress)
 
 	<-(*obj).isLeader
 

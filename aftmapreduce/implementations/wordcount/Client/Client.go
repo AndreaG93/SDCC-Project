@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
+	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/cloud/amazon"
 	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
@@ -26,9 +27,7 @@ func sendRequest(digestFile string, internetAddress string) {
 
 	gob.Register(wordcount.Input{})
 
-	currentLeaderPublicInternetAddress := fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceRequestRPCBasePort+1)
-
-	client, err := rpc.Dial("tcp", currentLeaderPublicInternetAddress)
+	client, err := rpc.Dial("tcp", internetAddress)
 	utility.CheckError(err)
 
 	err = client.Call("EntryPoint.Execute", &input, &output)
@@ -42,7 +41,7 @@ func printResult(rawData []byte) {
 	result.Print()
 }
 
-func StartWork(filename string, internetAddress string) {
+func StartWork(filename string) {
 
 	var rawData []byte
 	var watcher <-chan zk.Event
@@ -52,18 +51,32 @@ func StartWork(filename string, internetAddress string) {
 		panic(err)
 	}
 
+	node.Initialize(0, "Client")
+
 	zookeeperClient := zookeeper.New([]string{"localhost:2181"})
 	path := fmt.Sprintf("%s/%s", aftmapreduce.CompleteRequestsZNodePath, digest)
 
 	if !zookeeperClient.CheckZNodeExistence(path) {
 
-		S3Client := amazon.New()
+		S3Client := amazons3.New()
 		S3Client.Upload(filename, digest)
 
+		internetAddress, err := zookeeperClient.GetCurrentLeaderInternetAddress()
+		if err != nil {
+			panic(err)
+		}
+
 		sendRequest(digest, internetAddress)
+
 		_, watcher = zookeeperClient.GetZNodeData(path)
 		<-watcher
 	} else {
+
+		internetAddress, err := zookeeperClient.GetCurrentLeaderInternetAddress()
+		if err != nil {
+			panic(err)
+		}
+
 		rawData, _ = zookeeperClient.GetZNodeData(path)
 		if rawData == nil {
 			sendRequest(digest, internetAddress)

@@ -112,7 +112,7 @@ func (obj Input) splitFile() ([]string, error) {
 		utility.CheckError(os.Remove(inputFile.Name()))
 	}()
 
-	amazonS3Client := amazon.New()
+	amazonS3Client := amazons3.New()
 	amazonS3Client.Download((obj).FileDigest, inputFile)
 
 	if fileInfo, err = inputFile.Stat(); err != nil {

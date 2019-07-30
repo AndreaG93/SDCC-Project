@@ -1,4 +1,4 @@
-package amazon
+package amazons3
 
 import (
 	"SDCC-Project/utility"
