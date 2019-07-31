@@ -14,11 +14,11 @@ type Primary struct {
 	isLeader                   chan bool
 }
 
-func New(id int, internetAddress string) *Primary {
+func New(id int, internetAddress string, zookeeperAddresses []string) *Primary {
 
 	output := new(Primary)
 
-	node.Initialize(id, "Primary")
+	node.Initialize(id, "Primary", zookeeperAddresses)
 
 	(*output).id = id
 	(*output).mapReduceRequestRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceRequestRPCBasePort+id)

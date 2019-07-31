@@ -8,9 +8,9 @@ import (
 var zookeeperClient *zookeeper.Client
 var logger *nodelogger.Logger
 
-func Initialize(nodeID int, nodeType string) {
+func Initialize(nodeID int, nodeType string, zookeeperAddresses []string) {
 
-	zookeeperClient = zookeeper.New([]string{"localhost:2181"})
+	zookeeperClient = zookeeper.New(zookeeperAddresses)
 	logger = nodelogger.New(nodeID, nodeType)
 }
 

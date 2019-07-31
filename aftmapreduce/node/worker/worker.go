@@ -3,7 +3,7 @@ package worker
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/implementations/wordcount"
-	"SDCC-Project/cloud/zookeeper"
+	"SDCC-Project/aftmapreduce/node"
 	"encoding/gob"
 	"fmt"
 )
@@ -13,18 +13,18 @@ type Worker struct {
 	internetAddress        string
 	mapReduceRPCAddress    string
 	mapReduceGetRPCAddress string
-	zookeeperClient        *zookeeper.Client
 }
 
-func New(id int, internetAddress string) *Worker {
+func New(id int, internetAddress string, zookeeperAddresses []string) *Worker {
 
 	output := new(Worker)
+
+	node.Initialize(id, "Worker", zookeeperAddresses)
 
 	(*output).id = id
 	(*output).internetAddress = internetAddress
 	(*output).mapReduceRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceRPCBasePort+id)
 	(*output).mapReduceGetRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceGetRPCBasePort+id)
-	(*output).zookeeperClient = zookeeper.New(configuration.zookeeperServers)
 
 	return output
 }
@@ -37,6 +37,6 @@ func (obj *Worker) StartWork() {
 	go aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.Replica{}, (*obj).mapReduceRPCAddress)
 	go aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.DataRetriever{}, (*obj).mapReduceGetRPCAddress)
 
-	(*obj).zookeeperClient.RegisterNodeMembership((*obj).id, (*obj).internetAddress)
-	(*obj).zookeeperClient.KeepConnectionAlive()
+	node.GetZookeeperClient().RegisterNodeMembership((*obj).id, (*obj).internetAddress)
+	node.GetZookeeperClient().KeepConnectionAlive()
 }

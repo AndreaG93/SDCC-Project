@@ -1,10 +1,13 @@
 sudo apt install python-pip
 sudo pip install awscli
+chmod 077 graziani-01.pem
 
-# ==================================================================================================================== #
-# Zookeeper EC2 instances data retrival
-# ==================================================================================================================== #
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# Zookeeper nodes configuration on Amazon EC2
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+# Information retrival...
+# ==================================================================================================================== #
 ZOOKEEPER_SERVER_PRIVATE_IP=()
 ZOOKEEPER_SERVER_PUBLIC_IP=()
 
@@ -19,13 +22,13 @@ do
     ZOOKEEPER_SERVER_PUBLIC_IP+=("$OUTPUT2")
 done
 
-# ==================================================================================================================== #
-# Zookeeper Servers configuration
+# Configuration
 # ==================================================================================================================== #
 
 index=0
 for i in "${ZOOKEEPER_SERVER_PUBLIC_IP[@]}"
 do
+    ((index++))
     ssh -i "graziani-01.pem" ubuntu@$i "
 
 sudo apt update -y && sudo apt upgrade -y && sudo apt install -y default-jre
@@ -48,21 +51,82 @@ echo $index | sudo tee /var/lib/zookeeper/myid
     "
 done
 
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# Primary nodes configuration on Amazon EC2
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+# Information retrival...
 # ==================================================================================================================== #
-# Primary Servers configuration
+
+PRIMARY_SERVERS_PUBLIC_IP=()
+
+for i in 1 2 3
+do
+    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=PrimaryServer" "Name=tag:ID,Values=$i")
+
+    OUTPUT1=$(echo $EC2_OUTPUT | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
+
+    PRIMARY_SERVERS_PUBLIC_IP+=("$OUTPUT1")
+done
+
+# Configuration
 # ==================================================================================================================== #
 
+index=0
+for i in "${PRIMARY_SERVERS_PUBLIC_IP[@]}"
+do
+    ((index++))
+    ssh -i "graziani-01.pem" ubuntu@$i "
 
+sudo apt update -y && sudo apt upgrade -y
 
+go get -u github.com/aws/aws-sdk-go/service/s3/...
+go get -u github.com/aws/aws-sdk-go/aws/...
+go get -u github.com/samuel/go-zookeeper/z
 
+git -C ./go/src clone https://github.com/AndreaG93/SDCC-Project
 
+jq -n "{ZookeeperServersPrivateIPs: [\"${ZOOKEEPER_SERVER_PRIVATE_IP[0]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[1]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[2]}\"], NodeID: $index, NodeClass: \"Primary\"}" > ./go/src/SDCC-Project/main/conf.json
 
+    "
+done
 
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# Worker nodes configuration on Amazon EC2
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+# Information retrival...
+# ==================================================================================================================== #
 
+WORKER_SERVERS_PUBLIC_IP=()
 
+for i in 1 2 3 4 5
+do
+    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=Worker" "Name=tag:ID,Values=$i")
 
+    OUTPUT1=$(echo $EC2_OUTPUT | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
 
-jq -n "{ZookeeperServersPrivateIPs: [\"${ZOOKEEPER_SERVER_PRIVATE_IP[0]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[1]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[2]}\"], NodeID: 1, NodeClass: \"Worker\"}" > conf.json
+    WORKER_SERVERS_PUBLIC_IP+=("$OUTPUT1")
+done
 
+# Configuration
+# ==================================================================================================================== #
 
+index=0
+for i in "${WORKER_SERVERS_PUBLIC_IP[@]}"
+do
+    ((index++))
+    ssh -i "graziani-01.pem" ubuntu@$i "
+
+sudo apt update -y && sudo apt upgrade -y
+
+go get -u github.com/aws/aws-sdk-go/service/s3/...
+go get -u github.com/aws/aws-sdk-go/aws/...
+go get -u github.com/samuel/go-zookeeper/z
+
+git -C ./go/src clone https://github.com/AndreaG93/SDCC-Project
+
+jq -n "{ZookeeperServersPrivateIPs: [\"${ZOOKEEPER_SERVER_PRIVATE_IP[0]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[1]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[2]}\"], NodeID: $index, NodeClass: \"Worker\"}" > ./go/src/SDCC-Project/main/conf.json
+
+    "
+done

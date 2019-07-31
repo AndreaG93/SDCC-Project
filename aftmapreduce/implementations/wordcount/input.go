@@ -5,7 +5,8 @@ import (
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenListGroupSet"
-	"SDCC-Project/cloud/amazon"
+	"SDCC-Project/cloud/amazons3"
+
 	"SDCC-Project/utility"
 	"io/ioutil"
 	"os"

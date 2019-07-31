@@ -10,7 +10,7 @@ import (
 func main() {
 
 	configuration := new(utility.NodeConfiguration)
-	configuration.Load("conf.json")
+	configuration.Load("./conf.json")
 
 	command := exec.Command("curl", "http://169.254.169.254/latest/meta-data/public-ipv4")
 	commandOutput, err := command.Output()
@@ -24,10 +24,10 @@ func main() {
 
 	if nodeClass == "primary" {
 
-		primary.New(nodeID, nodePublicIP).StartWork()
+		primary.New(nodeID, nodePublicIP, configuration.ZookeeperServersPrivateIPs).StartWork()
 
 	} else if nodeClass == "worker" {
 
-		worker.New(nodeID, nodePublicIP).StartWork()
+		worker.New(nodeID, nodePublicIP, configuration.ZookeeperServersPrivateIPs).StartWork()
 	}
 }

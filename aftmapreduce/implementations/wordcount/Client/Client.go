@@ -5,8 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/implementations/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/cloud/amazon"
-	"SDCC-Project/cloud/zookeeper"
+	"SDCC-Project/cloud/amazons3"
 	"SDCC-Project/utility"
 	"encoding/gob"
 	"fmt"
@@ -41,7 +40,7 @@ func printResult(rawData []byte) {
 	result.Print()
 }
 
-func StartWork(filename string) {
+func StartWork(filename string, zookeeperAddresses []string) {
 
 	var rawData []byte
 	var watcher <-chan zk.Event
@@ -51,40 +50,39 @@ func StartWork(filename string) {
 		panic(err)
 	}
 
-	node.Initialize(0, "Client")
+	node.Initialize(0, "Client", zookeeperAddresses)
 
-	zookeeperClient := zookeeper.New([]string{"localhost:2181"})
 	path := fmt.Sprintf("%s/%s", aftmapreduce.CompleteRequestsZNodePath, digest)
 
-	if !zookeeperClient.CheckZNodeExistence(path) {
+	if !node.GetZookeeperClient().CheckZNodeExistence(path) {
 
 		S3Client := amazons3.New()
 		S3Client.Upload(filename, digest)
 
-		internetAddress, err := zookeeperClient.GetCurrentLeaderInternetAddress()
+		internetAddress, err := node.GetZookeeperClient().GetCurrentLeaderInternetAddress()
 		if err != nil {
 			panic(err)
 		}
 
 		sendRequest(digest, internetAddress)
 
-		_, watcher = zookeeperClient.GetZNodeData(path)
+		_, watcher = node.GetZookeeperClient().GetZNodeData(path)
 		<-watcher
 	} else {
 
-		internetAddress, err := zookeeperClient.GetCurrentLeaderInternetAddress()
+		internetAddress, err := node.GetZookeeperClient().GetCurrentLeaderInternetAddress()
 		if err != nil {
 			panic(err)
 		}
 
-		rawData, _ = zookeeperClient.GetZNodeData(path)
+		rawData, _ = node.GetZookeeperClient().GetZNodeData(path)
 		if rawData == nil {
 			sendRequest(digest, internetAddress)
-			_, watcher = zookeeperClient.GetZNodeData(path)
+			_, watcher = node.GetZookeeperClient().GetZNodeData(path)
 			<-watcher
 		}
 	}
 
-	rawData, _ = zookeeperClient.GetZNodeData(path)
+	rawData, _ = node.GetZookeeperClient().GetZNodeData(path)
 	printResult(rawData)
 }
