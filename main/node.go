@@ -1,20 +1,26 @@
 package main
 
 import (
-	"SDCC-Project/aftmapreduce/nodes/primary"
-	"SDCC-Project/aftmapreduce/nodes/worker"
+	"SDCC-Project/aftmapreduce/node/primary"
+	"SDCC-Project/aftmapreduce/node/worker"
 	"SDCC-Project/utility"
-	"os"
-	"strconv"
+	"os/exec"
 )
 
 func main() {
 
-	nodeID, err := strconv.Atoi(os.Args[1])
-	utility.CheckError(err)
+	configuration := new(utility.NodeConfiguration)
+	configuration.Load("conf.json")
 
-	nodeClass := os.Args[2]
-	nodePublicIP := os.Args[3]
+	command := exec.Command("curl", "http://169.254.169.254/latest/meta-data/public-ipv4")
+	commandOutput, err := command.Output()
+	if err != nil {
+		panic(err)
+	}
+
+	nodeID := configuration.NodeID
+	nodeClass := configuration.NodeClass
+	nodePublicIP := string(commandOutput)
 
 	if nodeClass == "primary" {
 

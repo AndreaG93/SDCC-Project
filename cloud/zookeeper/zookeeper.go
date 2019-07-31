@@ -131,10 +131,10 @@ func (obj *Client) RegisterNodeMembership(nodeID int, internetAddress string) {
 	path := fmt.Sprintf("%s/%d", membershipZNodeRootPath, nodeID)
 
 	if !(*obj).CheckZNodeExistence(path) {
-		(*obj).CreateZNode(path, nil, zk.FlagEphemeral)
+		(*obj).CreateZNode(path, []byte(internetAddress), zk.FlagEphemeral)
+	} else {
+		(*obj).SetZNodeData(path, []byte(internetAddress))
 	}
-
-	(*obj).SetZNodeData(path, []byte(internetAddress))
 }
 
 func (obj *Client) KeepConnectionAlive() {

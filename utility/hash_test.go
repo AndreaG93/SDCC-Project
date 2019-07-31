@@ -13,7 +13,7 @@ func TestGenerateDigestOfDataUsingSHA512(t *testing.T) {
 		expectedDigest = "61c6df4cf5e8ca09a7c03f10587190c0d8b0609c3c145d37390f740939b92c70ef8f517f4f99457c11007d943cead69349a8aad413b662fec6efab6932a2aeb5"
 	)
 
-	output, _ := GenerateDigestUsingSHA512([]byte(input))
+	output := GenerateDigestUsingSHA512([]byte(input))
 
 	if strings.Compare(output, expectedDigest) != 0 {
 		log.Fatal("Output NOT correct!")

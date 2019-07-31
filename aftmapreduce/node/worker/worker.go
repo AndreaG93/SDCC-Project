@@ -24,7 +24,7 @@ func New(id int, internetAddress string) *Worker {
 	(*output).internetAddress = internetAddress
 	(*output).mapReduceRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceRPCBasePort+id)
 	(*output).mapReduceGetRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceGetRPCBasePort+id)
-	(*output).zookeeperClient = zookeeper.New([]string{"localhost:2181"})
+	(*output).zookeeperClient = zookeeper.New(configuration.zookeeperServers)
 
 	return output
 }

@@ -1,0 +1,9 @@
+{
+  "ZookeeperServersPrivateIPs": [
+    "172.31.83.14",
+    "172.31.92.183",
+    "172.31.85.212"
+  ],
+  "NodeID": 1,
+  "NodeClass": "Worker"
+}
