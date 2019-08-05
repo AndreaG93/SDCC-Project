@@ -3,6 +3,7 @@ package aftmapreduce
 import (
 	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/cloud/amazons3"
 	"SDCC-Project/utility"
 	"fmt"
 	"net/rpc"
@@ -36,6 +37,9 @@ func ManageClientRequest(request *Request) {
 			continue
 
 		case AfterMapPhase:
+
+			amazonS3Client := amazons3.New()
+			amazonS3Client.Delete()
 
 			node.GetLogger().PrintMessage(fmt.Sprintf("Enter into 'AfterMapPhase' for request ID: %s", request.digest))
 

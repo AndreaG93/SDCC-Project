@@ -2,6 +2,7 @@ package amazons3
 
 import (
 	"SDCC-Project/utility"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -71,7 +72,15 @@ func (obj *S3Client) Delete(key string) {
 		Bucket: aws.String(AmazonS3BucketName),
 		Key:    aws.String(key),
 	})
-	utility.CheckError(err)
+	if err != nil {
+
+		if err.Error() == s3.ErrCodeNoSuchKey {
+			fmt.Println("Specified Key not found - OK")
+		} else {
+			utility.CheckError(err)
+		}
+	}
+
 
 	err = amazonS3Service.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(AmazonS3BucketName),
