@@ -82,7 +82,7 @@ sudo apt update -y && sudo apt upgrade -y
 
 go get -u github.com/aws/aws-sdk-go/service/s3/...
 go get -u github.com/aws/aws-sdk-go/aws/...
-go get -u github.com/samuel/go-zookeeper/z
+go get -u github.com/samuel/go-zookeeper/zk
 
 git -C ./go/src clone https://github.com/AndreaG93/SDCC-Project
 
