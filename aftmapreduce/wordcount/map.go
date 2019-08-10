@@ -12,7 +12,7 @@ type Map struct {
 }
 
 type MapInput struct {
-	text               string
+	Text               string
 	MappingCardinality int
 }
 
@@ -25,12 +25,12 @@ type MapOutput struct {
 
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
-	digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.text, input.MappingCardinality)
+	digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
 
 	node.GetCache().Set(digest, wordTokenHashTable)
 
-	(*output).IdGroup = node.GetIntegerProperty(property.NodeID)
-	(*output).IdNode = node.GetIntegerProperty(property.NodeGroupID)
+	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeID)
+	(*output).IdNode = node.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).ReplayDigest = digest
 	(*output).MappedDataSizes = mappedDataSizes
 

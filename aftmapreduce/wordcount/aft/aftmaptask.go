@@ -1,6 +1,8 @@
 package aft
 
 import (
+	"SDCC-Project/aftmapreduce"
+	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/registry"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/utility"
@@ -14,99 +16,82 @@ type MapTaskOutput struct {
 	MappedDataSizes          map[int]int
 }
 
-type reply struct {
-	id              int
-	digest          string
-	mappedDataSizes map[int]int
-}
-
 type MapTask struct {
-	workersReplyChannel chan workerReply
+	mapTaskOutput       *MapTaskOutput
+	workersReplyChannel chan *wordcount.MapOutput
 	faultToleranceLevel int
-	currentWorkerID     int
+	requestSend         int
 	workersAddresses    []string
 	registry            *registry.MapReplies
 	split               string
 }
 
-func NewMapTask(split string, workersAddresses []string) *ReplicatedMapTask {
+func NewMapTask(split string, workerGroupId int) *MapTask {
 
-	output := new(ReplicatedMapTask)
+	output := new(MapTask)
 
-	(*output).workersReplyChannel = make(chan workerReply)
-	(*output).faultToleranceLevel = faultToleranceLevel
-	(*output).currentWorkerID = 0
-	(*output).workersAddresses = workersAddresses
-	(*output).registry = registry.NewMapReply(faultToleranceLevel + 1)
+	(*output).mapTaskOutput = new(MapTaskOutput)
+	(*(*output).mapTaskOutput).IdGroup = workerGroupId
+	(*output).workersReplyChannel = make(chan *wordcount.MapOutput)
+	(*output).faultToleranceLevel = 1
+	(*output).requestSend = 0
+	(*output).workersAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
+	(*output).registry = registry.NewMapReply((*output).faultToleranceLevel + 1)
 	(*output).split = split
 
 	return output
 }
 
-func (obj *ReplicatedMapTask) Execute() (string, []string) {
+func (obj *MapTask) Execute() *MapTaskOutput {
 
 	defer close((*obj).workersReplyChannel)
 
-	numberOfReply := 0
-
-	for ; (*obj).currentWorkerID <= (*obj).faultToleranceLevel; (*obj).currentWorkerID++ {
-		go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
+	for ; (*obj).requestSend <= (*obj).faultToleranceLevel; (*obj).requestSend++ {
+		go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
 	}
+
+	(*obj).startListeningWorkersReplies()
+
+	digest, nodeIds, mappedDataSizes := (*obj).registry.GetMostMatchedReply()
+
+	(*(*obj).mapTaskOutput).ReplayDigest = digest
+	(*(*obj).mapTaskOutput).MappedDataSizes = mappedDataSizes
+	(*(*obj).mapTaskOutput).NodeIdsWithCorrectResult = nodeIds
+
+	return (*obj).mapTaskOutput
+}
+
+func (obj *MapTask) startListeningWorkersReplies() {
+
+	numberOfReply := 0
 
 	for reply := range (*obj).workersReplyChannel {
 
-		if (*obj).repliesRegistry.AddWorkerResponse(reply.digest, reply.workerAddress) {
-			break
-		}
-
-		numberOfReply++
-
-		if numberOfReply >= (*obj).faultToleranceLevel+1 {
-			(*obj).currentWorkerID++
-			go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
-		}
-	}
-
-	return (*obj).repliesRegistry.GetMostMatchedWorkerResponse()
-}
-
-func (obj *ReplicatedMapTask) startListeningWorkersReplies() {
-
-	numberOfReply := 0
-
-	for response := range (*obj).workersReplyChannel {
-
-		if (*obj).repliesRegistry.AddWorkerResponse(response.digest, response.workerAddress) {
+		if (*obj).registry.Add(reply.ReplayDigest, reply.IdNode, reply.MappedDataSizes) {
 			return
 		}
 
 		numberOfReply++
 
 		if numberOfReply >= (*obj).faultToleranceLevel+1 {
-			(*obj).currentWorkerID++
-			go executeSingleMapTaskReplica((*obj).inputSplit, (*obj).workersAddresses[(*obj).currentWorkerID], (*obj).workersReplyChannel)
+			(*obj).requestSend++
+			go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
 		}
 	}
 }
 
-func executeSingleMapTaskReplica(split string, address string, reply chan workerReply) {
+func executeSingleMapTaskReplica(split string, fullRPCInternetAddress string, reply chan *wordcount.MapOutput) {
 
-	var workerInput wordcount.MapInput
-	var workerOutput wordcount.MapOutput
+	input := new(wordcount.MapInput)
+	output := new(wordcount.MapOutput)
 
-	worker, err := rpc.Dial("tcp", address)
+	(*input).Text = split
+
+	worker, err := rpc.Dial("tcp", fullRPCInternetAddress)
 	utility.CheckError(err)
 
-	workerInput.text = middleInput
-
-	err = worker.Call("Replica.Execute", &workerInput, &workerOutput)
-
+	err = worker.Call("Map.Execute", input, output)
 	if err == nil {
-
-		output := new(workerReply)
-		(*output).workerAddress = address
-		(*output).digest = workerOutput.Digest
-
-		reply <- *output
+		reply <- output
 	}
 }

@@ -51,3 +51,7 @@ func sendDataToWorker(data *WordTokenList.WordTokenList, dataDigest string, rece
 		utility.CheckError(worker.Close())
 	}
 }
+
+func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverGroupId, dataDigest string) {
+
+}

@@ -137,7 +137,7 @@ func (obj *Client) RegisterNodeMembership(nodeId int, groupId int, internetAddre
 	}
 }
 
-func (obj *Client) GetWorkerInternetAddressesForRPC(groupId int, baseRPCPort int) map[int]string {
+func (obj *Client) GetMappedWorkerInternetAddressesForRPC(groupId int, baseRPCPort int) map[int]string {
 
 	output := make(map[int]string)
 	parentZNodePath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, groupId)
@@ -152,6 +152,20 @@ func (obj *Client) GetWorkerInternetAddressesForRPC(groupId int, baseRPCPort int
 		internetAddresses := fmt.Sprintf("%s:%d", string(rawInternetAddresses), nodeId+baseRPCPort)
 
 		output[nodeId] = internetAddresses
+	}
+
+	return output
+}
+
+func (obj *Client) GetWorkerInternetAddressesForRPC(groupId int, baseRPCPort int) []string {
+
+	index := 0
+	mappedWorkerInternetAddresses := (*obj).GetMappedWorkerInternetAddressesForRPC(groupId, baseRPCPort)
+	output := make([]string, len(mappedWorkerInternetAddresses))
+
+	for _, value := range mappedWorkerInternetAddresses {
+		output[index] = value
+		index++
 	}
 
 	return output
