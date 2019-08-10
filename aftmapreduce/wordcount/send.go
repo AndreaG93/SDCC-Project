@@ -52,6 +52,6 @@ func sendDataToWorker(data *WordTokenList.WordTokenList, dataDigest string, rece
 	}
 }
 
-func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverGroupId, dataDigest string) {
+func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverGroupId int, dataDigest string) {
 
 }

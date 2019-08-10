@@ -64,11 +64,3 @@ func Test_AmazonS3BasicOperationsWithTemporaryFile(t *testing.T) {
 
 	(*amazonS3Client).Delete(testKeyName)
 }
-
-func Test_deletion(t *testing.T){
-
-	amazonS3Client := New()
-
-	amazonS3Client.Delete("NotExistentTest")
-
-}

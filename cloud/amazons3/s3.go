@@ -80,8 +80,6 @@ func (obj *S3Client) Delete(key string) {
 			utility.CheckError(err)
 		}
 	}
-
-
 	err = amazonS3Service.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(AmazonS3BucketName),
 		Key:    aws.String(key),

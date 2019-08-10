@@ -171,6 +171,25 @@ func (obj *Client) GetWorkerInternetAddressesForRPC(groupId int, baseRPCPort int
 	return output
 }
 
+func (obj *Client) GetWorkerInternetAddressesForRPCWithIdConstraints(groupId int, baseRPCPort int, requiredId []int) []string {
+
+	mappedWorkerInternetAddresses := (*obj).GetMappedWorkerInternetAddressesForRPC(groupId, baseRPCPort)
+
+	for id := range requiredId {
+		delete(mappedWorkerInternetAddresses, id)
+	}
+
+	index := 0
+	output := make([]string, len(mappedWorkerInternetAddresses))
+
+	for _, value := range mappedWorkerInternetAddresses {
+		output[index] = value
+		index++
+	}
+
+	return output
+}
+
 func (obj *Client) GetGroupAmount() int {
 
 	groups, _ := (*obj).getChildrenZNode(membershipZNodeRootPath)

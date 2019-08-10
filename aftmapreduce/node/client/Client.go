@@ -15,14 +15,14 @@ import (
 
 func sendRequest(digestFile string, internetAddress string) {
 
-	input := new(wordcount.EntryPointInput)
-	output := new(wordcount.EntryPointOutput)
+	input := new(wordcount.RequestInput)
+	output := new(wordcount.RequestOutput)
 
 	inputData := new(wordcount.Input)
 	(*inputData).FileDigest = digestFile
 	(*inputData).MapCardinality = 5
 
-	input.Data = inputData
+	input. = inputData
 
 	gob.Register(wordcount.Input{})
 
