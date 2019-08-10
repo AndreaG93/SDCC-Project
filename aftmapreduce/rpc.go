@@ -7,9 +7,11 @@ import (
 )
 
 const (
-	MapReduceRPCBasePort        = 20000
-	MapReduceGetRPCBasePort     = 30000
-	MapReduceRequestRPCBasePort = 40000
+	WordCountMapTaskRPCBasePort    = 20000
+	WordCountReduceTaskRPCBasePort = 30000
+	WordCountReceiveRPCBasePort    = 40000
+	WordCountRequestRPCBasePort    = 50000
+	WordCountSendRPCBasePort       = 60000
 )
 
 func StartAcceptingRPCRequest(serviceTypeRequest interface{}, address string) {

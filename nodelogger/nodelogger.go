@@ -1,7 +1,7 @@
 package nodelogger
 
 import (
-	"fmt"
+	"SDCC-Project/aftmapreduce/node"
 	"github.com/Sirupsen/logrus"
 	"os"
 )
@@ -11,12 +11,12 @@ type Logger struct {
 	log  *logrus.Logger
 }
 
-func New(nodeID int, nodeType string) *Logger {
+func New() *Logger {
+
 	output := new(Logger)
 	(*output).log = logrus.New()
-	(*output).node = fmt.Sprintf("%s %d", nodeType, nodeID)
 
-	file, err := os.OpenFile(fmt.Sprintf("%s-%d.log", nodeType, nodeID), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile("./log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		(*output).log.Out = file
 	} else {
@@ -27,9 +27,9 @@ func New(nodeID int, nodeType string) *Logger {
 }
 
 func (obj *Logger) PrintMessage(message string) {
-	(*obj).log.Infof("%s :--> %s", (*obj).node, message)
+	(*obj).log.Infof("%s-%d :--> %s", node.GetStringProperty(node.TypeStringProperty), node.GetIntegerProperty(node.IDIntegerProperty), message)
 }
 
 func (obj *Logger) InvalidArgumentValue(argumentName string, argumentValue string) {
-	(*obj).log.Infof("%s :--> Invalid value for argument: %s: %v", (*obj).node, argumentName, argumentValue)
+	(*obj).log.Infof("%s-%d :--> Invalid value for argument: %s: %v", node.GetStringProperty(node.TypeStringProperty), node.GetIntegerProperty(node.IDIntegerProperty), argumentName, argumentValue)
 }

@@ -2,48 +2,36 @@ package primary
 
 import (
 	"SDCC-Project/aftmapreduce"
-	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/wordcount"
 	"encoding/gob"
 	"fmt"
 )
 
-type Primary struct {
-	id                         int
-	mapReduceRequestRPCAddress string
-	isLeader                   chan bool
+func Initialize(id int, internetAddress string, zookeeperAddresses []string) {
+
+	node.Initialize(zookeeperAddresses)
+
+	node.SetProperty(property.NodeID, id)
+	node.SetProperty(property.NodeType, "Primary")
+	node.SetProperty(property.InternetAddress, internetAddress)
+	node.SetProperty(property.MapCardinality, node.GetZookeeperClient().GetGroupAmount())
+	node.SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountRequestRPCBasePort+id))
 }
 
-func New(id int, internetAddress string, zookeeperAddresses []string) *Primary {
+func StartWork() {
 
-	output := new(Primary)
+	isLeader := make(chan bool)
 
-	node.Initialize(id, "Primary", zookeeperAddresses)
+	go node.GetZookeeperClient().RunAsLeaderCandidate(isLeader, node.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
 
-	(*output).id = id
-	(*output).mapReduceRequestRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceRequestRPCBasePort+id)
-	(*output).isLeader = make(chan bool)
-
-	return output
-}
-
-func (obj *Primary) StartWork() {
-
-	go node.GetZookeeperClient().RunAsLeaderCandidate((*obj).isLeader, (*obj).mapReduceRequestRPCAddress)
-
-	<-(*obj).isLeader
+	<-isLeader
 
 	node.GetLogger().PrintMessage("I'm leader")
 
-	gob.Register(wordcount.Input{})
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
 
-	aftmapreduce.InitNeededZNodePathsToManageClientsRequests()
-
-	for _, item := range aftmapreduce.GetPendingClientsRequests() {
-		go aftmapreduce.ManageClientRequest(item)
-	}
-
-	aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.EntryPoint{}, (*obj).mapReduceRequestRPCAddress)
+	aftmapreduce.StartAcceptingRPCRequest(&wordcount.Request{}, node.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
 }

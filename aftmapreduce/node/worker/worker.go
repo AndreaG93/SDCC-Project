@@ -2,41 +2,38 @@ package worker
 
 import (
 	"SDCC-Project/aftmapreduce"
-	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/wordcount"
 	"encoding/gob"
 	"fmt"
 )
 
-type Worker struct {
-	id                     int
-	internetAddress        string
-	mapReduceRPCAddress    string
-	mapReduceGetRPCAddress string
+func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses []string) {
+
+	node.Initialize(zookeeperAddresses)
+
+	node.SetProperty(property.NodeID, id)
+	node.SetProperty(property.NodeGroupID, groupId)
+	node.SetProperty(property.NodeType, "Worker")
+	node.SetProperty(property.InternetAddress, internetAddress)
+
+	node.SetProperty(property.WordCountMapRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountMapTaskRPCBasePort+id))
+	node.SetProperty(property.WordCountReduceRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReduceTaskRPCBasePort+id))
+	node.SetProperty(property.WordCountReceiveRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReceiveRPCBasePort+id))
+	node.SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountSendRPCBasePort+id))
 }
 
-func New(id int, internetAddress string, zookeeperAddresses []string) *Worker {
-
-	output := new(Worker)
-
-	node.Initialize(id, "Worker", zookeeperAddresses)
-
-	(*output).id = id
-	(*output).internetAddress = internetAddress
-	(*output).mapReduceRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceRPCBasePort+id)
-	(*output).mapReduceGetRPCAddress = fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.MapReduceGetRPCBasePort+id)
-
-	return output
-}
-
-func (obj *Worker) StartWork() {
+func StartWork() {
 
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
 
-	go aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.Replica{}, (*obj).mapReduceRPCAddress)
-	go aftmapreduce.StartAcceptingRPCRequest(&aftmapreduce.DataRetriever{}, (*obj).mapReduceGetRPCAddress)
+	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Map{}, node.GetPropertyAsString(property.WordCountMapRPCFullAddress))
+	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Reduce{}, node.GetPropertyAsString(property.WordCountReduceRPCFullAddress))
+	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Receive{}, node.GetPropertyAsString(property.WordCountReceiveRPCFullAddress))
+	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Send{}, node.GetPropertyAsString(property.WordCountSendRPCFullAddress))
 
-	node.GetZookeeperClient().RegisterNodeMembership((*obj).id, (*obj).internetAddress)
+	node.GetZookeeperClient().RegisterNodeMembership(node.GetPropertyAsInteger(property.NodeID), node.GetPropertyAsInteger(property.NodeGroupID), node.GetPropertyAsString(property.InternetAddress))
 	node.GetZookeeperClient().KeepConnectionAlive()
 }

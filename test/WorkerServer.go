@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 func helloWorldHandler(w http.ResponseWriter, r *http.Request) {
@@ -11,6 +12,7 @@ func helloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(msg)
 
 	response := fmt.Sprintf("Hello, World! at Path: %s", r.URL.Path)
+	time.Sleep(30 * time.Second)
 	fmt.Fprintf(w, response)
 }
 

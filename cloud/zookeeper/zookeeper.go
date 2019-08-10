@@ -101,40 +101,11 @@ func (obj *Client) CloseConnection() {
 	(*obj).zooKeeperConnection.Close()
 }
 
-func (obj *Client) GetMembersInternetAddress() map[int]string {
+func (obj *Client) getChildrenZNode(parentZNode string) ([]string, <-chan zk.Event) {
 
-	members, _ := (*obj).GetMembersList()
-	membersInternetAddress := make(map[int]string)
-
-	for _, element := range members {
-
-		path := fmt.Sprintf("%s/%s", membershipZNodeRootPath, element)
-		rawData, _ := (*obj).GetZNodeData(path)
-		memberID, err := strconv.Atoi(element)
-		utility.CheckError(err)
-
-		membersInternetAddress[memberID] = string(rawData)
-	}
-
-	return membersInternetAddress
-}
-
-func (obj *Client) GetMembersList() ([]string, <-chan zk.Event) {
-
-	data, _, channel, err := (*obj).zooKeeperConnection.ChildrenW(membershipZNodeRootPath)
+	data, _, channel, err := (*obj).zooKeeperConnection.ChildrenW(parentZNode)
 	utility.CheckError(err)
 	return data, channel
-}
-
-func (obj *Client) RegisterNodeMembership(nodeID int, internetAddress string) {
-
-	path := fmt.Sprintf("%s/%d", membershipZNodeRootPath, nodeID)
-
-	if !(*obj).CheckZNodeExistence(path) {
-		(*obj).CreateZNode(path, []byte(internetAddress), zk.FlagEphemeral)
-	} else {
-		(*obj).SetZNodeData(path, []byte(internetAddress))
-	}
 }
 
 func (obj *Client) KeepConnectionAlive() {
@@ -148,4 +119,46 @@ func (obj *Client) GetChildrenList(zNodePath string) []string {
 	output, _, err := (*obj).zooKeeperConnection.Children(zNodePath)
 	utility.CheckError(err)
 	return output
+}
+
+func (obj *Client) RegisterNodeMembership(nodeId int, groupId int, internetAddress string) {
+
+	groupPath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, groupId)
+	nodePath := fmt.Sprintf("%s/%d", groupPath, nodeId)
+
+	if !(*obj).CheckZNodeExistence(groupPath) {
+		(*obj).CreateZNode(groupPath, nil, 0)
+	} else {
+		if !(*obj).CheckZNodeExistence(nodePath) {
+			(*obj).CreateZNode(nodePath, []byte(internetAddress), zk.FlagEphemeral)
+		} else {
+			(*obj).SetZNodeData(nodePath, []byte(internetAddress))
+		}
+	}
+}
+
+func (obj *Client) GetWorkerInternetAddressesForRPC(groupId int, baseRPCPort int) map[int]string {
+
+	output := make(map[int]string)
+	parentZNodePath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, groupId)
+	group, _ := (*obj).getChildrenZNode(parentZNodePath)
+
+	for _, element := range group {
+
+		nodeId, err := strconv.Atoi(element)
+		utility.CheckError(err)
+
+		rawInternetAddresses, _ := (*obj).GetZNodeData(fmt.Sprintf("%s/%s", parentZNodePath, element))
+		internetAddresses := fmt.Sprintf("%s:%d", string(rawInternetAddresses), nodeId+baseRPCPort)
+
+		output[nodeId] = internetAddresses
+	}
+
+	return output
+}
+
+func (obj *Client) GetGroupAmount() int {
+
+	groups, _ := (*obj).getChildrenZNode(membershipZNodeRootPath)
+	return len(groups)
 }

@@ -3,5 +3,6 @@ package worker
 import "testing"
 
 func Test_worker1(t *testing.T) {
-	New(1, "127.0.0.1", []string{"127.0.0.1"}).StartWork()
+	Initialize(1, 1, "127.0.0.1", []string{"127.0.0.1:2181"})
+	StartWork()
 }

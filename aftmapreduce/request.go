@@ -2,8 +2,8 @@ package aftmapreduce
 
 import (
 	"SDCC-Project/aftmapreduce/data"
-	"SDCC-Project/aftmapreduce/implementations/wordcount"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
 	"fmt"

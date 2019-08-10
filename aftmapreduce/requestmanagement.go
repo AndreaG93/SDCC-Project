@@ -3,6 +3,7 @@ package aftmapreduce
 import (
 	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/cloud/amazons3"
 	"SDCC-Project/utility"
 	"fmt"
@@ -106,8 +107,8 @@ func retrieveDataFromWorker(digest string, workersAddresses []string) []byte {
 
 	for _, address := range workersAddresses {
 
-		var input DataRetrieverInput
-		var output DataRetrieverOutput
+		var input wordcount.DataRetrieverInput
+		var output wordcount.DataRetrieverOutput
 
 		input.Digest = digest
 
