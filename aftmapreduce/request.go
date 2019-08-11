@@ -1,5 +1,6 @@
 package aftmapreduce
 
+/*
 import (
 	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/node"
@@ -32,7 +33,7 @@ type Request struct {
 }
 
 func NewRequest(clientData *data.ClientData) *Request {
-	/*gfdgfdgd*/
+
 	output := new(Request)
 
 	(*output).digest = (*clientData).GetDigest()
@@ -147,3 +148,4 @@ func getClientDataFromName(zookeeperClient *zookeeper.Client, zNodePathRawClient
 
 	return &output
 }
+*/

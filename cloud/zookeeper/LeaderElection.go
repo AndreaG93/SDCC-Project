@@ -43,7 +43,7 @@ func (obj *Client) getCandidates() []string {
 	return output
 }
 
-func (obj *Client) GetCurrentLeaderInternetAddress() (string, error) {
+func (obj *Client) GetCurrentLeaderRequestRPCInternetAddress() (string, error) {
 
 	candidates := (*obj).getCandidates()
 	if len(candidates) == 0 {

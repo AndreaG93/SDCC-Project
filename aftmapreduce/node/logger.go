@@ -1,7 +1,7 @@
-package nodelogger
+package node
 
 import (
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/node/property"
 	"github.com/Sirupsen/logrus"
 	"os"
 )
@@ -27,9 +27,9 @@ func New() *Logger {
 }
 
 func (obj *Logger) PrintMessage(message string) {
-	(*obj).log.Infof("%s-%d :--> %s", node.GetStringProperty(node.TypeStringProperty), node.GetIntegerProperty(node.IDIntegerProperty), message)
+	(*obj).log.Infof("%s-%d :--> %s", GetPropertyAsString(property.NodeType), GetPropertyAsInteger(property.NodeID), message)
 }
 
 func (obj *Logger) InvalidArgumentValue(argumentName string, argumentValue string) {
-	(*obj).log.Infof("%s-%d :--> Invalid value for argument: %s: %v", node.GetStringProperty(node.TypeStringProperty), node.GetIntegerProperty(node.IDIntegerProperty), argumentName, argumentValue)
+	(*obj).log.Infof("%s-%d :--> Invalid value for argument: %s: %v", GetPropertyAsString(property.NodeType), GetPropertyAsInteger(property.NodeID), argumentName, argumentValue)
 }

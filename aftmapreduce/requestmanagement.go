@@ -1,5 +1,6 @@
 package aftmapreduce
 
+/*
 import (
 	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/node"
@@ -126,3 +127,4 @@ func retrieveDataFromWorker(digest string, workersAddresses []string) []byte {
 	}
 	return nil
 }
+*/

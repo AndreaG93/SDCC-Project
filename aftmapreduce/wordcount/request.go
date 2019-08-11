@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
-	"SDCC-Project/aftmapreduce/wordcount/aft"
 	"fmt"
 	"sync"
 )
@@ -27,7 +26,7 @@ func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 func manageRequest(digest string) {
 
 	splits := getSplits(digest, node.GetPropertyAsInteger(property.MapCardinality))
-	arbitraryFaultTolerantMapTaskOutput := make([]*aft.MapTaskOutput, len(splits))
+	arbitraryFaultTolerantMapTaskOutput := make([]*MapTaskOutput, len(splits))
 
 	var mapWaitGroup sync.WaitGroup
 
@@ -37,7 +36,7 @@ func manageRequest(digest string) {
 
 		go func(index int, mapWaitGroup *sync.WaitGroup) {
 
-			arbitraryFaultTolerantMapTaskOutput[index] = aft.NewMapTask(split, index).Execute()
+			arbitraryFaultTolerantMapTaskOutput[index] = NewMapTask(split, index).Execute()
 			mapWaitGroup.Done()
 
 		}(index, &mapWaitGroup)
@@ -47,7 +46,7 @@ func manageRequest(digest string) {
 	fmt.Println(arbitraryFaultTolerantMapTaskOutput)
 }
 
-func startLocalityAwareShuffling(mapTaskOutput []*aft.MapTaskOutput) {
+func startLocalityAwareShuffling(mapTaskOutput []*MapTaskOutput) {
 
 	var bestGroupId int
 	var maxDataSize int

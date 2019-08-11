@@ -1,10 +1,9 @@
-package aft
+package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/registry"
-	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/utility"
 	"net/rpc"
 )
@@ -18,7 +17,7 @@ type MapTaskOutput struct {
 
 type MapTask struct {
 	mapTaskOutput       *MapTaskOutput
-	workersReplyChannel chan *wordcount.MapOutput
+	workersReplyChannel chan *MapOutput
 	faultToleranceLevel int
 	requestSend         int
 	workersAddresses    []string
@@ -32,7 +31,7 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 
 	(*output).mapTaskOutput = new(MapTaskOutput)
 	(*(*output).mapTaskOutput).IdGroup = workerGroupId
-	(*output).workersReplyChannel = make(chan *wordcount.MapOutput)
+	(*output).workersReplyChannel = make(chan *MapOutput)
 	(*output).faultToleranceLevel = 1
 	(*output).requestSend = 0
 	(*output).workersAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
@@ -80,10 +79,10 @@ func (obj *MapTask) startListeningWorkersReplies() {
 	}
 }
 
-func executeSingleMapTaskReplica(split string, fullRPCInternetAddress string, reply chan *wordcount.MapOutput) {
+func executeSingleMapTaskReplica(split string, fullRPCInternetAddress string, reply chan *MapOutput) {
 
-	input := new(wordcount.MapInput)
-	output := new(wordcount.MapOutput)
+	input := new(MapInput)
+	output := new(MapOutput)
 
 	(*input).Text = split
 

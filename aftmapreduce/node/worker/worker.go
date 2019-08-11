@@ -22,12 +22,13 @@ func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses 
 	node.SetProperty(property.WordCountReduceRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReduceTaskRPCBasePort+id))
 	node.SetProperty(property.WordCountReceiveRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReceiveRPCBasePort+id))
 	node.SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountSendRPCBasePort+id))
-}
-
-func StartWork() {
 
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
+	gob.Register(wordcount.Send{})
+}
+
+func StartWork() {
 
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Map{}, node.GetPropertyAsString(property.WordCountMapRPCFullAddress))
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Reduce{}, node.GetPropertyAsString(property.WordCountReduceRPCFullAddress))

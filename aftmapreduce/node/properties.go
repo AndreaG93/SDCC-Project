@@ -4,11 +4,10 @@ import (
 	"SDCC-Project/aftmapreduce/registry"
 	"SDCC-Project/cloud/amazons3"
 	"SDCC-Project/cloud/zookeeper"
-	"SDCC-Project/nodelogger"
 )
 
 var zookeeperClient *zookeeper.Client
-var logger *nodelogger.Logger
+var logger *Logger
 var cache *registry.Registry
 var properties map[string]interface{}
 var amazonS3Client *amazons3.S3Client
@@ -16,7 +15,7 @@ var amazonS3Client *amazons3.S3Client
 func Initialize(zookeeperAddresses []string) {
 
 	zookeeperClient = zookeeper.New(zookeeperAddresses)
-	logger = nodelogger.New()
+	logger = New()
 	cache = registry.New()
 	properties = make(map[string]interface{})
 	amazonS3Client = amazons3.New()
@@ -26,7 +25,7 @@ func GetZookeeperClient() *zookeeper.Client {
 	return zookeeperClient
 }
 
-func GetLogger() *nodelogger.Logger {
+func GetLogger() *Logger {
 	return logger
 }
 

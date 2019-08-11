@@ -94,7 +94,7 @@ func (obj *WordTokenHashTable) Serialize() ([]byte, error) {
 	var output []WordToken.WordToken
 	var currentWordTokenList *WordTokenList.WordTokenList
 	var currentWordToken *WordToken.WordToken
-	totalNumberOfWordToken := uint(0)
+	totalNumberOfWordToken := 0
 
 	for index := uint(0); index < (*obj).hashTableSize; index++ {
 

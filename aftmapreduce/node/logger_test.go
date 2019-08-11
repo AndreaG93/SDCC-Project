@@ -1,4 +1,4 @@
-package nodelogger
+package node
 
 import "testing"
 

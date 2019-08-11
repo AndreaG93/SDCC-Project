@@ -13,7 +13,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 
 	initialize(zookeeperAddresses)
 
-	currentLeaderInternetAddress, err := node.GetZookeeperClient().GetCurrentLeaderInternetAddress()
+	currentLeaderInternetAddress, err := node.GetZookeeperClient().GetCurrentLeaderRequestRPCInternetAddress()
 	utility.CheckError(err)
 
 	sourceFileDigest, err := utility.GenerateDigestOfFileUsingSHA512(sourceFilePath)
