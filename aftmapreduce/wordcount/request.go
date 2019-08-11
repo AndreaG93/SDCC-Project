@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
-	"fmt"
 	"sync"
 )
 
@@ -45,39 +44,45 @@ func manageRequest(digest string) {
 	}
 
 	mapWaitGroup.Wait()
-	fmt.Println(arbitraryFaultTolerantMapTaskOutput)
+
+	mapping := getReduceTaskIndexMappedToBestGroupIndex(arbitraryFaultTolerantMapTaskOutput)
+
+	startLocalityAwareShuffling(arbitraryFaultTolerantMapTaskOutput, mapping)
 }
 
-func startLocalityAwareShuffling(mapTaskOutput []*MapTaskOutput) {
+func getReduceTaskIndexMappedToBestGroupIndex(mapTaskOutput []*MapTaskOutput) map[int]int {
 
-	var bestGroupId int
-	var maxDataSize int
+	output := make(map[int]int)
 
-	reduceTaskAmount := len(mapTaskOutput)
+	for reduceTaskIndex := 0; reduceTaskIndex < len(mapTaskOutput); reduceTaskIndex++ {
 
-	for index := 0; index < reduceTaskAmount; index++ {
-
-		maxDataSize = 0
-		bestGroupId = 0
+		maxDataSize := 0
 
 		for _, reply := range mapTaskOutput {
 
-			currentDataSize := (*reply).MappedDataSizes[index]
+			currentDataSize := (*reply).MappedDataSizes[reduceTaskIndex]
 
 			if currentDataSize > maxDataSize {
 				maxDataSize = currentDataSize
-				bestGroupId = (*reply).IdGroup
+				output[reduceTaskIndex] = (*reply).IdGroup
 			}
 		}
+	}
 
-		for _, reply := range mapTaskOutput {
+	return output
+}
 
-			if (*reply).IdGroup == bestGroupId {
-				continue
-			} else {
+func startLocalityAwareShuffling(mapTaskOutput []*MapTaskOutput, reduceTaskMappedToBestGroupId map[int]int) {
 
+	for reduceTaskIndex, bestGroupId := range reduceTaskMappedToBestGroupId {
+
+		receiverNodeId := (*mapTaskOutput[bestGroupId]).NodeIdsWithCorrectResult
+
+		for _, mapOutput := range mapTaskOutput {
+
+			if (*mapOutput).IdGroup != bestGroupId {
+				sendDataTask((*mapOutput).NodeIdsWithCorrectResult, (*mapOutput).IdGroup, receiverNodeId, bestGroupId, (*mapOutput).ReplayDigest, reduceTaskIndex)
 			}
-
 		}
 	}
 }

@@ -2,11 +2,11 @@ package test
 
 import (
 	"fmt"
-	"math"
+	"math/rand"
 	"testing"
 )
 
 func Test_startWork(t *testing.T) {
 
-	fmt.Println(int(math.Floor(float64((2)-1) / 2)))
+	fmt.Println(rand.Intn(100))
 }

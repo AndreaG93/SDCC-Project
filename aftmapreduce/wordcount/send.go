@@ -1,6 +1,7 @@
 package wordcount
 
 import (
+	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
@@ -52,6 +53,27 @@ func sendDataToWorker(data *WordTokenList.WordTokenList, dataDigest string, rece
 	}
 }
 
-func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverGroupId int, dataDigest string) {
+func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int, receiverGroupId int, dataDigest string, receiverReduceTaskId int) {
 
+	senderInternetAddresses := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(sourceGroupId, aftmapreduce.WordCountSendRPCBasePort, sourceNodeIds)
+	receiverInternetAddresses := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(receiverGroupId, aftmapreduce.WordCountReceiveRPCBasePort, receiverNodeIds)
+
+	for _, sender := range senderInternetAddresses {
+
+		input := new(SendInput)
+		output := new(SendOutput)
+
+		(*input).SourceDataDigest = dataDigest
+		(*input).WordTokenListIndex = receiverReduceTaskId
+		(*input).receiversInternetAddresses = receiverInternetAddresses
+
+		worker, err := rpc.Dial("tcp", sender)
+		utility.CheckError(err)
+
+		err = worker.Call("Send.Execute", input, output)
+		utility.CheckError(worker.Close())
+		if err == nil {
+			return
+		}
+	}
 }
