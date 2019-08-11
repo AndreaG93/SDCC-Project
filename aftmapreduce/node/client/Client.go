@@ -1,35 +1,46 @@
 package client
 
 import (
-	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
-	"SDCC-Project/cloud/amazons3"
 	"SDCC-Project/utility"
 	"encoding/gob"
-	"fmt"
-	"github.com/samuel/go-zookeeper/zk"
 	"net/rpc"
 )
 
-func sendRequest(digestFile string, internetAddress string) {
+func StartWork(sourceFilePath string, zookeeperAddresses []string) {
+
+	initialize(zookeeperAddresses)
+
+	currentLeaderInternetAddress, err := node.GetZookeeperClient().GetCurrentLeaderInternetAddress()
+	utility.CheckError(err)
+
+	sourceFileDigest, err := utility.GenerateDigestOfFileUsingSHA512(sourceFilePath)
+	utility.CheckError(err)
+
+	node.GetAmazonS3Client().Upload(sourceFilePath, sourceFileDigest)
+
+	sendRequestToCurrentLeader(sourceFileDigest, currentLeaderInternetAddress)
+}
+
+func initialize(zookeeperAddresses []string) {
+	node.Initialize(zookeeperAddresses)
+
+	gob.Register(wordcount.Request{})
+}
+
+func sendRequestToCurrentLeader(sourceFileDigest string, currentLeaderInternetAddress string) {
 
 	input := new(wordcount.RequestInput)
 	output := new(wordcount.RequestOutput)
 
-	inputData := new(wordcount.Input)
-	(*inputData).FileDigest = digestFile
-	(*inputData).MapCardinality = 5
+	(*input).SourceFileDigest = sourceFileDigest
 
-	input. = inputData
-
-	gob.Register(wordcount.Input{})
-
-	client, err := rpc.Dial("tcp", internetAddress)
+	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
 	utility.CheckError(err)
 
-	err = client.Call("EntryPoint.Execute", &input, &output)
+	err = client.Call("Request.Execute", &input, &output)
 	utility.CheckError(err)
 }
 
@@ -40,7 +51,8 @@ func printResult(rawData []byte) {
 	result.Print()
 }
 
-func StartWork(filename string, zookeeperAddresses []string) {
+/*
+func kkStartWork(filename string, zookeeperAddresses []string) {
 
 	var rawData []byte
 	var watcher <-chan zk.Event
@@ -85,4 +97,4 @@ func StartWork(filename string, zookeeperAddresses []string) {
 
 	rawData, _ = node.GetZookeeperClient().GetZNodeData(path)
 	printResult(rawData)
-}
+}*/

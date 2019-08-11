@@ -12,7 +12,7 @@ type Request struct {
 }
 
 type RequestInput struct {
-	SourceDataDigest string
+	SourceFileDigest string
 }
 
 type RequestOutput struct {
@@ -20,7 +20,7 @@ type RequestOutput struct {
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
-	go manageRequest(input.SourceDataDigest)
+	go manageRequest(input.SourceFileDigest)
 	return nil
 }
 
