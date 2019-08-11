@@ -25,21 +25,23 @@ func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
 func manageRequest(digest string) {
 
+	node.SetProperty(property.MapCardinality, node.GetZookeeperClient().GetGroupAmount())
+
 	splits := getSplits(digest, node.GetPropertyAsInteger(property.MapCardinality))
 	arbitraryFaultTolerantMapTaskOutput := make([]*MapTaskOutput, len(splits))
 
 	var mapWaitGroup sync.WaitGroup
 
-	for index, split := range splits {
+	for groupId, split := range splits {
 
 		mapWaitGroup.Add(1)
 
-		go func(index int, mapWaitGroup *sync.WaitGroup) {
+		go func(mySplit string, myGroupId int, mapWaitGroup *sync.WaitGroup) {
 
-			arbitraryFaultTolerantMapTaskOutput[index] = NewMapTask(split, index).Execute()
+			arbitraryFaultTolerantMapTaskOutput[myGroupId] = NewMapTask(mySplit, myGroupId).Execute()
 			mapWaitGroup.Done()
 
-		}(index, &mapWaitGroup)
+		}(split, groupId, &mapWaitGroup)
 	}
 
 	mapWaitGroup.Wait()

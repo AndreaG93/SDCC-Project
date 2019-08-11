@@ -159,13 +159,20 @@ func (obj *Client) GetMappedWorkerInternetAddressesForRPC(groupId int, baseRPCPo
 
 func (obj *Client) GetWorkerInternetAddressesForRPC(groupId int, baseRPCPort int) []string {
 
-	index := 0
-	mappedWorkerInternetAddresses := (*obj).GetMappedWorkerInternetAddressesForRPC(groupId, baseRPCPort)
-	output := make([]string, len(mappedWorkerInternetAddresses))
+	parentZNodePath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, groupId)
+	availableWorkerNodes, _ := (*obj).getChildrenZNode(parentZNodePath)
 
-	for _, value := range mappedWorkerInternetAddresses {
-		output[index] = value
-		index++
+	output := make([]string, len(availableWorkerNodes))
+
+	for index, element := range availableWorkerNodes {
+
+		nodeId, err := strconv.Atoi(element)
+		utility.CheckError(err)
+
+		rawInternetAddresses, _ := (*obj).GetZNodeData(fmt.Sprintf("%s/%s", parentZNodePath, element))
+		internetAddresses := fmt.Sprintf("%s:%d", string(rawInternetAddresses), nodeId+baseRPCPort)
+
+		output[index] = internetAddresses
 	}
 
 	return output

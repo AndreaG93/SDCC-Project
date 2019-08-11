@@ -19,7 +19,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	sourceFileDigest, err := utility.GenerateDigestOfFileUsingSHA512(sourceFilePath)
 	utility.CheckError(err)
 
-	node.GetAmazonS3Client().Upload(sourceFilePath, sourceFileDigest)
+	//node.GetAmazonS3Client().Upload(sourceFilePath, sourceFileDigest)
 
 	sendRequestToCurrentLeader(sourceFileDigest, currentLeaderInternetAddress)
 }

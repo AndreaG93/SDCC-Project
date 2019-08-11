@@ -3,8 +3,10 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/registry"
 	"SDCC-Project/utility"
+	"math"
 	"net/rpc"
 )
 
@@ -32,11 +34,11 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 	(*output).mapTaskOutput = new(MapTaskOutput)
 	(*(*output).mapTaskOutput).IdGroup = workerGroupId
 	(*output).workersReplyChannel = make(chan *MapOutput)
-	(*output).faultToleranceLevel = 1
 	(*output).requestSend = 0
 	(*output).workersAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
 	(*output).registry = registry.NewMapReply((*output).faultToleranceLevel + 1)
 	(*output).split = split
+	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workersAddresses) - 1) / 2)))
 
 	return output
 }
@@ -85,6 +87,7 @@ func executeSingleMapTaskReplica(split string, fullRPCInternetAddress string, re
 	output := new(MapOutput)
 
 	(*input).Text = split
+	(*input).MappingCardinality = node.GetPropertyAsInteger(property.MapCardinality)
 
 	worker, err := rpc.Dial("tcp", fullRPCInternetAddress)
 	utility.CheckError(err)

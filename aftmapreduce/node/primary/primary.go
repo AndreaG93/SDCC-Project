@@ -16,7 +16,6 @@ func Initialize(id int, internetAddress string, zookeeperAddresses []string) {
 	node.SetProperty(property.NodeID, id)
 	node.SetProperty(property.NodeType, "Primary")
 	node.SetProperty(property.InternetAddress, internetAddress)
-	node.SetProperty(property.MapCardinality, node.GetZookeeperClient().GetGroupAmount())
 	node.SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountRequestRPCBasePort+id))
 }
 
@@ -33,5 +32,6 @@ func StartWork() {
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
 
+	go node.GetZookeeperClient().KeepConnectionAlive()
 	aftmapreduce.StartAcceptingRPCRequest(&wordcount.Request{}, node.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
 }

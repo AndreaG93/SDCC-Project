@@ -1,8 +1,12 @@
 package test
 
-import "testing"
+import (
+	"fmt"
+	"math"
+	"testing"
+)
 
 func Test_startWork(t *testing.T) {
 
-	startWork()
+	fmt.Println(int(math.Floor(float64((2)-1) / 2)))
 }

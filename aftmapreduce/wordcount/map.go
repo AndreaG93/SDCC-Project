@@ -5,6 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/utility"
+	"fmt"
 	"strings"
 )
 
@@ -29,11 +30,12 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	node.GetCache().Set(digest, wordTokenHashTable)
 
-	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeID)
-	(*output).IdNode = node.GetPropertyAsInteger(property.NodeGroupID)
+	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeGroupID)
+	(*output).IdNode = node.GetPropertyAsInteger(property.NodeID)
 	(*output).ReplayDigest = digest
 	(*output).MappedDataSizes = mappedDataSizes
-
+	wordTokenHashTable.Print()
+	fmt.Println(*output)
 	return nil
 }
 
