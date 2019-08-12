@@ -6,11 +6,12 @@ const (
 	NodeType        = "NodeType"
 	InternetAddress = "InternetAddress"
 
-	WordCountSendRPCFullAddress    = "WordCountSendRPCFullAddress"
-	WordCountMapRPCFullAddress     = "WordCountMapRPCFullAddress"
-	WordCountReduceRPCFullAddress  = "WordCountReduceRPCFullAddress"
-	WordCountReceiveRPCFullAddress = "WordCountReceiveRPCFullAddress"
-	WordCountRequestRPCFullAddress = "WordCountRequestRPCFullAddress"
+	WordCountSendRPCFullAddress     = "WordCountSendRPCFullAddress"
+	WordCountMapRPCFullAddress      = "WordCountMapRPCFullAddress"
+	WordCountReduceRPCFullAddress   = "WordCountReduceRPCFullAddress"
+	WordCountReceiveRPCFullAddress  = "WordCountReceiveRPCFullAddress"
+	WordCountRequestRPCFullAddress  = "WordCountRequestRPCFullAddress"
+	WordCountRetrieveRPCFullAddress = "WordCountRetrieveRPCFullAddress"
 
 	MapCardinality = "MapCardinality"
 )

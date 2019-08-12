@@ -5,6 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/utility"
+	"fmt"
 	"sync"
 )
 
@@ -78,6 +79,9 @@ func localityAwareShuffleAndReduceTask(input []*AFTMapTaskOutput, reduceTaskMapp
 	}
 
 	mapWaitGroup.Wait()
+
+	node.GetLogger().PrintMessage(fmt.Sprintf("'localityAwareShuffleAndReduceTask' COMPLETE -- Output: %s", output))
+
 	return output
 }
 
@@ -87,7 +91,7 @@ func retrieveTask(input []*AFTReduceTaskOutput) []*WordTokenList.WordTokenList {
 
 	for index, aftReduceTaskOutput := range input {
 
-		targetNodeIP := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(aftReduceTaskOutput.IdGroup, aftmapreduce.WordCountDataRetrieverRPCBasePort, aftReduceTaskOutput.NodeIdsWithCorrectResult)
+		targetNodeIP := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(aftReduceTaskOutput.IdGroup, aftmapreduce.WordCountRetrieverRPCBasePort, aftReduceTaskOutput.NodeIdsWithCorrectResult)
 
 		rawData := retrieveFrom(targetNodeIP, aftReduceTaskOutput.ReplayDigest)
 		serializedData, err := WordTokenList.Deserialize(rawData)

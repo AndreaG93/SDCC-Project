@@ -3,6 +3,7 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/utility"
+	"fmt"
 	"net/rpc"
 )
 
@@ -10,37 +11,44 @@ type Retrieve struct {
 }
 
 type RetrieveInput struct {
-	dataDigest string
+	DataDigest string
 }
 
 type RetrieveOutput struct {
-	rawData []byte
+	RawData []byte
 }
 
 func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
-	output.rawData = node.GetDataRegistry().Get(input.dataDigest).([]byte)
+	node.GetLogger().PrintMessage(fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
+
+	output.RawData = node.GetDataRegistry().Get(input.DataDigest).([]byte)
 	return nil
 }
 
 func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
+
+	node.GetLogger().PrintMessage(fmt.Sprintf("Send a 'RETRIEVE' command -- Target Nodes are %s", NodeIPs))
 
 	for _, ip := range NodeIPs {
 
 		var input RetrieveInput
 		var output RetrieveOutput
 
-		input.dataDigest = dataDigest
+		input.DataDigest = dataDigest
 
 		worker, err := rpc.Dial("tcp", ip)
 		if err != nil {
+			node.GetLogger().PrintMessage(fmt.Sprintf("'RETRIEVE' command -- Error %s", err.Error()))
 			continue
 		}
 
-		err = worker.Call("DataRetriever.Execute", &input, &output)
+		err = worker.Call("Retrieve.Execute", &input, &output)
 		utility.CheckError(worker.Close())
 		if err == nil {
-			return output.rawData
+			return output.RawData
+		} else {
+			node.GetLogger().PrintMessage(fmt.Sprintf("'RETRIEVE' command -- Error %s", err.Error()))
 		}
 	}
 	return nil

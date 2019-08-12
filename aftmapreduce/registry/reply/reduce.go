@@ -21,15 +21,12 @@ func (obj *ReduceReplyRegistry) Add(replyDigest string, replyNodeId int) bool {
 	reply := (*obj).registry[replyDigest]
 
 	if reply == nil {
-
 		reply = make([]int, 0)
-
-		(*obj).registry[replyDigest] = reply
 	}
 
-	reply = append(reply, replyNodeId)
+	(*obj).registry[replyDigest] = append(reply, replyNodeId)
 
-	if len(reply) == (*obj).requiredNumberOfMatches {
+	if len((*obj).registry[replyDigest]) == (*obj).requiredNumberOfMatches {
 		(*obj).mostMatchedWorkerReplyDigest = replyDigest
 		return true
 	}

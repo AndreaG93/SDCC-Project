@@ -5,6 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/registry/reply"
 	"SDCC-Project/utility"
+	"fmt"
 	"math"
 	"net/rpc"
 )
@@ -36,9 +37,8 @@ func NewAFTReduceTask(targetNodeIds []int, targetNodeGroupId int, reduceTaskIden
 	(*output).targetNodesFullRPCInternetAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort, targetNodeIds)
 
 	(*output).replyChannel = make(chan *ReduceOutput)
-	(*output).replyRegistry = reply.NewReduceReplyRegistry((*output).arbitraryFaultToleranceLevel + 1)
-
 	(*output).arbitraryFaultToleranceLevel = int(math.Floor(float64((len((*output).targetNodesFullRPCInternetAddresses) - 1) / 2)))
+	(*output).replyRegistry = reply.NewReduceReplyRegistry((*output).arbitraryFaultToleranceLevel + 1)
 
 	(*output).output = new(AFTReduceTaskOutput)
 	(*(*output).output).IdGroup = targetNodeGroupId
@@ -90,6 +90,8 @@ func (obj *AFTReduceTask) startListeningWorkersReplies() {
 
 func executeSingleReduceTaskReplica(localDataDigest string, ReduceWorkIndex int, fullRPCInternetAddress string, reply chan *ReduceOutput) {
 
+	node.GetLogger().PrintMessage(fmt.Sprintf("Send a 'REDUCE' command to: %s -- Reduce Task Index %d", fullRPCInternetAddress, ReduceWorkIndex))
+
 	input := new(ReduceInput)
 	output := new(ReduceOutput)
 
@@ -103,4 +105,5 @@ func executeSingleReduceTaskReplica(localDataDigest string, ReduceWorkIndex int,
 	if err == nil {
 		reply <- output
 	}
+
 }

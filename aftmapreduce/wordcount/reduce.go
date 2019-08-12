@@ -5,6 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
+	"fmt"
 )
 
 type Reduce struct {
@@ -21,6 +22,8 @@ type ReduceOutput struct {
 }
 
 func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
+
+	node.GetLogger().PrintMessage(fmt.Sprintf("Received a 'REDUCE' request -- Local data digest: %s -- ReduceWorkIndex: %d", input.LocalDataDigest, input.ReduceWorkIndex))
 
 	digest, rawData := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
 
