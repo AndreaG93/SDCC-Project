@@ -52,10 +52,7 @@ func getLocalityAwareReduceTaskMappedToNodeGroupId(input []*AFTMapTaskOutput) ma
 	return output
 }
 
-func localityAwareShuffleAndReduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) []*AFTReduceTaskOutput {
-
-	output := make([]*AFTReduceTaskOutput, len(input))
-	var mapWaitGroup sync.WaitGroup
+func localityAwareShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) {
 
 	for index, bestGroupId := range reduceTaskMappedToNodeGroupId {
 
@@ -68,6 +65,19 @@ func localityAwareShuffleAndReduceTask(input []*AFTMapTaskOutput, reduceTaskMapp
 				sendDataTask((*mapOutput).NodeIdsWithCorrectResult, (*mapOutput).IdGroup, receiverNodeId, bestGroupId, (*mapOutput).ReplayDigest, receiverDigestData, index)
 			}
 		}
+	}
+	node.GetLogger().PrintMessage("'localityAwareShuffle' COMPLETE")
+}
+
+func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) []*AFTReduceTaskOutput {
+
+	output := make([]*AFTReduceTaskOutput, len(input))
+	var mapWaitGroup sync.WaitGroup
+
+	for index, bestGroupId := range reduceTaskMappedToNodeGroupId {
+
+		receiverDigestData := input[bestGroupId].ReplayDigest
+		receiverNodeId := (*input[bestGroupId]).NodeIdsWithCorrectResult
 
 		mapWaitGroup.Add(1)
 		go func(targetNodeIds []int, targetNodeGroupId int, reduceTaskIdentifierDigest string, reduceTaskIndex int) {

@@ -28,8 +28,12 @@ func manageRequest(digest string) {
 	splits := getSplits(digest, node.GetPropertyAsInteger(property.MapCardinality))
 
 	mapTaskOutput := mapTask(splits)
+
 	localityAwarenessData := getLocalityAwareReduceTaskMappedToNodeGroupId(mapTaskOutput)
-	reduceTaskOutput := localityAwareShuffleAndReduceTask(mapTaskOutput, localityAwarenessData)
+
+	localityAwareShuffleTask(mapTaskOutput, localityAwarenessData)
+
+	reduceTaskOutput := reduceTask(mapTaskOutput, localityAwarenessData)
 
 	dataArray := retrieveTask(reduceTaskOutput)
 	finalData := computeFinalOutputTask(dataArray)
