@@ -29,7 +29,7 @@ func (x *Send) Execute(input SendInput, output *SendOutput) error {
 	node.GetLogger().PrintMessage(fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
 	node.GetLogger().PrintMessage(fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
 
-	data := (node.GetCache().Get(input.SourceDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(input.WordTokenListIndex)
+	data := (node.GetDataRegistry().Get(input.SourceDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(input.WordTokenListIndex)
 	dataDigest := data.GetDigest()
 
 	sendDataToWorker(data, dataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)

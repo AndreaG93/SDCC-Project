@@ -4,7 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
-	"SDCC-Project/aftmapreduce/registry"
+	"SDCC-Project/aftmapreduce/registry/reply"
 	"SDCC-Project/utility"
 	"math"
 	"net/rpc"
@@ -23,7 +23,7 @@ type MapTask struct {
 	faultToleranceLevel int
 	requestSend         int
 	workersAddresses    []string
-	registry            *registry.MapReplies
+	registry            *reply.MapReplyRegistry
 	split               string
 }
 
@@ -36,7 +36,7 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 	(*output).workersReplyChannel = make(chan *MapOutput)
 	(*output).requestSend = 0
 	(*output).workersAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
-	(*output).registry = registry.NewMapReply((*output).faultToleranceLevel + 1)
+	(*output).registry = reply.NewMapReplyRegistry((*output).faultToleranceLevel + 1)
 	(*output).split = split
 	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workersAddresses) - 1) / 2)))
 

@@ -28,7 +28,7 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
 
-	node.GetCache().Set(digest, wordTokenHashTable)
+	node.GetDataRegistry().Set(digest, wordTokenHashTable)
 
 	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).IdNode = node.GetPropertyAsInteger(property.NodeID)

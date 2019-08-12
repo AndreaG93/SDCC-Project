@@ -11,7 +11,7 @@ type Logger struct {
 	log  *logrus.Logger
 }
 
-func New() *Logger {
+func NewLogger() *Logger {
 
 	output := new(Logger)
 	(*output).log = logrus.New()

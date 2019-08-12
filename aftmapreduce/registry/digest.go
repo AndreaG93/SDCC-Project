@@ -1,32 +1,18 @@
 package registry
 
-import (
-	"sync"
-)
-
-type DigestCache struct {
+type DigestRegistry struct {
 	table map[string][]string
 }
 
-var data *DigestCache
-var once sync.Once
+func NewDigestRegistry() *DigestRegistry {
 
-func GetDigestCacheInstance() *DigestCache {
-	once.Do(func() {
-		data = NewDigestCache()
-	})
-	return data
-}
-
-func NewDigestCache() *DigestCache {
-
-	output := new(DigestCache)
+	output := new(DigestRegistry)
 	(*output).table = make(map[string][]string)
 
 	return output
 }
 
-func (obj *DigestCache) Add(digest string, associatedDigest string) {
+func (obj *DigestRegistry) Add(digest string, associatedDigest string) {
 
 	associatedDigests := (*obj).table[digest]
 
@@ -53,6 +39,6 @@ func (obj *DigestCache) Add(digest string, associatedDigest string) {
 	}
 }
 
-func (obj *DigestCache) GetAssociatedDigest(digest string) []string {
+func (obj *DigestRegistry) GetAssociatedDigest(digest string) []string {
 	return (*obj).table[digest]
 }

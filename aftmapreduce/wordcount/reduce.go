@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/registry"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/utility"
@@ -26,7 +25,7 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 	digest, wordTokenList := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
 
-	node.GetCache().Set(digest, wordTokenList)
+	node.GetDataRegistry().Set(digest, wordTokenList)
 	(*output).Digest = digest
 
 	wordTokenList.Print()
@@ -36,12 +35,12 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, *WordTokenList.WordTokenList) {
 
-	localWordTokenList := (node.GetCache().Get(localDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(reduceTaskIndex)
-	receivedDataDigest := registry.GetDigestCacheInstance().GetAssociatedDigest(localDataDigest)
+	localWordTokenList := (node.GetDataRegistry().Get(localDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(reduceTaskIndex)
+	receivedDataDigest := node.GetDigestRegistry().GetAssociatedDigest(localDataDigest)
 
 	for _, digest := range receivedDataDigest {
 
-		currentWordTokenList := (node.GetCache().Get(digest)).(*WordTokenList.WordTokenList)
+		currentWordTokenList := (node.GetDataRegistry().Get(digest)).(*WordTokenList.WordTokenList)
 		localWordTokenList.Merge(currentWordTokenList)
 	}
 

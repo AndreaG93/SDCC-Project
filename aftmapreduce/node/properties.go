@@ -8,17 +8,23 @@ import (
 
 var zookeeperClient *zookeeper.Client
 var logger *Logger
-var cache *registry.Registry
 var properties map[string]interface{}
 var amazonS3Client *amazons3.S3Client
+
+var dataRegistry *registry.DataRegistry
+var digestRegistry *registry.DigestRegistry
 
 func Initialize(zookeeperAddresses []string) {
 
 	zookeeperClient = zookeeper.New(zookeeperAddresses)
-	logger = New()
-	cache = registry.New()
-	properties = make(map[string]interface{})
 	amazonS3Client = amazons3.New()
+
+	logger = NewLogger()
+
+	dataRegistry = registry.NewDataRegistry()
+	digestRegistry = registry.NewDigestRegistry()
+
+	properties = make(map[string]interface{})
 }
 
 func GetZookeeperClient() *zookeeper.Client {
@@ -27,10 +33,6 @@ func GetZookeeperClient() *zookeeper.Client {
 
 func GetLogger() *Logger {
 	return logger
-}
-
-func GetCache() *registry.Registry {
-	return cache
 }
 
 func SetProperty(key string, value interface{}) {
@@ -47,4 +49,12 @@ func GetPropertyAsInteger(key string) int {
 
 func GetAmazonS3Client() *amazons3.S3Client {
 	return amazonS3Client
+}
+
+func GetDataRegistry() *registry.DataRegistry {
+	return dataRegistry
+}
+
+func GetDigestRegistry() *registry.DigestRegistry {
+	return digestRegistry
 }
