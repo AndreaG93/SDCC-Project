@@ -76,13 +76,20 @@ func startLocalityAwareShuffling(mapTaskOutput []*MapTaskOutput, reduceTaskMappe
 
 	for reduceTaskIndex, bestGroupId := range reduceTaskMappedToBestGroupId {
 
+		receiverDigestData := mapTaskOutput[bestGroupId].ReplayDigest
 		receiverNodeId := (*mapTaskOutput[bestGroupId]).NodeIdsWithCorrectResult
 
 		for _, mapOutput := range mapTaskOutput {
 
 			if (*mapOutput).IdGroup != bestGroupId {
-				sendDataTask((*mapOutput).NodeIdsWithCorrectResult, (*mapOutput).IdGroup, receiverNodeId, bestGroupId, (*mapOutput).ReplayDigest, reduceTaskIndex)
+				sendDataTask((*mapOutput).NodeIdsWithCorrectResult, (*mapOutput).IdGroup, receiverNodeId, bestGroupId, (*mapOutput).ReplayDigest, receiverDigestData, reduceTaskIndex)
 			}
 		}
+
+		sendReduceTask(receiverNodeId, bestGroupId, receiverDigestData, reduceTaskIndex)
 	}
+}
+
+func startReduceTaskOnWorker(mapTaskOutput []*MapTaskOutput, reduceTaskMappedToBestGroupId map[int]int) {
+
 }

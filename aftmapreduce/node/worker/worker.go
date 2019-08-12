@@ -5,7 +5,6 @@ import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/wordcount"
-	"encoding/gob"
 	"fmt"
 )
 
@@ -22,10 +21,6 @@ func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses 
 	node.SetProperty(property.WordCountReduceRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReduceTaskRPCBasePort+id))
 	node.SetProperty(property.WordCountReceiveRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReceiveRPCBasePort+id))
 	node.SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountSendRPCBasePort+id))
-
-	gob.Register(wordcount.MapInput{})
-	gob.Register(wordcount.ReduceInput{})
-	gob.Register(wordcount.Send{})
 }
 
 func StartWork() {

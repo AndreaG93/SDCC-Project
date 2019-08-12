@@ -11,7 +11,7 @@ import (
 const (
 	membershipZNodeRootPath = "/membership"
 	ActualLeaderZNodePath   = "/leader"
-	zkSessionTimeOut        = 10 * time.Second
+	zkSessionTimeOut        = 15 * time.Second
 )
 
 type Client struct {
@@ -128,11 +128,13 @@ func (obj *Client) RegisterNodeMembership(nodeId int, groupId int, internetAddre
 
 	if !(*obj).CheckZNodeExistence(groupPath) {
 		(*obj).CreateZNode(groupPath, nil, 0)
+		(*obj).CreateZNode(nodePath, []byte(internetAddress), zk.FlagEphemeral)
 	} else {
-		if !(*obj).CheckZNodeExistence(nodePath) {
+		if (*obj).CheckZNodeExistence(nodePath) {
+			(*obj).RemoveZNode(nodePath)
 			(*obj).CreateZNode(nodePath, []byte(internetAddress), zk.FlagEphemeral)
 		} else {
-			(*obj).SetZNodeData(nodePath, []byte(internetAddress))
+			(*obj).CreateZNode(nodePath, []byte(internetAddress), zk.FlagEphemeral)
 		}
 	}
 }
@@ -180,17 +182,12 @@ func (obj *Client) GetWorkerInternetAddressesForRPC(groupId int, baseRPCPort int
 
 func (obj *Client) GetWorkerInternetAddressesForRPCWithIdConstraints(groupId int, baseRPCPort int, requiredId []int) []string {
 
+	output := make([]string, len(requiredId))
 	mappedWorkerInternetAddresses := (*obj).GetMappedWorkerInternetAddressesForRPC(groupId, baseRPCPort)
 
-	for id := range requiredId {
-		delete(mappedWorkerInternetAddresses, id)
-	}
-
 	index := 0
-	output := make([]string, len(mappedWorkerInternetAddresses))
-
-	for _, value := range mappedWorkerInternetAddresses {
-		output[index] = value
+	for _, id := range requiredId {
+		output[index] = mappedWorkerInternetAddresses[id]
 		index++
 	}
 
