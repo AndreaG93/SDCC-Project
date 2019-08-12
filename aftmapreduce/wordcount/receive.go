@@ -23,10 +23,10 @@ func (x *Receive) Execute(input ReceiveInput, output *ReceiveOutput) error {
 
 	node.GetLogger().PrintMessage(fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
 
-	receivedWordTolenList, err := WordTokenList.Deserialize(input.Data)
+	receivedWordTokenList, err := WordTokenList.Deserialize(input.Data)
 	utility.CheckError(err)
 
-	node.GetDataRegistry().Set(input.ReceivedDataDigest, receivedWordTolenList)
+	node.GetDataRegistry().Set(input.ReceivedDataDigest, receivedWordTokenList)
 	node.GetDigestRegistry().Add(input.AssociatedDataDigest, input.ReceivedDataDigest)
 
 	return nil

@@ -10,7 +10,7 @@ import (
 	"net/rpc"
 )
 
-type MapTaskOutput struct {
+type AFTMapTaskOutput struct {
 	IdGroup                  int
 	ReplayDigest             string
 	NodeIdsWithCorrectResult []int
@@ -18,7 +18,7 @@ type MapTaskOutput struct {
 }
 
 type MapTask struct {
-	mapTaskOutput       *MapTaskOutput
+	mapTaskOutput       *AFTMapTaskOutput
 	workersReplyChannel chan *MapOutput
 	faultToleranceLevel int
 	requestSend         int
@@ -31,7 +31,7 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 
 	output := new(MapTask)
 
-	(*output).mapTaskOutput = new(MapTaskOutput)
+	(*output).mapTaskOutput = new(AFTMapTaskOutput)
 	(*(*output).mapTaskOutput).IdGroup = workerGroupId
 	(*output).workersReplyChannel = make(chan *MapOutput)
 	(*output).requestSend = 0
@@ -43,7 +43,7 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 	return output
 }
 
-func (obj *MapTask) Execute() *MapTaskOutput {
+func (obj *MapTask) Execute() *AFTMapTaskOutput {
 
 	defer close((*obj).workersReplyChannel)
 

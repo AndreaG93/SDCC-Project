@@ -41,7 +41,7 @@ func Deserialize(input []byte) (*WordTokenList, error) {
 	return output, nil
 }
 
-func (obj *WordTokenList) GetDigest() string {
+func (obj *WordTokenList) GetDigestAndSerializedData() (string, []byte) {
 
 	(*obj).IteratorReset()
 
@@ -59,7 +59,7 @@ func (obj *WordTokenList) GetDigest() string {
 
 	rawData, err := utility.Encode(output)
 	utility.CheckError(err)
-	return utility.GenerateDigestUsingSHA512(rawData)
+	return utility.GenerateDigestUsingSHA512(rawData), rawData
 }
 
 func (obj *WordTokenList) InsertWord(word string) {

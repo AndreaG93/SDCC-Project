@@ -1,12 +1,10 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
-	"SDCC-Project/utility"
-	"net/rpc"
 )
 
 type Reduce struct {
@@ -19,21 +17,21 @@ type ReduceInput struct {
 
 type ReduceOutput struct {
 	Digest string
+	nodeId int
 }
 
 func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
-	digest, wordTokenList := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
+	digest, rawData := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
 
-	node.GetDataRegistry().Set(digest, wordTokenList)
+	node.GetDataRegistry().Set(digest, rawData)
 	(*output).Digest = digest
-
-	wordTokenList.Print()
+	(*output).nodeId = node.GetPropertyAsInteger(property.NodeID)
 
 	return nil
 }
 
-func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, *WordTokenList.WordTokenList) {
+func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, []byte) {
 
 	localWordTokenList := (node.GetDataRegistry().Get(localDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(reduceTaskIndex)
 	receivedDataDigest := node.GetDigestRegistry().GetAssociatedDigest(localDataDigest)
@@ -44,32 +42,7 @@ func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, *Wo
 		localWordTokenList.Merge(currentWordTokenList)
 	}
 
-	rawData, err := localWordTokenList.Serialize()
-	utility.CheckError(err)
-	digest := utility.GenerateDigestUsingSHA512(rawData)
+	digest, rawData := localWordTokenList.GetDigestAndSerializedData()
 
-	return digest, localWordTokenList
-}
-
-func sendReduceTask(NodeIds []int, GroupId int, localDataDigest string, receiverReduceTaskId int) {
-
-	internetAddresses := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(GroupId, aftmapreduce.WordCountReduceTaskRPCBasePort, NodeIds)
-
-	for _, sender := range internetAddresses {
-
-		input := new(ReduceInput)
-		output := new(ReduceOutput)
-
-		(*input).ReduceWorkIndex = receiverReduceTaskId
-		(*input).LocalDataDigest = localDataDigest
-
-		worker, err := rpc.Dial("tcp", sender)
-		utility.CheckError(err)
-
-		err = worker.Call("Reduce.Execute", input, output)
-		utility.CheckError(worker.Close())
-		if err == nil {
-			return
-		}
-	}
+	return digest, rawData
 }

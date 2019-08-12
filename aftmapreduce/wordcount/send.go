@@ -4,7 +4,6 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
-	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/utility"
 	"fmt"
 	"net/rpc"
@@ -30,16 +29,16 @@ func (x *Send) Execute(input SendInput, output *SendOutput) error {
 	node.GetLogger().PrintMessage(fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
 
 	data := (node.GetDataRegistry().Get(input.SourceDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(input.WordTokenListIndex)
-	dataDigest := data.GetDigest()
+	dataDigest, rawData := data.GetDigestAndSerializedData()
 
-	sendDataToWorker(data, dataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)
+	sendDataToWorker(rawData, dataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)
 
 	output.SendDataDigest = dataDigest
 
 	return nil
 }
 
-func sendDataToWorker(data *WordTokenList.WordTokenList, dataDigest string, receiverAssociatedDataDigest string, receiversInternetAddresses []string) {
+func sendDataToWorker(data []byte, dataDigest string, receiverAssociatedDataDigest string, receiversInternetAddresses []string) {
 
 	for _, address := range receiversInternetAddresses {
 
@@ -47,7 +46,7 @@ func sendDataToWorker(data *WordTokenList.WordTokenList, dataDigest string, rece
 		var output ReceiveOutput
 
 		input.ReceivedDataDigest = dataDigest
-		input.Data, _ = data.Serialize()
+		input.Data = data
 		input.AssociatedDataDigest = receiverAssociatedDataDigest
 
 		worker, err := rpc.Dial("tcp", address)
@@ -61,7 +60,6 @@ func sendDataToWorker(data *WordTokenList.WordTokenList, dataDigest string, rece
 			node.GetLogger().PrintMessage(fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
 			continue
 		}
-		//utility.CheckError(worker.Close())
 	}
 }
 
