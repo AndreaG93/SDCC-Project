@@ -3,6 +3,7 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/utility"
+	"errors"
 	"fmt"
 	"net/rpc"
 )
@@ -23,6 +24,10 @@ func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 	node.GetLogger().PrintMessage(fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
 
 	output.RawData = node.GetDataRegistry().Get(input.DataDigest).([]byte)
+	if output.RawData == nil {
+		return errors.New("no data with given digest")
+	}
+
 	return nil
 }
 

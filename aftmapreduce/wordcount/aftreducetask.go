@@ -75,7 +75,7 @@ func (obj *AFTReduceTask) startListeningWorkersReplies() {
 
 	for reply := range (*obj).replyChannel {
 
-		if (*obj).replyRegistry.Add(reply.Digest, reply.nodeId) {
+		if (*obj).replyRegistry.Add(reply.Digest, reply.NodeId) {
 			return
 		}
 

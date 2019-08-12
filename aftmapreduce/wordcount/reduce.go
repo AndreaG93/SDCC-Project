@@ -18,7 +18,7 @@ type ReduceInput struct {
 
 type ReduceOutput struct {
 	Digest string
-	nodeId int
+	NodeId int
 }
 
 func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
@@ -29,7 +29,7 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 	node.GetDataRegistry().Set(digest, rawData)
 	(*output).Digest = digest
-	(*output).nodeId = node.GetPropertyAsInteger(property.NodeID)
+	(*output).NodeId = node.GetPropertyAsInteger(property.NodeID)
 
 	return nil
 }
