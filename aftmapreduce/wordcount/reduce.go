@@ -23,7 +23,7 @@ type ReduceOutput struct {
 
 func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("Received a 'REDUCE' request -- Local data digest: %s -- ReduceWorkIndex: %d", input.LocalDataDigest, input.ReduceWorkIndex))
+	node.GetLogger().PrintInfoTaskMessage(ReduceTaskName, fmt.Sprintf("Local data digest: %s -- Reduce work index: %d", input.LocalDataDigest, input.ReduceWorkIndex))
 
 	digest, rawData := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
 

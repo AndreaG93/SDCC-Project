@@ -9,6 +9,15 @@ import (
 	"sync"
 )
 
+const (
+	ReduceTaskName   = "REDUCE"
+	MapTaskName      = "MAP"
+	ReceiveTaskName  = "RECEIVE"
+	SendTaskName     = "SEND"
+	RetrieveTaskName = "RETRIEVE"
+	ShuffleTaskName  = "SHUFFLE"
+)
+
 func mapTask(input []string) []*AFTMapTaskOutput {
 
 	output := make([]*AFTMapTaskOutput, len(input))
@@ -27,6 +36,7 @@ func mapTask(input []string) []*AFTMapTaskOutput {
 	}
 
 	mapWaitGroup.Wait()
+	node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
 	return output
 }
 
@@ -66,7 +76,7 @@ func localityAwareShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeG
 			}
 		}
 	}
-	node.GetLogger().PrintMessage("'localityAwareShuffle' COMPLETE")
+	node.GetLogger().PrintInfoCompleteTaskMessage(ShuffleTaskName)
 }
 
 func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) []*AFTReduceTaskOutput {
@@ -90,8 +100,8 @@ func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int
 
 	mapWaitGroup.Wait()
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("'localityAwareShuffleAndReduceTask' COMPLETE -- Output: %s", output))
-
+	node.GetLogger().PrintInfoTaskMessage(ReduceTaskName, fmt.Sprintf("Output: %s", output))
+	node.GetLogger().PrintInfoCompleteTaskMessage(ReduceTaskName)
 	return output
 }
 
@@ -109,6 +119,7 @@ func retrieveTask(input []*AFTReduceTaskOutput) []*WordTokenList.WordTokenList {
 
 		output[index] = serializedData
 	}
+	node.GetLogger().PrintInfoCompleteTaskMessage(RetrieveTaskName)
 	return output
 }
 

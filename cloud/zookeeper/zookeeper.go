@@ -53,6 +53,17 @@ func (obj *Client) CreateZNode(zNodePath string, data []byte, flags int32) {
 	utility.CheckError(err)
 }
 
+func (obj *Client) CreateZNodeCheckingExistence(zNodePath string, data []byte, flags int32) {
+
+	output, _, err := (*obj).zooKeeperConnection.Exists(zNodePath)
+	utility.CheckError(err)
+
+	if !output {
+		_, err := (*obj).zooKeeperConnection.Create(zNodePath, data, flags, zk.WorldACL(zk.PermAll))
+		utility.CheckError(err)
+	}
+}
+
 func (obj *Client) RemoveZNode(zNodePath string) {
 
 	var zNodeExistence bool

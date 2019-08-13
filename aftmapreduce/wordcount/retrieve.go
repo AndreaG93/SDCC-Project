@@ -33,18 +33,18 @@ func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
 func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("Send a 'RETRIEVE' command -- Target Nodes are %s", NodeIPs))
+	node.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Target Nodes are %s", NodeIPs))
+
+	var input RetrieveInput
+	var output RetrieveOutput
+
+	input.DataDigest = dataDigest
 
 	for _, ip := range NodeIPs {
 
-		var input RetrieveInput
-		var output RetrieveOutput
-
-		input.DataDigest = dataDigest
-
 		worker, err := rpc.Dial("tcp", ip)
 		if err != nil {
-			node.GetLogger().PrintMessage(fmt.Sprintf("'RETRIEVE' command -- Error %s", err.Error()))
+			node.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
 			continue
 		}
 
@@ -53,8 +53,11 @@ func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 		if err == nil {
 			return output.RawData
 		} else {
-			node.GetLogger().PrintMessage(fmt.Sprintf("'RETRIEVE' command -- Error %s", err.Error()))
+			node.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
 		}
 	}
+
+	node.GetLogger().PrintPanicErrorTaskMessage(RetrieveTaskName, "Task failed! Aborting...")
+
 	return nil
 }

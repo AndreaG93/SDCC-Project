@@ -4,11 +4,11 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"github.com/Sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 type Logger struct {
-	node string
-	log  *logrus.Logger
+	log *logrus.Logger
 }
 
 func NewLogger() *Logger {
@@ -26,10 +26,34 @@ func NewLogger() *Logger {
 	return output
 }
 
-func (obj *Logger) PrintMessage(message string) {
-	(*obj).log.Infof("%s-%d :--> %s", GetPropertyAsString(property.NodeType), GetPropertyAsInteger(property.NodeID), message)
+func (obj *Logger) PrintInfoTaskMessage(taskName string, taskMessage string) {
+
+	nodeId := GetPropertyAsInteger(property.NodeID)
+	nodeType := strings.ToUpper(GetPropertyAsString(property.NodeType))
+
+	(*obj).log.Infof("NODE: \"%s-%d\" >> TASK: \"%s\" -->: %s", nodeType, nodeId, taskName, taskMessage)
 }
 
-func (obj *Logger) InvalidArgumentValue(argumentName string, argumentValue string) {
-	(*obj).log.Infof("%s-%d :--> Invalid value for argument: %s: %v", GetPropertyAsString(property.NodeType), GetPropertyAsInteger(property.NodeID), argumentName, argumentValue)
+func (obj *Logger) PrintErrorTaskMessage(taskName string, taskMessage string) {
+
+	nodeId := GetPropertyAsInteger(property.NodeID)
+	nodeType := strings.ToUpper(GetPropertyAsString(property.NodeType))
+
+	(*obj).log.Errorf("NODE: \"%s-%d\" >> TASK: \"%s\" -->: %s", nodeType, nodeId, taskName, taskMessage)
+}
+
+func (obj *Logger) PrintPanicErrorTaskMessage(taskName string, taskMessage string) {
+
+	nodeId := GetPropertyAsInteger(property.NodeID)
+	nodeType := strings.ToUpper(GetPropertyAsString(property.NodeType))
+
+	(*obj).log.Panicf("NODE: \"%s-%d\" >> TASK: \"%s\" -->: %s", nodeType, nodeId, taskName, taskMessage)
+}
+
+func (obj *Logger) PrintInfoStartingTaskMessage(taskName string) {
+	(*obj).PrintInfoTaskMessage(taskName, "starting...")
+}
+
+func (obj *Logger) PrintInfoCompleteTaskMessage(taskName string) {
+	(*obj).PrintInfoTaskMessage(taskName, "complete!")
 }

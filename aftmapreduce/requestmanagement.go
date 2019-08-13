@@ -1,26 +1,7 @@
 package aftmapreduce
 
 /*
-import (
-	"SDCC-Project/aftmapreduce/data"
-	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/wordcount"
-	"SDCC-Project/cloud/amazons3"
-	"SDCC-Project/utility"
-	"fmt"
-	"net/rpc"
-	"strconv"
-	"strings"
-)
-
-func ManageClientRequest(request *Request) {
-
-	var transientData [][]byte
-
-	faultToleranceLevel := 2
-	clientData := request.getClientData()
-
-	transientData = nil
+func ManageClientRequest() {
 
 	for {
 

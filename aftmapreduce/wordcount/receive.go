@@ -21,7 +21,7 @@ type ReceiveOutput struct {
 
 func (x *Receive) Execute(input ReceiveInput, output *ReceiveOutput) error {
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
+	node.GetLogger().PrintInfoTaskMessage(ReceiveTaskName, fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
 
 	receivedWordTokenList, err := WordTokenList.Deserialize(input.Data)
 	utility.CheckError(err)

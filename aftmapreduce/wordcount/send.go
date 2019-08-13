@@ -25,8 +25,8 @@ type SendOutput struct {
 
 func (x *Send) Execute(input SendInput, output *SendOutput) error {
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
-	node.GetLogger().PrintMessage(fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
+	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
+	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
 
 	data := (node.GetDataRegistry().Get(input.SourceDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(input.WordTokenListIndex)
 	dataDigest, rawData := data.GetDigestAndSerializedData()
@@ -51,14 +51,12 @@ func sendDataToWorker(data []byte, dataDigest string, receiverAssociatedDataDige
 
 		worker, err := rpc.Dial("tcp", address)
 		if err != nil {
-			node.GetLogger().PrintMessage(fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
-			continue
+			node.GetLogger().PrintPanicErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
 		}
 
 		err = worker.Call("Receive.Execute", &input, &output)
 		if err != nil {
-			node.GetLogger().PrintMessage(fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
-			continue
+			node.GetLogger().PrintPanicErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
 		}
 	}
 }
@@ -68,13 +66,10 @@ func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int,
 	senderInternetAddresses := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(sourceGroupId, aftmapreduce.WordCountSendRPCBasePort, sourceNodeIds)
 	receiverInternetAddresses := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(receiverGroupId, aftmapreduce.WordCountReceiveRPCBasePort, receiverNodeIds)
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("Send Task:\\n\\tSource\\n\\t\\tGroup Node ID: %d\n\t\tNode IDs: %d", sourceGroupId, sourceNodeIds))
-
-	node.GetLogger().PrintMessage("Destination worker IDs:" + fmt.Sprintf("%d", receiverGroupId))
-	node.GetLogger().PrintMessage(fmt.Sprintf("Destination worker Group ID: %d", receiverGroupId))
-
-	node.GetLogger().PrintMessage("Destination worker internetAddresses:" + fmt.Sprintf("%s", receiverInternetAddresses))
-	node.GetLogger().PrintMessage("Source worker internetAddresses:" + fmt.Sprintf("%s", senderInternetAddresses))
+	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker IDs:           %d", sourceNodeIds))
+	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker group IDs:     %d", sourceGroupId))
+	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IDs:      %d", receiverNodeIds))
+	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker group ID: %d", receiverGroupId))
 
 	for _, sender := range senderInternetAddresses {
 
@@ -85,7 +80,6 @@ func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int,
 		(*input).ReceiverAssociatedDataDigest = receiverAssociatedDataDigest
 		(*input).WordTokenListIndex = receiverReduceTaskId
 		(*input).ReceiversInternetAddresses = receiverInternetAddresses
-		fmt.Println(receiverInternetAddresses)
 
 		worker, err := rpc.Dial("tcp", sender)
 		utility.CheckError(err)
@@ -96,4 +90,6 @@ func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int,
 			return
 		}
 	}
+
+	node.GetLogger().PrintPanicErrorTaskMessage(SendTaskName, "Send operation failed! aborting...")
 }

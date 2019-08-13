@@ -1,14 +1,6 @@
 package aftmapreduce
 
 /*
-import (
-	"SDCC-Project/aftmapreduce/data"
-	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/wordcount"
-	"SDCC-Project/cloud/zookeeper"
-	"SDCC-Project/utility"
-	"fmt"
-)
 
 const (
 	PendingRequestsZNodePath  = "/pending-requests"
@@ -22,22 +14,20 @@ const (
 	AfterReducePhase          = "2"
 )
 
-type Request struct {
+type ClientRequest struct {
 	digest                  string
 	pendingRequestZNodePath string
 	transientDataZNodePath  string
 	requestStatusZNodePath  string
 	clientDataTypeZNodePath string
 	finalOutputZNodePath    string
-	zookeeperClient         *zookeeper.Client
 }
 
-func NewRequest(clientData *data.ClientData) *Request {
+func NewClientRequest(sourceFileDigest string) *ClientRequest {
 
-	output := new(Request)
+	output := new(ClientRequest)
 
-	(*output).digest = (*clientData).GetDigest()
-	(*output).zookeeperClient = node.GetZookeeperClient()
+	(*output).digest = sourceFileDigest
 
 	(*output).pendingRequestZNodePath = fmt.Sprintf("%s/%s", PendingRequestsZNodePath, (*output).digest)
 	(*output).finalOutputZNodePath = fmt.Sprintf("%s/%s", CompleteRequestsZNodePath, (*output).digest)
@@ -46,29 +36,24 @@ func NewRequest(clientData *data.ClientData) *Request {
 	(*output).requestStatusZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, StatusZNodeName)
 	(*output).clientDataTypeZNodePath = fmt.Sprintf("%s/%s", (*output).pendingRequestZNodePath, RequestDataTypeZNodeName)
 
-	if !(*output).zookeeperClient.CheckZNodeExistence((*output).pendingRequestZNodePath) {
-
-		(*output).zookeeperClient.CreateZNode((*output).pendingRequestZNodePath, (*clientData).ToByte(), int32(0))
-		(*output).zookeeperClient.CreateZNode((*output).requestStatusZNodePath, []byte(InitialPhase), int32(0))
-		(*output).zookeeperClient.CreateZNode((*output).transientDataZNodePath, nil, int32(0))
-		(*output).zookeeperClient.CreateZNode((*output).finalOutputZNodePath, nil, int32(0))
-		(*output).zookeeperClient.CreateZNode((*output).clientDataTypeZNodePath, []byte((*clientData).GetTypeName()), int32(0))
-	}
+	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).pendingRequestZNodePath, nil, int32(0))
+	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).requestStatusZNodePath, nil, int32(0))
+	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).transientDataZNodePath, nil, int32(0))
 
 	return output
 }
 
-func (obj *Request) Checkpoint(data []byte) {
+func (obj *ClientRequest) Checkpoint(data []byte) {
 
-	currentPhase, _ := (*obj).zookeeperClient.GetZNodeData((*obj).requestStatusZNodePath)
+	currentPhase, _ := node.GetZookeeperClient().GetZNodeData((*obj).requestStatusZNodePath)
 
 	switch string(currentPhase) {
 	case InitialPhase:
-		(*obj).zookeeperClient.SetZNodeData((*obj).transientDataZNodePath, data)
-		(*obj).zookeeperClient.SetZNodeData((*obj).requestStatusZNodePath, []byte(AfterMapPhase))
+		node.GetZookeeperClient().SetZNodeData((*obj).transientDataZNodePath, data)
+		node.GetZookeeperClient().SetZNodeData((*obj).requestStatusZNodePath, []byte(AfterMapPhase))
 	case AfterMapPhase:
-		(*obj).zookeeperClient.SetZNodeData((*obj).transientDataZNodePath, data)
-		(*obj).zookeeperClient.SetZNodeData((*obj).requestStatusZNodePath, []byte(AfterReducePhase))
+		node.GetZookeeperClient().SetZNodeData((*obj).transientDataZNodePath, data)
+		(node.GetZookeeperClient().SetZNodeData((*obj).requestStatusZNodePath, []byte(AfterReducePhase))
 	case AfterReducePhase:
 		(*obj).zookeeperClient.SetZNodeData((*obj).finalOutputZNodePath, data)
 

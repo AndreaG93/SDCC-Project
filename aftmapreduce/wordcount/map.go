@@ -5,7 +5,6 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/utility"
-	"fmt"
 	"strings"
 )
 
@@ -26,6 +25,8 @@ type MapOutput struct {
 
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
+	node.GetLogger().PrintInfoStartingTaskMessage(MapTaskName)
+
 	digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
 
 	node.GetDataRegistry().Set(digest, wordTokenHashTable)
@@ -34,8 +35,9 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 	(*output).IdNode = node.GetPropertyAsInteger(property.NodeID)
 	(*output).ReplayDigest = digest
 	(*output).MappedDataSizes = mappedDataSizes
-	wordTokenHashTable.Print()
-	fmt.Println(*output)
+
+	node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
+
 	return nil
 }
 
