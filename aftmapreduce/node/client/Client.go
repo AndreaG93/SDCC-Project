@@ -1,43 +1,41 @@
 package client
 
 import (
-	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
+	"SDCC-Project/cloud/zookeeper"
 	"SDCC-Project/utility"
-	"encoding/gob"
 	"fmt"
+	"io/ioutil"
 	"net/rpc"
 )
 
+var zookeeperClient *zookeeper.Client
+
 func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 
-	initialize(zookeeperAddresses)
+	zookeeperClient = zookeeper.New(zookeeperAddresses)
 
-	currentLeaderInternetAddress, err := node.GetZookeeperClient().GetCurrentLeaderRequestRPCInternetAddress()
+	currentLeaderInternetAddress, err := zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
 	utility.CheckError(err)
 
 	sourceFileDigest, err := utility.GenerateDigestOfFileUsingSHA512(sourceFilePath)
 	utility.CheckError(err)
 
-	node.GetAmazonS3Client().Upload(sourceFilePath, sourceFileDigest)
+	data, err := ioutil.ReadFile(sourceFilePath)
+	utility.CheckError(err)
 
-	rawDataOutput := sendRequestToCurrentLeader(sourceFileDigest, currentLeaderInternetAddress)
+	rawDataOutput := sendRequestToCurrentLeader(sourceFileDigest, string(data), currentLeaderInternetAddress)
 	printResult(rawDataOutput)
 }
 
-func initialize(zookeeperAddresses []string) {
-	node.Initialize(zookeeperAddresses)
-
-	gob.Register(wordcount.Request{})
-}
-
-func sendRequestToCurrentLeader(sourceFileDigest string, currentLeaderInternetAddress string) []byte {
+func sendRequestToCurrentLeader(sourceFileDigest string, fileContent string, currentLeaderInternetAddress string) []byte {
 
 	input := new(wordcount.RequestInput)
 	output := new(wordcount.RequestOutput)
 
 	(*input).SourceFileDigest = sourceFileDigest
+	(*input).FileContent = fileContent
 
 	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
 	utility.CheckError(err)
@@ -47,10 +45,10 @@ func sendRequestToCurrentLeader(sourceFileDigest string, currentLeaderInternetAd
 
 	finalOutputPath := fmt.Sprintf("%s/%s", wordcount.CompleteRequestsZNodePath, sourceFileDigest)
 
-	rawData, watcher := node.GetZookeeperClient().GetZNodeData(finalOutputPath)
+	rawData, watcher := zookeeperClient.GetZNodeData(finalOutputPath)
 	if rawData == nil {
 		<-watcher
-		rawData, _ = node.GetZookeeperClient().GetZNodeData(finalOutputPath)
+		rawData, _ = zookeeperClient.GetZNodeData(finalOutputPath)
 	}
 
 	return rawData

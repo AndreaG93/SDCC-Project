@@ -30,19 +30,11 @@ func New() *S3Client {
 	return output
 }
 
-func (obj *S3Client) Upload(inputFilename string, key string) {
+func (obj *S3Client) Upload(inputFile *os.File, key string) {
 
-	var inputFile *os.File
 	var err error
 
 	amazonAWSS3Uploader := s3manager.NewUploader((*obj).session)
-
-	inputFile, err = os.Open(inputFilename)
-	utility.CheckError(err)
-
-	defer func() {
-		utility.CheckError(inputFile.Close())
-	}()
 
 	_, err = amazonAWSS3Uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(AmazonS3BucketName),

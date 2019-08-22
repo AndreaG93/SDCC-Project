@@ -8,6 +8,7 @@ import (
 type NodeConfiguration struct {
 	ZookeeperServersPrivateIPs []string
 	NodeID                     int
+	NodeGroupID                int
 	NodeClass                  string
 }
 

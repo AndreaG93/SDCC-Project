@@ -5,12 +5,15 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/utility"
 	"fmt"
+	"io/ioutil"
+	"os"
 )
 
 type Request struct {
 }
 
 type RequestInput struct {
+	FileContent string
 	SourceFileDigest string
 }
 
@@ -18,6 +21,15 @@ type RequestOutput struct {
 }
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
+
+	file, err := ioutil.TempFile(os.TempDir(), "")
+	utility.CheckError(err)
+
+	_, err = file.Write([]byte(input.FileContent))
+	utility.CheckError(err)
+
+	node.GetDataRegistry().Set(input.SourceFileDigest, file)
+	node.GetAmazonS3Client().Upload(file, input.SourceFileDigest)
 
 	go ManageRequest(NewClientRequest(input.SourceFileDigest))
 

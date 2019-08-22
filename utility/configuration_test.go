@@ -13,4 +13,5 @@ func Test_Configuration(t *testing.T) {
 	fmt.Println(configuration.ZookeeperServersPrivateIPs)
 	fmt.Println(configuration.NodeClass)
 	fmt.Println(configuration.NodeID)
+	fmt.Println(configuration.NodeGroupID)
 }

@@ -20,14 +20,18 @@ func main() {
 
 	nodeID := configuration.NodeID
 	nodeClass := configuration.NodeClass
+	nodeGroupId := configuration.NodeGroupID
+	zookeeperServers := configuration.ZookeeperServersPrivateIPs
 	nodePublicIP := string(commandOutput)
 
 	if nodeClass == "primary" {
 
-		primary.New(nodeID, nodePublicIP, configuration.ZookeeperServersPrivateIPs).StartWork()
+		primary.Initialize(nodeID, nodePublicIP, zookeeperServers)
+		primary.StartWork()
 
 	} else if nodeClass == "worker" {
 
-		worker.New(nodeID, nodePublicIP, configuration.ZookeeperServersPrivateIPs).StartWork()
+		worker.Initialize(nodeID, nodeGroupId, nodePublicIP, zookeeperServers)
+		worker.StartWork()
 	}
 }

@@ -10,7 +10,12 @@ import (
 
 func downloadSourceDataFromCloud(sourceDataDigest string) *os.File {
 
-	output, err := ioutil.TempFile("", sourceDataDigest)
+	output := node.GetDataRegistry().Get(sourceDataDigest).(*os.File)
+	if output != nil {
+		return output
+	}
+
+	output, err := ioutil.TempFile(os.TempDir(), sourceDataDigest)
 	utility.CheckError(err)
 
 	node.GetAmazonS3Client().Download(sourceDataDigest, output)
