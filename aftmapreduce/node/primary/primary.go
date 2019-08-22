@@ -27,11 +27,17 @@ func StartWork() {
 
 	<-isLeader
 
-	node.GetLogger().PrintMessage("I'm leader")
+	node.GetLogger().PrintInfoTaskMessage("Initialization", "I'm leader")
 
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
 
 	go node.GetZookeeperClient().KeepConnectionAlive()
+	wordcount.InitNeededZNodePathsToManageClientRequests()
+
+	for _, request := range wordcount.GetPendingClientsRequests() {
+		go wordcount.ManageRequest(request)
+	}
+
 	aftmapreduce.StartAcceptingRPCRequest(&wordcount.Request{}, node.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
 }

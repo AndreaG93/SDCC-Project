@@ -3,6 +3,8 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/utility"
+	"fmt"
 )
 
 type Request struct {
@@ -17,27 +19,61 @@ type RequestOutput struct {
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
-	go manageRequest(input.SourceFileDigest)
+	go ManageRequest(NewClientRequest(input.SourceFileDigest))
+
 	return nil
 }
 
-func manageRequest(digest string) {
+func ManageRequest(clientRequest *ClientRequest) {
 
-	node.SetProperty(property.MapCardinality, node.GetZookeeperClient().GetGroupAmount())
+	var mapTaskOutput []*AFTMapTaskOutput
+	var reduceTaskOutput []*AFTReduceTaskOutput
+	var localityAwarenessData map[int]int
 
-	splits := getSplits(digest, node.GetPropertyAsInteger(property.MapCardinality))
+	for {
 
-	mapTaskOutput := mapTask(splits)
+		currentClientRequestStatus := clientRequest.getStatus()
 
-	localityAwarenessData := getLocalityAwareReduceTaskMappedToNodeGroupId(mapTaskOutput)
+		node.SetProperty(property.MapCardinality, node.GetZookeeperClient().GetGroupAmount())
+		node.GetLogger().PrintInfoStartingTaskMessage(fmt.Sprintf("%s for %s", currentClientRequestStatus, (*clientRequest).digest))
 
-	localityAwareShuffleTask(mapTaskOutput, localityAwarenessData)
+		switch currentClientRequestStatus {
+		case InitialStatus:
 
-	reduceTaskOutput := reduceTask(mapTaskOutput, localityAwarenessData)
+			splits := getSplits(clientRequest.digest, node.GetPropertyAsInteger(property.MapCardinality))
+			mapTaskOutput = mapTask(splits)
 
-	dataArray := retrieveTask(reduceTaskOutput)
-	finalData := computeFinalOutputTask(dataArray)
+			(*clientRequest).CheckPoint(AfterMapStatus, nil)
 
-	finalData.Print()
+		case AfterMapStatus:
 
+			node.GetAmazonS3Client().Delete((*clientRequest).digest)
+
+			localityAwarenessData = getLocalityAwareReduceTaskMappedToNodeGroupId(mapTaskOutput)
+			localityAwareShuffleTask(mapTaskOutput, localityAwarenessData)
+
+			(*clientRequest).CheckPoint(AfterLocalityAwareShuffle, nil)
+
+		case AfterLocalityAwareShuffle:
+
+			reduceTaskOutput = reduceTask(mapTaskOutput, localityAwarenessData)
+
+			(*clientRequest).CheckPoint(AfterLocalityAwareShuffle, nil)
+
+		case AfterReduce:
+			dataArray := retrieveTask(reduceTaskOutput)
+
+			finalOutput := computeFinalOutputTask(dataArray)
+			finalRawData, err := finalOutput.Serialize()
+			utility.CheckError(err)
+
+			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), finalRawData)
+
+			(*clientRequest).CheckPoint(Complete, nil)
+
+		case Complete:
+			return
+		}
+		node.GetLogger().PrintInfoCompleteTaskMessage(fmt.Sprintf("%s for %s", currentClientRequestStatus, (*clientRequest).digest))
+	}
 }

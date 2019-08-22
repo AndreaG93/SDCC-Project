@@ -6,6 +6,7 @@ import (
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"SDCC-Project/utility"
 	"encoding/gob"
+	"fmt"
 	"net/rpc"
 )
 
@@ -21,7 +22,8 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 
 	node.GetAmazonS3Client().Upload(sourceFilePath, sourceFileDigest)
 
-	sendRequestToCurrentLeader(sourceFileDigest, currentLeaderInternetAddress)
+	rawDataOutput := sendRequestToCurrentLeader(sourceFileDigest, currentLeaderInternetAddress)
+	printResult(rawDataOutput)
 }
 
 func initialize(zookeeperAddresses []string) {
@@ -30,7 +32,7 @@ func initialize(zookeeperAddresses []string) {
 	gob.Register(wordcount.Request{})
 }
 
-func sendRequestToCurrentLeader(sourceFileDigest string, currentLeaderInternetAddress string) {
+func sendRequestToCurrentLeader(sourceFileDigest string, currentLeaderInternetAddress string) []byte {
 
 	input := new(wordcount.RequestInput)
 	output := new(wordcount.RequestOutput)
@@ -42,6 +44,16 @@ func sendRequestToCurrentLeader(sourceFileDigest string, currentLeaderInternetAd
 
 	err = client.Call("Request.Execute", &input, &output)
 	utility.CheckError(err)
+
+	finalOutputPath := fmt.Sprintf("%s/%s", wordcount.CompleteRequestsZNodePath, sourceFileDigest)
+
+	rawData, watcher := node.GetZookeeperClient().GetZNodeData(finalOutputPath)
+	if rawData == nil {
+		<-watcher
+		rawData, _ = node.GetZookeeperClient().GetZNodeData(finalOutputPath)
+	}
+
+	return rawData
 }
 
 func printResult(rawData []byte) {
@@ -50,51 +62,3 @@ func printResult(rawData []byte) {
 
 	result.Print()
 }
-
-/*
-func kkStartWork(filename string, zookeeperAddresses []string) {
-
-	var rawData []byte
-	var watcher <-chan zk.Event
-
-	digest, err := utility.GenerateDigestOfFileUsingSHA512(filename)
-	if err != nil {
-		panic(err)
-	}
-
-	node.Initialize(0, "Client", zookeeperAddresses)
-
-	path := fmt.Sprintf("%s/%s", aftmapreduce.CompleteRequestsZNodePath, digest)
-
-	if !node.GetZookeeperClient().CheckZNodeExistence(path) {
-
-		S3Client := amazons3.New()
-		S3Client.Upload(filename, digest)
-
-		internetAddress, err := node.GetZookeeperClient().GetCurrentLeaderInternetAddress()
-		if err != nil {
-			panic(err)
-		}
-
-		sendRequest(digest, internetAddress)
-
-		_, watcher = node.GetZookeeperClient().GetZNodeData(path)
-		<-watcher
-	} else {
-
-		internetAddress, err := node.GetZookeeperClient().GetCurrentLeaderInternetAddress()
-		if err != nil {
-			panic(err)
-		}
-
-		rawData, _ = node.GetZookeeperClient().GetZNodeData(path)
-		if rawData == nil {
-			sendRequest(digest, internetAddress)
-			_, watcher = node.GetZookeeperClient().GetZNodeData(path)
-			<-watcher
-		}
-	}
-
-	rawData, _ = node.GetZookeeperClient().GetZNodeData(path)
-	printResult(rawData)
-}*/
