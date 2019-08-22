@@ -90,7 +90,7 @@ func (obj *AFTReduceTask) startListeningWorkersReplies() {
 
 func executeSingleReduceTaskReplica(localDataDigest string, ReduceWorkIndex int, fullRPCInternetAddress string, reply chan *ReduceOutput) {
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("Send a 'REDUCE' command to: %s -- Reduce Task Index %d", fullRPCInternetAddress, ReduceWorkIndex))
+	node.GetLogger().PrintInfoTaskMessage("SINGLE-REDUCE-REPLICA", fmt.Sprintf("Send a 'REDUCE' command to: %s -- Reduce Task Index %d", fullRPCInternetAddress, ReduceWorkIndex))
 
 	input := new(ReduceInput)
 	output := new(ReduceOutput)
@@ -105,5 +105,4 @@ func executeSingleReduceTaskReplica(localDataDigest string, ReduceWorkIndex int,
 	if err == nil {
 		reply <- output
 	}
-
 }

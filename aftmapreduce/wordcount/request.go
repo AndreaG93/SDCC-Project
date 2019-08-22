@@ -29,8 +29,14 @@ func ManageRequest(clientRequest *ClientRequest) {
 	var mapTaskOutput []*AFTMapTaskOutput
 	var reduceTaskOutput []*AFTReduceTaskOutput
 	var localityAwarenessData map[int]int
+	var rawData []byte
+	var err error
 
 	for {
+
+		reduceTaskOutput = nil
+		mapTaskOutput = nil
+		localityAwarenessData = nil
 
 		currentClientRequestStatus := clientRequest.getStatus()
 
@@ -43,24 +49,52 @@ func ManageRequest(clientRequest *ClientRequest) {
 			splits := getSplits(clientRequest.digest, node.GetPropertyAsInteger(property.MapCardinality))
 			mapTaskOutput = mapTask(splits)
 
-			(*clientRequest).CheckPoint(AfterMapStatus, nil)
+			rawData, err = utility.Encode(mapTaskOutput)
+			utility.CheckError(err)
+
+			(*clientRequest).CheckPoint(AfterMapStatus, rawData, nil)
 
 		case AfterMapStatus:
+
+			if mapTaskOutput == nil {
+				rawData = (*clientRequest).GetDataFromCache1()
+				utility.CheckError(utility.Decode(rawData, &mapTaskOutput))
+			}
 
 			node.GetAmazonS3Client().Delete((*clientRequest).digest)
 
 			localityAwarenessData = getLocalityAwareReduceTaskMappedToNodeGroupId(mapTaskOutput)
 			localityAwareShuffleTask(mapTaskOutput, localityAwarenessData)
 
-			(*clientRequest).CheckPoint(AfterLocalityAwareShuffle, nil)
+			rawData, err = utility.Encode(localityAwarenessData)
+			utility.CheckError(err)
+
+			(*clientRequest).CheckPoint(AfterLocalityAwareShuffle, nil, rawData)
 
 		case AfterLocalityAwareShuffle:
 
+			if localityAwarenessData == nil || mapTaskOutput == nil {
+				rawData = (*clientRequest).GetDataFromCache1()
+				utility.CheckError(utility.Decode(rawData, &mapTaskOutput))
+
+				rawData = (*clientRequest).GetDataFromCache2()
+				utility.CheckError(utility.Decode(rawData, &localityAwarenessData))
+			}
+
 			reduceTaskOutput = reduceTask(mapTaskOutput, localityAwarenessData)
 
-			(*clientRequest).CheckPoint(AfterLocalityAwareShuffle, nil)
+			rawData, err = utility.Encode(reduceTaskOutput)
+			utility.CheckError(err)
+
+			(*clientRequest).CheckPoint(AfterReduce, rawData, nil)
 
 		case AfterReduce:
+
+			if reduceTaskOutput == nil {
+				rawData = (*clientRequest).GetDataFromCache1()
+				utility.CheckError(utility.Decode(rawData, &reduceTaskOutput))
+			}
+
 			dataArray := retrieveTask(reduceTaskOutput)
 
 			finalOutput := computeFinalOutputTask(dataArray)
@@ -69,9 +103,10 @@ func ManageRequest(clientRequest *ClientRequest) {
 
 			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), finalRawData)
 
-			(*clientRequest).CheckPoint(Complete, nil)
+			(*clientRequest).CheckPoint(Complete, nil, nil)
 
 		case Complete:
+			clientRequest.DeletePendingRequest()
 			return
 		}
 		node.GetLogger().PrintInfoCompleteTaskMessage(fmt.Sprintf("%s for %s", currentClientRequestStatus, (*clientRequest).digest))

@@ -21,7 +21,7 @@ type RetrieveOutput struct {
 
 func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
-	node.GetLogger().PrintMessage(fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
+	node.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
 
 	output.RawData = node.GetDataRegistry().Get(input.DataDigest).([]byte)
 	if output.RawData == nil {

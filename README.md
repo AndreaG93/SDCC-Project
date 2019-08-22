@@ -10,3 +10,6 @@ University project.
 1. `go get -u github.com/aws/aws-sdk-go/service/s3/...`
 
 1. `go get -u github.com/aws/aws-sdk-go/aws/...`
+
+1. `go get -u github.com/Sirupsen/logrus`
+
