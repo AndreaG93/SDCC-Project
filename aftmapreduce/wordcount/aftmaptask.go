@@ -66,9 +66,9 @@ func (obj *MapTask) startListeningWorkersReplies() {
 
 	numberOfReply := 0
 
-	for reply := range (*obj).workersReplyChannel {
+	for myReply := range (*obj).workersReplyChannel {
 
-		if (*obj).registry.Add(reply.ReplayDigest, reply.IdNode, reply.MappedDataSizes) {
+		if (*obj).registry.Add(myReply.ReplayDigest, myReply.IdNode, myReply.MappedDataSizes) {
 			return
 		}
 

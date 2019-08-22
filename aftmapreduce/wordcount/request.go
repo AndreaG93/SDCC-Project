@@ -34,10 +34,6 @@ func ManageRequest(clientRequest *ClientRequest) {
 
 	for {
 
-		reduceTaskOutput = nil
-		mapTaskOutput = nil
-		localityAwarenessData = nil
-
 		currentClientRequestStatus := clientRequest.getStatus()
 
 		node.SetProperty(property.MapCardinality, node.GetZookeeperClient().GetGroupAmount())
