@@ -22,7 +22,7 @@ var mutex = &sync.Mutex{}
 func GenerateArrayIndexFromString(inputString string, arraySize uint) (uint, error) {
 
 	if inputString == "" {
-		return 0, errors.New(InvalidInput)
+		return 0, errors.New("invalid input")
 	}
 
 	if _, err := FNV1AHashAlgorithm.Write([]byte(inputString)); err != nil {

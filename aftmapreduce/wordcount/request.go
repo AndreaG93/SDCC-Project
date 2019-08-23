@@ -3,7 +3,7 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,7 +13,7 @@ type Request struct {
 }
 
 type RequestInput struct {
-	FileContent string
+	FileContent      string
 	SourceFileDigest string
 }
 

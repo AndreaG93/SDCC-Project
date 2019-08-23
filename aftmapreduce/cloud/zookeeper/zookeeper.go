@@ -1,7 +1,7 @@
 package zookeeper
 
 import (
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"strconv"
@@ -10,7 +10,6 @@ import (
 
 const (
 	membershipZNodeRootPath = "/membership"
-	ActualLeaderZNodePath   = "/leader"
 	zkSessionTimeOut        = 15 * time.Second
 )
 

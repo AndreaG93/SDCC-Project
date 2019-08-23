@@ -1,9 +1,9 @@
 package WordTokenHashTable
 
 import (
+	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordToken"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
-	"SDCC-Project/utility"
 	"fmt"
 )
 
@@ -24,31 +24,6 @@ func New(size uint) *WordTokenHashTable {
 	}
 
 	return output
-}
-
-func Deserialize(input []byte) (*WordTokenHashTable, error) {
-
-	var output *WordTokenHashTable
-	var currentWordToken *WordToken.WordToken
-
-	serializedData := []WordToken.WordToken{}
-
-	if err := utility.Decode(input, &serializedData); err != nil {
-		return nil, err
-	}
-
-	output = New(serializedData[0].Occurrences)
-
-	for index := uint(1); index < uint(len(serializedData)); index++ {
-
-		currentWordToken = WordToken.New(serializedData[index].Word, serializedData[index].Occurrences)
-		if err := (*output).InsertWordToken(currentWordToken); err != nil {
-			return nil, err
-		}
-
-	}
-
-	return output, nil
 }
 
 func (obj *WordTokenHashTable) InsertWordToken(wordToken *WordToken.WordToken) error {

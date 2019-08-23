@@ -5,7 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/registry/reply"
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"math"
 	"net/rpc"
 )

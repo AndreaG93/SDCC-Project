@@ -3,7 +3,7 @@ package main
 import (
 	"SDCC-Project/aftmapreduce/node/primary"
 	"SDCC-Project/aftmapreduce/node/worker"
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"os/exec"
 )
 

@@ -1,7 +1,6 @@
 package zookeeper
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -27,24 +26,4 @@ func Test_zookeeperBasicOperations(t *testing.T) {
 	}
 
 	(*zooKeeperClient).RemoveZNode(testZNodePath)
-}
-
-func Test_membershipWatcher(t *testing.T) {
-
-	zooKeeperClient := New([]string{"localhost:2181"})
-
-	for {
-		data, watcher := zooKeeperClient.GetMembersList()
-		fmt.Println(data)
-		<-watcher
-		fmt.Println("There are some changes...")
-	}
-}
-
-func Test_ephemeralNodes(t *testing.T) {
-
-	zooKeeperClient := New([]string{"localhost:2181"})
-
-	(*zooKeeperClient).RegisterNodeMembership(1, testData)
-	(*zooKeeperClient).KeepConnectionAlive()
 }

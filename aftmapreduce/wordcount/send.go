@@ -3,8 +3,8 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
-	"SDCC-Project/utility"
 	"fmt"
 	"net/rpc"
 )
@@ -52,6 +52,7 @@ func sendDataToWorker(data []byte, dataDigest string, receiverAssociatedDataDige
 		worker, err := rpc.Dial("tcp", address)
 		if err != nil {
 			node.GetLogger().PrintPanicErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
+			continue
 		}
 
 		err = worker.Call("Receive.Execute", &input, &output)

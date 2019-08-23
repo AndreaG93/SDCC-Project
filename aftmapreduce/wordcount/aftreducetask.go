@@ -4,7 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/registry/reply"
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 	"math"
 	"net/rpc"

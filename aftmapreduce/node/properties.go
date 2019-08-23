@@ -1,9 +1,9 @@
 package node
 
 import (
+	"SDCC-Project/aftmapreduce/cloud/amazons3"
+	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/registry"
-	"SDCC-Project/cloud/amazons3"
-	"SDCC-Project/cloud/zookeeper"
 )
 
 var zookeeperClient *zookeeper.Client

@@ -1,7 +1,7 @@
 package aftmapreduce
 
 import (
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"net"
 	"net/rpc"
 )
@@ -20,7 +20,7 @@ func StartAcceptingRPCRequest(serviceTypeRequest interface{}, address string) {
 	var listener net.Listener
 
 	listener, _ = net.Listen("tcp", address)
-	rpc.Register(serviceTypeRequest)
+	utility.CheckError(rpc.Register(serviceTypeRequest))
 
 	defer func() {
 		utility.CheckError(listener.Close())

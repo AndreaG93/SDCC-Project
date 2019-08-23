@@ -1,7 +1,7 @@
 package amazons3
 
 import (
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -19,7 +19,13 @@ func Test_AmazonS3BasicOperations(t *testing.T) {
 
 	amazonS3Client := New()
 
-	(*amazonS3Client).Upload(testFile1Path, testKeyName)
+	file, err := os.Open("./test1.txt")
+	utility.CheckError(err)
+	defer func() {
+		utility.CheckError(file.Close())
+	}()
+
+	(*amazonS3Client).Upload(file, testKeyName)
 
 	outputFile, err := os.Create(testFile2Path)
 	utility.CheckError(err)
@@ -44,7 +50,13 @@ func Test_AmazonS3BasicOperationsWithTemporaryFile(t *testing.T) {
 
 	amazonS3Client := New()
 
-	(*amazonS3Client).Upload(testFile1Path, testKeyName)
+	file, err := os.Open("./test1.txt")
+	utility.CheckError(err)
+	defer func() {
+		utility.CheckError(file.Close())
+	}()
+
+	(*amazonS3Client).Upload(file, testKeyName)
 
 	outputFile, err := ioutil.TempFile("", "testFile2Path")
 	utility.CheckError(err)
@@ -56,9 +68,11 @@ func Test_AmazonS3BasicOperationsWithTemporaryFile(t *testing.T) {
 	(*amazonS3Client).Download(testKeyName, outputFile)
 
 	fileInfo, err := outputFile.Stat()
+	utility.CheckError(err)
 	buffer := make([]byte, fileInfo.Size())
 
-	outputFile.Read(buffer)
+	_, err = outputFile.Read(buffer)
+	utility.CheckError(err)
 
 	fmt.Println(string(buffer))
 

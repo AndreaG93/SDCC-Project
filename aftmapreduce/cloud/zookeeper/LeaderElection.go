@@ -1,7 +1,7 @@
 package zookeeper
 
 import (
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"errors"
 	"fmt"
 	"github.com/samuel/go-zookeeper/zk"

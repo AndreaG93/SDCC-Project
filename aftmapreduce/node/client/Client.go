@@ -1,10 +1,10 @@
 package client
 
 import (
+	"SDCC-Project/aftmapreduce/cloud/zookeeper"
+	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
-	"SDCC-Project/cloud/zookeeper"
-	"SDCC-Project/utility"
 	"fmt"
 	"io/ioutil"
 	"net/rpc"

@@ -2,7 +2,7 @@ package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"io/ioutil"
 	"os"
 	"strings"

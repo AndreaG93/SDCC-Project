@@ -1,7 +1,7 @@
 package amazons3
 
 import (
-	"SDCC-Project/utility"
+	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"

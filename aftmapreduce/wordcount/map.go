@@ -3,8 +3,8 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
-	"SDCC-Project/utility"
 	"strings"
 )
 
