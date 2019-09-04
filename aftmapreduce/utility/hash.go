@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"hash/fnv"
-	"os/exec"
 	"sync"
 )
 
@@ -44,19 +43,4 @@ func GenerateDigestUsingSHA512(data []byte) string {
 	mutex.Unlock()
 
 	return output
-}
-
-func GenerateDigestOfFileUsingSHA512(filename string) (string, error) {
-
-	var command *exec.Cmd
-	var commandOutput []byte
-	var commandError error
-
-	command = exec.Command("sha512sum", filename)
-
-	if commandOutput, commandError = command.Output(); commandError != nil {
-		return "", commandError
-	}
-
-	return string(commandOutput[:128]), nil
 }

@@ -19,10 +19,10 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	currentLeaderInternetAddress, err := zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
 	utility.CheckError(err)
 
-	sourceFileDigest, err := utility.GenerateDigestOfFileUsingSHA512(sourceFilePath)
+	data, err := ioutil.ReadFile(sourceFilePath)
 	utility.CheckError(err)
 
-	data, err := ioutil.ReadFile(sourceFilePath)
+	sourceFileDigest := utility.GenerateDigestUsingSHA512(data)
 	utility.CheckError(err)
 
 	rawDataOutput := sendRequestToCurrentLeader(sourceFileDigest, string(data), currentLeaderInternetAddress)
@@ -55,8 +55,6 @@ func sendRequestToCurrentLeader(sourceFileDigest string, fileContent string, cur
 }
 
 func printResult(rawData []byte) {
-	result, err := WordTokenList.Deserialize(rawData)
-	utility.CheckError(err)
-
+	result := WordTokenList.Deserialize(rawData)
 	result.Print()
 }

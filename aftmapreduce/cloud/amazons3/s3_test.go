@@ -19,21 +19,26 @@ func Test_AmazonS3BasicOperations(t *testing.T) {
 
 	amazonS3Client := New()
 
-	file, err := os.Open("./test1.txt")
+	file, err := os.Open(testFile1Path)
 	utility.CheckError(err)
-	defer func() {
-		utility.CheckError(file.Close())
-	}()
 
 	(*amazonS3Client).Upload(file, testKeyName)
+	utility.CheckError(file.Close())
 
 	outputFile, err := os.Create(testFile2Path)
 	utility.CheckError(err)
 
 	(*amazonS3Client).Download(testKeyName, outputFile)
+	utility.CheckError(outputFile.Close())
 
-	digest1, _ := utility.GenerateDigestOfFileUsingSHA512(testFile1Path)
-	digest2, _ := utility.GenerateDigestOfFileUsingSHA512(testFile2Path)
+	data1, err := ioutil.ReadFile(testFile1Path)
+	utility.CheckError(err)
+
+	data2, err := ioutil.ReadFile(testFile2Path)
+	utility.CheckError(err)
+
+	digest1 := utility.GenerateDigestUsingSHA512(data1)
+	digest2 := utility.GenerateDigestUsingSHA512(data2)
 
 	if strings.Compare(digest1, digest2) != 0 {
 		panic("Error")
@@ -62,6 +67,7 @@ func Test_AmazonS3BasicOperationsWithTemporaryFile(t *testing.T) {
 	utility.CheckError(err)
 
 	defer func() {
+		utility.CheckError(outputFile.Close())
 		utility.CheckError(os.Remove(outputFile.Name()))
 	}()
 

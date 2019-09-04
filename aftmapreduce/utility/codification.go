@@ -5,29 +5,18 @@ import (
 	"encoding/gob"
 )
 
-func Encode(data interface{}) ([]byte, error) {
+func Encode(data interface{}) []byte {
 
-	var err error
 	var buffer bytes.Buffer
 
-	enc := gob.NewEncoder(&buffer)
+	encoder := gob.NewEncoder(&buffer)
+	CheckError(encoder.Encode(data))
 
-	if err = enc.Encode(data); err != nil {
-		return nil, err
-	}
-
-	return buffer.Bytes(), nil
+	return buffer.Bytes()
 }
 
-func Decode(inputData []byte, outputType interface{}) error {
-
-	var err error
+func Decode(inputData []byte, outputType interface{}) {
 
 	decoder := gob.NewDecoder(bytes.NewReader(inputData))
-
-	if err = decoder.Decode(outputType); err != nil {
-		return err
-	}
-
-	return nil
+	CheckError(decoder.Decode(outputType))
 }

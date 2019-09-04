@@ -10,15 +10,23 @@ import (
 
 func downloadSourceDataFromCloud(sourceDataDigest string) *os.File {
 
-	output := node.GetDataRegistry().Get(sourceDataDigest).(*os.File)
-	if output != nil {
-		return output
-	}
-
 	output, err := ioutil.TempFile(os.TempDir(), sourceDataDigest)
 	utility.CheckError(err)
 
-	node.GetAmazonS3Client().Download(sourceDataDigest, output)
+	clientInput := node.GetDataRegistry().Get(sourceDataDigest)
+
+	if clientInput != nil {
+
+		_, err = output.Write(clientInput)
+		utility.CheckError(err)
+
+		return output
+	} else {
+		node.GetAmazonS3Client().Download(sourceDataDigest, output)
+	}
+
+	_, err = output.Seek(0, 0)
+	utility.CheckError(err)
 
 	return output
 }
@@ -31,10 +39,6 @@ func getSplits(sourceDataDigest string, splitsCardinality int) []string {
 	output := make([]string, splitsCardinality)
 
 	inputFile := downloadSourceDataFromCloud(sourceDataDigest)
-	defer func() {
-		utility.CheckError(os.Remove(inputFile.Name()))
-	}()
-
 	fileInfo, err = inputFile.Stat()
 	utility.CheckError(err)
 
@@ -89,5 +93,7 @@ func getSplits(sourceDataDigest string, splitsCardinality int) []string {
 		}
 	}
 
+	utility.CheckError(inputFile.Close())
+	utility.CheckError(os.Remove(inputFile.Name()))
 	return output
 }

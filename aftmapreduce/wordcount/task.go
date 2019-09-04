@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"fmt"
 	"sync"
@@ -114,8 +113,7 @@ func retrieveTask(input []*AFTReduceTaskOutput) []*WordTokenList.WordTokenList {
 		targetNodeIP := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(aftReduceTaskOutput.IdGroup, aftmapreduce.WordCountRetrieverRPCBasePort, aftReduceTaskOutput.NodeIdsWithCorrectResult)
 
 		rawData := retrieveFrom(targetNodeIP, aftReduceTaskOutput.ReplayDigest)
-		serializedData, err := WordTokenList.Deserialize(rawData)
-		utility.CheckError(err)
+		serializedData := WordTokenList.Deserialize(rawData)
 
 		output[index] = serializedData
 	}

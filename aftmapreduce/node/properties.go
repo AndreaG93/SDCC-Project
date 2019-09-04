@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce/cloud/amazons3"
 	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/registry"
+	"fmt"
 )
 
 var zookeeperClient *zookeeper.Client
@@ -14,15 +15,26 @@ var amazonS3Client *amazons3.S3Client
 var dataRegistry *registry.DataRegistry
 var digestRegistry *registry.DigestRegistry
 
-func Initialize(zookeeperAddresses []string) {
+func InitializePrimary(zookeeperAddresses []string, nodeId int) {
+
+	initializeNode(zookeeperAddresses)
+
+	amazonS3Client = amazons3.New()
+	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Primary%d", nodeId), false)
+}
+
+func InitializeWorker(zookeeperAddresses []string, nodeId int) {
+
+	initializeNode(zookeeperAddresses)
+
+	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Worker%d", nodeId), true)
+	digestRegistry = registry.NewDigestRegistry()
+}
+
+func initializeNode(zookeeperAddresses []string) {
 
 	zookeeperClient = zookeeper.New(zookeeperAddresses)
-	amazonS3Client = amazons3.New()
-
 	logger = NewLogger()
-
-	dataRegistry = registry.NewDataRegistry()
-	digestRegistry = registry.NewDigestRegistry()
 
 	properties = make(map[string]interface{})
 }

@@ -64,7 +64,7 @@ func (obj *WordTokenHashTable) GetWordTokenListAt(index int) *WordTokenList.Word
 	return obj.hashTable[index]
 }
 
-func (obj *WordTokenHashTable) Serialize() ([]byte, error) {
+func (obj *WordTokenHashTable) Serialize() []byte {
 
 	var output []WordToken.WordToken
 	var currentWordTokenList *WordTokenList.WordTokenList
@@ -99,4 +99,26 @@ func (obj *WordTokenHashTable) Serialize() ([]byte, error) {
 	}
 
 	return utility.Encode(output)
+}
+
+func Deserialize(input []byte) *WordTokenHashTable {
+
+	var output *WordTokenHashTable
+	var currentWordToken *WordToken.WordToken
+
+	serializedData := []WordToken.WordToken{}
+
+	utility.Decode(input, &serializedData)
+
+	output = New(serializedData[0].Occurrences)
+
+	for index := uint(1); index < uint(len(serializedData)); index++ {
+
+		currentWordToken = WordToken.New(serializedData[index].Word, serializedData[index].Occurrences)
+		err := (*output).InsertWordToken(currentWordToken)
+		utility.CheckError(err)
+
+	}
+
+	return output
 }

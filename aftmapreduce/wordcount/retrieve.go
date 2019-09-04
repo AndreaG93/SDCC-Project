@@ -23,7 +23,7 @@ func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
 	node.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
 
-	output.RawData = node.GetDataRegistry().Get(input.DataDigest).([]byte)
+	output.RawData = node.GetDataRegistry().Get(input.DataDigest)
 	if output.RawData == nil {
 		return errors.New("no data with given digest")
 	}

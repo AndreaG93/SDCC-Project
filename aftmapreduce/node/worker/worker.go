@@ -10,7 +10,7 @@ import (
 
 func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses []string) {
 
-	node.Initialize(zookeeperAddresses)
+	node.InitializeWorker(zookeeperAddresses, id)
 
 	node.SetProperty(property.NodeID, id)
 	node.SetProperty(property.NodeGroupID, groupId)

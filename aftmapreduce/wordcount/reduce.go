@@ -36,12 +36,14 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, []byte) {
 
-	localWordTokenList := (node.GetDataRegistry().Get(localDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(reduceTaskIndex)
+	localWordTokenHashTable := WordTokenHashTable.Deserialize(node.GetDataRegistry().Get(localDataDigest))
+
+	localWordTokenList := localWordTokenHashTable.GetWordTokenListAt(reduceTaskIndex)
 	receivedDataDigest := node.GetDigestRegistry().GetAssociatedDigest(localDataDigest)
 
 	for _, digest := range receivedDataDigest {
 
-		currentWordTokenList := (node.GetDataRegistry().Get(digest)).(*WordTokenList.WordTokenList)
+		currentWordTokenList := WordTokenList.Deserialize(node.GetDataRegistry().Get(digest))
 		localWordTokenList.Merge(currentWordTokenList)
 	}
 

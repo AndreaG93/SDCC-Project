@@ -22,14 +22,24 @@ type RequestOutput struct {
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
-	file, err := ioutil.TempFile(os.TempDir(), "")
+	rawData := []byte(input.FileContent)
+
+	file, err := ioutil.TempFile("", "")
 	utility.CheckError(err)
 
-	_, err = file.Write([]byte(input.FileContent))
+	_, err = file.Write(rawData)
 	utility.CheckError(err)
 
-	node.GetDataRegistry().Set(input.SourceFileDigest, file)
+	utility.CheckError(file.Sync())
+
+	_, err = file.Seek(0, 0)
+	utility.CheckError(err)
+
+	node.GetDataRegistry().Set(input.SourceFileDigest, rawData)
 	node.GetAmazonS3Client().Upload(file, input.SourceFileDigest)
+
+	utility.CheckError(file.Close())
+	utility.CheckError(os.Remove(file.Name()))
 
 	go ManageRequest(NewClientRequest(input.SourceFileDigest))
 
@@ -42,7 +52,6 @@ func ManageRequest(clientRequest *ClientRequest) {
 	var reduceTaskOutput []*AFTReduceTaskOutput
 	var localityAwarenessData map[int]int
 	var rawData []byte
-	var err error
 
 	for {
 
@@ -57,16 +66,14 @@ func ManageRequest(clientRequest *ClientRequest) {
 			splits := getSplits(clientRequest.digest, node.GetPropertyAsInteger(property.MapCardinality))
 			mapTaskOutput = mapTask(splits)
 
-			rawData, err = utility.Encode(mapTaskOutput)
-			utility.CheckError(err)
-
+			rawData = utility.Encode(mapTaskOutput)
 			(*clientRequest).CheckPoint(AfterMapStatus, rawData, nil)
 
 		case AfterMapStatus:
 
 			if mapTaskOutput == nil {
 				rawData = (*clientRequest).GetDataFromCache1()
-				utility.CheckError(utility.Decode(rawData, &mapTaskOutput))
+				utility.Decode(rawData, &mapTaskOutput)
 			}
 
 			node.GetAmazonS3Client().Delete((*clientRequest).digest)
@@ -74,8 +81,7 @@ func ManageRequest(clientRequest *ClientRequest) {
 			localityAwarenessData = getLocalityAwareReduceTaskMappedToNodeGroupId(mapTaskOutput)
 			localityAwareShuffleTask(mapTaskOutput, localityAwarenessData)
 
-			rawData, err = utility.Encode(localityAwarenessData)
-			utility.CheckError(err)
+			rawData = utility.Encode(localityAwarenessData)
 
 			(*clientRequest).CheckPoint(AfterLocalityAwareShuffle, nil, rawData)
 
@@ -83,16 +89,15 @@ func ManageRequest(clientRequest *ClientRequest) {
 
 			if localityAwarenessData == nil || mapTaskOutput == nil {
 				rawData = (*clientRequest).GetDataFromCache1()
-				utility.CheckError(utility.Decode(rawData, &mapTaskOutput))
+				utility.Decode(rawData, &mapTaskOutput)
 
 				rawData = (*clientRequest).GetDataFromCache2()
-				utility.CheckError(utility.Decode(rawData, &localityAwarenessData))
+				utility.Decode(rawData, &localityAwarenessData)
 			}
 
 			reduceTaskOutput = reduceTask(mapTaskOutput, localityAwarenessData)
 
-			rawData, err = utility.Encode(reduceTaskOutput)
-			utility.CheckError(err)
+			rawData = utility.Encode(reduceTaskOutput)
 
 			(*clientRequest).CheckPoint(AfterReduce, rawData, nil)
 
@@ -100,14 +105,13 @@ func ManageRequest(clientRequest *ClientRequest) {
 
 			if reduceTaskOutput == nil {
 				rawData = (*clientRequest).GetDataFromCache1()
-				utility.CheckError(utility.Decode(rawData, &reduceTaskOutput))
+				utility.Decode(rawData, &reduceTaskOutput)
 			}
 
 			dataArray := retrieveTask(reduceTaskOutput)
 
 			finalOutput := computeFinalOutputTask(dataArray)
-			finalRawData, err := finalOutput.Serialize()
-			utility.CheckError(err)
+			finalRawData := finalOutput.Serialize()
 
 			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), finalRawData)
 

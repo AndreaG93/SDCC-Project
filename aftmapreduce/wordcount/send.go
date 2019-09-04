@@ -28,7 +28,9 @@ func (x *Send) Execute(input SendInput, output *SendOutput) error {
 	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
 	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
 
-	data := (node.GetDataRegistry().Get(input.SourceDataDigest)).(*WordTokenHashTable.WordTokenHashTable).GetWordTokenListAt(input.WordTokenListIndex)
+	currentWordTokenHashTable := WordTokenHashTable.Deserialize(node.GetDataRegistry().Get(input.SourceDataDigest))
+
+	data := currentWordTokenHashTable.GetWordTokenListAt(input.WordTokenListIndex)
 	dataDigest, rawData := data.GetDigestAndSerializedData()
 
 	sendDataToWorker(rawData, dataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)

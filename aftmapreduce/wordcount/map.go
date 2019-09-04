@@ -29,7 +29,7 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
 
-	node.GetDataRegistry().Set(digest, wordTokenHashTable)
+	node.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize())
 
 	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).IdNode = node.GetPropertyAsInteger(property.NodeID)
@@ -54,8 +54,7 @@ func performMapTask(text string, mappingCardinality int) (string, *WordTokenHash
 		utility.CheckError(outputData.InsertWord(currentWord))
 	}
 
-	rawData, err := outputData.Serialize()
-	utility.CheckError(err)
+	rawData := outputData.Serialize()
 	digest := utility.GenerateDigestUsingSHA512(rawData)
 
 	for index := 0; index < mappingCardinality; index++ {
