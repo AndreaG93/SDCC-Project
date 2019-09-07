@@ -60,7 +60,6 @@ func (obj *Client) RunAsLeaderCandidate(responseChannel chan bool, internetAddre
 
 	(*obj).initializationElectionResource()
 	myProposal := (*obj).createProposalsZNode(internetAddress)
-	fmt.Println("My proposal is ", myProposal)
 
 	for {
 
@@ -71,8 +70,6 @@ func (obj *Client) RunAsLeaderCandidate(responseChannel chan bool, internetAddre
 		} else {
 
 			zNodeToWatch := fmt.Sprintf("%s%s", proposalZNodePath, candidates[len(candidates)-2])
-
-			fmt.Println("I'm watching ", zNodeToWatch)
 			watcher := (*obj).GetZNodeWatcher(zNodeToWatch)
 			<-watcher
 		}

@@ -9,25 +9,27 @@ import (
 )
 
 const (
-	timeout = 5 * time.Minute
+	timeout = 30 * time.Second
 )
 
 type DataRegistry struct {
 	dataRegistryFolderPath string
 	content                map[string][]byte
 	permanentRegistry      bool
+	timerTable             map[string]*time.Timer
 }
 
 func NewDataRegistry(nodeName string, writeRegistryOnFileSystem bool) *DataRegistry {
 
 	output := new(DataRegistry)
 
+	(*output).timerTable = make(map[string]*time.Timer)
 	(*output).permanentRegistry = writeRegistryOnFileSystem
 
 	if (*output).permanentRegistry {
 		(*output).dataRegistryFolderPath = fmt.Sprintf("./registry-%s/", nodeName)
 		utility.CheckError(os.MkdirAll((*output).dataRegistryFolderPath, 0755))
-		(*output).content = initializeDataRegistry((*output).dataRegistryFolderPath)
+		(*output).initializeDataRegistry((*output).dataRegistryFolderPath)
 
 	} else {
 		(*output).content = make(map[string][]byte)
@@ -41,27 +43,35 @@ func (obj *DataRegistry) Get(key string) []byte {
 }
 
 func (obj *DataRegistry) Set(key string, input []byte) {
-	(*obj).content[key] = input
 
-	if (*obj).permanentRegistry {
-		(*obj).writeOnDisk(key, input)
+	if (*obj).content[key] == nil {
+
+		(*obj).content[key] = input
+		(*obj).timerTable[key] = time.NewTimer(timeout)
+
+		if (*obj).permanentRegistry {
+			(*obj).writeOnDisk(key, input)
+		}
+
+		go (*obj).automaticClean(key)
+
+	} else {
+		(*obj).timerTable[key].Reset(timeout)
 	}
-
-	go (*obj).automaticClean(key)
 }
 
 func (obj *DataRegistry) automaticClean(digest string) {
 
-	timer1 := time.NewTimer(timeout)
-	<-timer1.C
+	<-(*obj).timerTable[digest].C
 
 	if (*obj).permanentRegistry {
 
-		path := fmt.Sprintf("./%s/%s", (*obj).dataRegistryFolderPath, digest)
+		path := fmt.Sprintf("%s%s", (*obj).dataRegistryFolderPath, digest)
 		utility.CheckError(os.Remove(path))
 	}
 
 	delete((*obj).content, digest)
+	delete((*obj).timerTable, digest)
 }
 
 func (obj *DataRegistry) writeOnDisk(digest string, data []byte) {
@@ -78,9 +88,9 @@ func (obj *DataRegistry) writeOnDisk(digest string, data []byte) {
 	utility.CheckError(file.Sync())
 }
 
-func initializeDataRegistry(dataRegistryDirectoryPath string) map[string][]byte {
+func (obj *DataRegistry) initializeDataRegistry(dataRegistryDirectoryPath string) {
 
-	output := make(map[string][]byte)
+	(*obj).content = make(map[string][]byte)
 
 	c, err := ioutil.ReadDir(dataRegistryDirectoryPath)
 	utility.CheckError(err)
@@ -88,12 +98,11 @@ func initializeDataRegistry(dataRegistryDirectoryPath string) map[string][]byte 
 	for _, entry := range c {
 
 		if !entry.IsDir() {
-			rawData, err := ioutil.ReadFile(dataRegistryDirectoryPath + "/" + entry.Name())
+			rawData, err := ioutil.ReadFile(dataRegistryDirectoryPath + entry.Name())
 			utility.CheckError(err)
 
-			output[entry.Name()] = rawData
+			(*obj).content[entry.Name()] = rawData
+			go (*obj).automaticClean(entry.Name())
 		}
 	}
-
-	return output
 }

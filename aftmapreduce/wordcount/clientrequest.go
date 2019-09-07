@@ -50,6 +50,12 @@ func NewClientRequest(digest string) *ClientRequest {
 	return output
 }
 
+func CheckDuplicatedClientRequest(digest string) bool {
+
+	completeRequestZNodePath := fmt.Sprintf("%s/%s", CompleteRequestsZNodePath, digest)
+	return node.GetZookeeperClient().CheckZNodeExistence(completeRequestZNodePath)
+}
+
 func (obj *ClientRequest) CheckPoint(newStatus string, data1 []byte, data2 []byte) {
 
 	node.GetZookeeperClient().SetZNodeData((*obj).statusZNodePath, []byte(newStatus))

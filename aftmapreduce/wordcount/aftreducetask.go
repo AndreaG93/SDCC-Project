@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"net/rpc"
+	"time"
 )
 
 type AFTReduceTaskOutput struct {
@@ -71,19 +72,37 @@ func (obj *AFTReduceTask) Execute() *AFTReduceTaskOutput {
 
 func (obj *AFTReduceTask) startListeningWorkersReplies() {
 
-	numberOfReply := 0
+	timeout := time.NewTimer(3 * time.Second)
 
-	for myReply := range (*obj).replyChannel {
-
-		if (*obj).replyRegistry.Add(myReply.Digest, myReply.NodeId) {
-			return
-		}
-
-		numberOfReply++
-
-		if numberOfReply >= (*obj).arbitraryFaultToleranceLevel+1 {
+	for {
+		select {
+		case <-timeout.C:
+			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", "Timout expired!")
 			(*obj).requestsSend++
-			go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
+
+			if (*obj).requestsSend < len((*obj).targetNodesFullRPCInternetAddresses) {
+				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
+			} else {
+				panic("number of available WP isn't enough")
+			}
+
+		case myReply := <-(*obj).replyChannel:
+
+			timeout.Stop()
+
+			if (*obj).replyRegistry.Add(myReply.Digest, myReply.NodeId) {
+				return
+			}
+
+			(*obj).requestsSend++
+
+			if (*obj).requestsSend < len((*obj).targetNodesFullRPCInternetAddresses) {
+				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
+			} else {
+				panic("number of available WP isn't enough")
+			}
+
+			timeout.Reset(3 * time.Second)
 		}
 	}
 }

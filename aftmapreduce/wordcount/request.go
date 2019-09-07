@@ -5,43 +5,35 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
-	"io/ioutil"
-	"os"
 )
 
 type Request struct {
 }
 
 type RequestInput struct {
-	FileContent      string
-	SourceFileDigest string
+	FileContent         string
+	RequestPreSignedURL bool
+	SourceFileDigest    string
 }
 
 type RequestOutput struct {
+	PreSignedURL string
 }
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
-	rawData := []byte(input.FileContent)
+	if input.RequestPreSignedURL {
 
-	file, err := ioutil.TempFile("", "")
-	utility.CheckError(err)
+		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURL(input.SourceFileDigest)
+		return nil
+	}
 
-	_, err = file.Write(rawData)
-	utility.CheckError(err)
+	if CheckDuplicatedClientRequest(input.SourceFileDigest) {
+		return nil
+	}
 
-	utility.CheckError(file.Sync())
-
-	_, err = file.Seek(0, 0)
-	utility.CheckError(err)
-
-	node.GetDataRegistry().Set(input.SourceFileDigest, rawData)
-	node.GetAmazonS3Client().Upload(file, input.SourceFileDigest)
-
-	utility.CheckError(file.Close())
-	utility.CheckError(os.Remove(file.Name()))
-
-	go ManageRequest(NewClientRequest(input.SourceFileDigest))
+	myClientRequest := NewClientRequest(input.SourceFileDigest)
+	go ManageRequest(myClientRequest)
 
 	return nil
 }

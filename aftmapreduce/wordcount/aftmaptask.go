@@ -6,8 +6,10 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/registry/reply"
 	"SDCC-Project/aftmapreduce/utility"
+	"fmt"
 	"math"
 	"net/rpc"
+	"time"
 )
 
 type AFTMapTaskOutput struct {
@@ -64,19 +66,39 @@ func (obj *MapTask) Execute() *AFTMapTaskOutput {
 
 func (obj *MapTask) startListeningWorkersReplies() {
 
-	numberOfReply := 0
+	timeout := time.NewTimer(3 * time.Second)
 
-	for myReply := range (*obj).workersReplyChannel {
-
-		if (*obj).registry.Add(myReply.ReplayDigest, myReply.IdNode, myReply.MappedDataSizes) {
-			return
-		}
-
-		numberOfReply++
-
-		if numberOfReply >= (*obj).faultToleranceLevel+1 {
+	for {
+		select {
+		case <-timeout.C:
+			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", "Timout expired!")
 			(*obj).requestSend++
-			go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
+
+			if (*obj).requestSend < len((*obj).workersAddresses) {
+				go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
+			} else {
+				panic("number of available WP isn't enough")
+			}
+
+		case myReply := <-(*obj).workersReplyChannel:
+
+			timeout.Stop()
+
+			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", fmt.Sprintf("Received reply by node id %d group %d", myReply.IdNode, myReply.IdGroup))
+
+			if (*obj).registry.Add(myReply.ReplayDigest, myReply.IdNode, myReply.MappedDataSizes) {
+				return
+			}
+
+			(*obj).requestSend++
+
+			if (*obj).requestSend < len((*obj).workersAddresses) {
+				go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
+			} else {
+				panic("number of available WP isn't enough")
+			}
+
+			timeout.Reset(3 * time.Second)
 		}
 	}
 }

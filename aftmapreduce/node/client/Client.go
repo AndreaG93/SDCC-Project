@@ -1,6 +1,7 @@
 package client
 
 import (
+	"SDCC-Project/aftmapreduce/cloud/amazons3"
 	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount"
@@ -14,10 +15,11 @@ var zookeeperClient *zookeeper.Client
 
 func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 
-	zookeeperClient = zookeeper.New(zookeeperAddresses)
+	var err error
+	var currentLeaderInternetAddress string
+	var preSignedURL string
 
-	currentLeaderInternetAddress, err := zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
-	utility.CheckError(err)
+	zookeeperClient = zookeeper.New(zookeeperAddresses)
 
 	data, err := ioutil.ReadFile(sourceFilePath)
 	utility.CheckError(err)
@@ -25,33 +27,103 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	sourceFileDigest := utility.GenerateDigestUsingSHA512(data)
 	utility.CheckError(err)
 
-	rawDataOutput := sendRequestToCurrentLeader(sourceFileDigest, string(data), currentLeaderInternetAddress)
-	printResult(rawDataOutput)
+	for {
+
+		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
+		if err != nil {
+			continue
+		}
+
+		preSignedURL, err = sendRequestForPreSignedURL(sourceFileDigest, currentLeaderInternetAddress)
+		if err != nil {
+			continue
+		} else {
+			break
+		}
+	}
+
+	fmt.Println(preSignedURL)
+
+	for {
+		err = amazons3.UploadWithPreSignedURL(data, preSignedURL)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		} else {
+			break
+		}
+	}
+
+	for {
+
+		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
+		if err != nil {
+			continue
+		}
+
+		err := sendRequestForJob(sourceFileDigest, currentLeaderInternetAddress)
+		if err != nil {
+			continue
+		} else {
+			break
+		}
+	}
+
+	finalOutputPath := fmt.Sprintf("%s/%s", wordcount.CompleteRequestsZNodePath, sourceFileDigest)
+
+	for {
+
+		rawData, watcher := zookeeperClient.GetZNodeData(finalOutputPath)
+		if rawData == nil {
+			<-watcher
+			rawData, _ = zookeeperClient.GetZNodeData(finalOutputPath)
+		} else {
+			printResult(rawData)
+			return
+		}
+	}
 }
 
-func sendRequestToCurrentLeader(sourceFileDigest string, fileContent string, currentLeaderInternetAddress string) []byte {
+func sendRequestForPreSignedURL(sourceFileDigest string, currentLeaderInternetAddress string) (string, error) {
 
 	input := new(wordcount.RequestInput)
 	output := new(wordcount.RequestOutput)
 
 	(*input).SourceFileDigest = sourceFileDigest
-	(*input).FileContent = fileContent
+	(*input).RequestPreSignedURL = true
 
 	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
-	utility.CheckError(err)
-
-	err = client.Call("Request.Execute", &input, &output)
-	utility.CheckError(err)
-
-	finalOutputPath := fmt.Sprintf("%s/%s", wordcount.CompleteRequestsZNodePath, sourceFileDigest)
-
-	rawData, watcher := zookeeperClient.GetZNodeData(finalOutputPath)
-	if rawData == nil {
-		<-watcher
-		rawData, _ = zookeeperClient.GetZNodeData(finalOutputPath)
+	if err != nil {
+		return "", err
 	}
 
-	return rawData
+	err = client.Call("Request.Execute", &input, &output)
+	if err != nil {
+		return "", err
+	}
+
+	return output.PreSignedURL, nil
+}
+
+func sendRequestForJob(sourceFileDigest string, currentLeaderInternetAddress string) error {
+
+	input := new(wordcount.RequestInput)
+	output := new(wordcount.RequestOutput)
+
+	(*input).SourceFileDigest = sourceFileDigest
+	(*input).RequestPreSignedURL = false
+
+	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
+	if err != nil {
+		return err
+	}
+
+	err = client.Call("Request.Execute", &input, &output)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func printResult(rawData []byte) {

@@ -83,12 +83,11 @@ sudo apt update -y && sudo apt upgrade -y
 go get -u github.com/aws/aws-sdk-go/service/s3/...
 go get -u github.com/aws/aws-sdk-go/aws/...
 go get -u github.com/samuel/go-zookeeper/zk
+go get -u github.com/Sirupsen/logrus
 
 git -C ./go/src clone https://github.com/AndreaG93/SDCC-Project
 
-jq -n "{ZookeeperServersPrivateIPs: [\"${ZOOKEEPER_SERVER_PRIVATE_IP[0]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[1]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[2]}\"], NodeID: $index, NodeClass: \"Primary\"}" > ./go/src/SDCC-Project/main/conf.json
-
-    "
+jq -n "{ZookeeperServersPrivateIPs: [\"${ZOOKEEPER_SERVER_PRIVATE_IP[0]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[1]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[2]}\"], NodeID: $index, NodeGroupID: 0, NodeClass: \"Primary\"}" > ./go/src/SDCC-Project/main/conf.json"
 done
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -98,15 +97,17 @@ done
 # Information retrival...
 # ==================================================================================================================== #
 
-WORKER_SERVERS_PUBLIC_IP=()
+WORKER_SERVERS_PUBLIC_IP()
 
-for i in 1 2 3 4 5
+for id in 0 1 2 3 4 5 6 7 8
+for groupid in 0 1 2
 do
-    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=Worker" "Name=tag:ID,Values=$i")
+    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=Worker" "Name=tag:ID,Values=$id","Name=tag:ID-Group,Values=$groupid")
 
     OUTPUT1=$(echo $EC2_OUTPUT | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
 
     WORKER_SERVERS_PUBLIC_IP+=("$OUTPUT1")
+done
 done
 
 # Configuration
