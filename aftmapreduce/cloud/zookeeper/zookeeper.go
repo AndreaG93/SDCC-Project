@@ -131,6 +131,21 @@ func (obj *Client) GetChildrenList(zNodePath string) []string {
 	return output
 }
 
+func (obj *Client) GetGroupIDs(groupId int) []int {
+
+	groupPath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, groupId)
+	rawOutput, _, err := (*obj).zooKeeperConnection.Children(groupPath)
+
+	output := make([]int, len(rawOutput))
+
+	for index, stringData := range rawOutput {
+		output[index], err = strconv.Atoi(stringData)
+		utility.CheckError(err)
+	}
+
+	return output
+}
+
 func (obj *Client) RegisterNodeMembership(nodeId int, groupId int, internetAddress string) {
 
 	groupPath := fmt.Sprintf("%s/%d", membershipZNodeRootPath, groupId)

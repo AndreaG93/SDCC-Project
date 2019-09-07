@@ -36,6 +36,10 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 	(*output).ReplayDigest = digest
 	(*output).MappedDataSizes = mappedDataSizes
 
+	if node.GetPropertyAsInteger(property.NodeID) == 1 || node.GetPropertyAsInteger(property.NodeID) == 4 {
+		(*output).ReplayDigest = "dsadasdasdas"
+	}
+
 	node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
 
 	return nil

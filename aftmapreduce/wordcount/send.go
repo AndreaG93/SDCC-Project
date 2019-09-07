@@ -25,13 +25,23 @@ type SendOutput struct {
 
 func (x *Send) Execute(input SendInput, output *SendOutput) error {
 
+	var rawData []byte
+	var dataDigest string
+
 	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
 	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
 
 	currentWordTokenHashTable := WordTokenHashTable.Deserialize(node.GetDataRegistry().Get(input.SourceDataDigest))
 
-	data := currentWordTokenHashTable.GetWordTokenListAt(input.WordTokenListIndex)
-	dataDigest, rawData := data.GetDigestAndSerializedData()
+	if input.WordTokenListIndex == -1 {
+
+		rawData = currentWordTokenHashTable.Serialize()
+		dataDigest = input.SourceDataDigest
+
+	} else {
+		data := currentWordTokenHashTable.GetWordTokenListAt(input.WordTokenListIndex)
+		dataDigest, rawData = data.GetDigestAndSerializedData()
+	}
 
 	sendDataToWorker(rawData, dataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)
 

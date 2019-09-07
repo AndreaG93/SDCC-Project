@@ -66,16 +66,17 @@ func (obj *MapTask) Execute() *AFTMapTaskOutput {
 
 func (obj *MapTask) startListeningWorkersReplies() {
 
+	repliesReceived := 0
 	timeout := time.NewTimer(3 * time.Second)
 
 	for {
 		select {
 		case <-timeout.C:
 			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", "Timout expired!")
-			(*obj).requestSend++
 
 			if (*obj).requestSend < len((*obj).workersAddresses) {
 				go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
+				(*obj).requestSend++
 			} else {
 				panic("number of available WP isn't enough")
 			}
@@ -83,6 +84,7 @@ func (obj *MapTask) startListeningWorkersReplies() {
 		case myReply := <-(*obj).workersReplyChannel:
 
 			timeout.Stop()
+			repliesReceived++
 
 			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", fmt.Sprintf("Received reply by node id %d group %d", myReply.IdNode, myReply.IdGroup))
 
@@ -90,10 +92,13 @@ func (obj *MapTask) startListeningWorkersReplies() {
 				return
 			}
 
-			(*obj).requestSend++
+			if repliesReceived < (*obj).requestSend {
+				continue
+			}
 
 			if (*obj).requestSend < len((*obj).workersAddresses) {
 				go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
+				(*obj).requestSend++
 			} else {
 				panic("number of available WP isn't enough")
 			}

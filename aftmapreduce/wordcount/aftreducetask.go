@@ -31,11 +31,11 @@ type AFTReduceTask struct {
 	reduceTaskIdentifierDigest string
 }
 
-func NewAFTReduceTask(targetNodeIds []int, targetNodeGroupId int, reduceTaskIdentifierDigest string, reduceTaskIndex int) *AFTReduceTask {
+func NewAFTReduceTask(targetNodeGroupId int, reduceTaskIdentifierDigest string, reduceTaskIndex int) *AFTReduceTask {
 
 	output := new(AFTReduceTask)
 
-	(*output).targetNodesFullRPCInternetAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort, targetNodeIds)
+	(*output).targetNodesFullRPCInternetAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort)
 
 	(*output).replyChannel = make(chan *ReduceOutput)
 	(*output).arbitraryFaultToleranceLevel = int(math.Floor(float64((len((*output).targetNodesFullRPCInternetAddresses) - 1) / 2)))
@@ -72,16 +72,17 @@ func (obj *AFTReduceTask) Execute() *AFTReduceTaskOutput {
 
 func (obj *AFTReduceTask) startListeningWorkersReplies() {
 
+	repliesReceived := 0
 	timeout := time.NewTimer(3 * time.Second)
 
 	for {
 		select {
 		case <-timeout.C:
 			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", "Timout expired!")
-			(*obj).requestsSend++
 
 			if (*obj).requestsSend < len((*obj).targetNodesFullRPCInternetAddresses) {
 				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
+				(*obj).requestsSend++
 			} else {
 				panic("number of available WP isn't enough")
 			}
@@ -94,10 +95,13 @@ func (obj *AFTReduceTask) startListeningWorkersReplies() {
 				return
 			}
 
-			(*obj).requestsSend++
+			if repliesReceived < (*obj).requestsSend {
+				continue
+			}
 
 			if (*obj).requestsSend < len((*obj).targetNodesFullRPCInternetAddresses) {
 				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
+				(*obj).requestsSend++
 			} else {
 				panic("number of available WP isn't enough")
 			}

@@ -63,10 +63,36 @@ func getLocalityAwareReduceTaskMappedToNodeGroupId(input []*AFTMapTaskOutput) ma
 
 func localityAwareShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) {
 
+	for _, mapOutput := range input {
+
+		nodeWithoutCorrectData := make([]int, 0)
+
+		nodeWithCorrectData := (*mapOutput).NodeIdsWithCorrectResult
+		allNode := node.GetZookeeperClient().GetGroupIDs(mapOutput.IdGroup)
+
+		for _, nodeID := range allNode {
+
+			found := false
+
+			for _, nodeIDWithCorrectData := range nodeWithCorrectData {
+
+				if nodeID == nodeIDWithCorrectData {
+					found = true
+				}
+			}
+
+			if !found {
+				nodeWithoutCorrectData = append(nodeWithoutCorrectData, nodeID)
+			}
+		}
+
+		sendDataTask((*mapOutput).NodeIdsWithCorrectResult, (*mapOutput).IdGroup, nodeWithoutCorrectData, (*mapOutput).IdGroup, (*mapOutput).ReplayDigest, "", -1)
+	}
+
 	for index, bestGroupId := range reduceTaskMappedToNodeGroupId {
 
 		receiverDigestData := input[bestGroupId].ReplayDigest
-		receiverNodeId := (*input[bestGroupId]).NodeIdsWithCorrectResult
+		receiverNodeId := node.GetZookeeperClient().GetGroupIDs(bestGroupId)
 
 		for _, mapOutput := range input {
 
@@ -86,15 +112,14 @@ func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int
 	for index, bestGroupId := range reduceTaskMappedToNodeGroupId {
 
 		receiverDigestData := input[bestGroupId].ReplayDigest
-		receiverNodeId := (*input[bestGroupId]).NodeIdsWithCorrectResult
 
 		mapWaitGroup.Add(1)
-		go func(targetNodeIds []int, targetNodeGroupId int, reduceTaskIdentifierDigest string, reduceTaskIndex int) {
+		go func(targetNodeGroupId int, reduceTaskIdentifierDigest string, reduceTaskIndex int) {
 
-			output[reduceTaskIndex] = NewAFTReduceTask(targetNodeIds, targetNodeGroupId, reduceTaskIdentifierDigest, reduceTaskIndex).Execute()
+			output[reduceTaskIndex] = NewAFTReduceTask(targetNodeGroupId, reduceTaskIdentifierDigest, reduceTaskIndex).Execute()
 			mapWaitGroup.Done()
 
-		}(receiverNodeId, bestGroupId, receiverDigestData, index)
+		}(bestGroupId, receiverDigestData, index)
 	}
 
 	mapWaitGroup.Wait()

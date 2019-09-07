@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	timeout = 30 * time.Second
+	timeout = 1 * time.Minute
 )
 
 type DataRegistry struct {
@@ -83,8 +83,8 @@ func (obj *DataRegistry) writeOnDisk(digest string, data []byte) {
 	}()
 
 	_, err = file.Write(data)
-	utility.CheckError(err)
 
+	utility.CheckError(err)
 	utility.CheckError(file.Sync())
 }
 
@@ -102,6 +102,8 @@ func (obj *DataRegistry) initializeDataRegistry(dataRegistryDirectoryPath string
 			utility.CheckError(err)
 
 			(*obj).content[entry.Name()] = rawData
+			(*obj).timerTable[entry.Name()] = time.NewTimer(timeout)
+
 			go (*obj).automaticClean(entry.Name())
 		}
 	}

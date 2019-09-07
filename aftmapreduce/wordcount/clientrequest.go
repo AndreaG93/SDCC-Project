@@ -58,14 +58,14 @@ func CheckDuplicatedClientRequest(digest string) bool {
 
 func (obj *ClientRequest) CheckPoint(newStatus string, data1 []byte, data2 []byte) {
 
-	node.GetZookeeperClient().SetZNodeData((*obj).statusZNodePath, []byte(newStatus))
-
 	if data1 != nil {
 		node.GetZookeeperClient().SetZNodeData((*obj).cacheData1ZNodePath, data1)
 	}
 	if data2 != nil {
 		node.GetZookeeperClient().SetZNodeData((*obj).cacheData2ZNodePath, data2)
 	}
+
+	node.GetZookeeperClient().SetZNodeData((*obj).statusZNodePath, []byte(newStatus))
 }
 
 func (obj *ClientRequest) getStatus() string {
