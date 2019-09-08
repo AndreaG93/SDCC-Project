@@ -9,21 +9,18 @@ const (
 	PendingRequestsZNodePath  = "/pending-requests"
 	CompleteRequestsZNodePath = "/complete-requests"
 	StatusZNodeName           = "status"
-	CacheData1ZNodeName       = "data1"
-	CacheData2ZNodeName       = "data2"
+	CacheDataZNodeName        = "data"
 	InitialStatus             = "0"
-	AfterMapStatus            = "1"
-	AfterLocalityAwareShuffle = "2"
-	AfterReduce               = "3"
-	Complete                  = "4"
+	AfterMap                  = "1"
+	AfterReduce               = "2"
+	Complete                  = "3"
 )
 
 type ClientRequest struct {
 	digest        string
 	rootZNodePath string
 
-	cacheData1ZNodePath string
-	cacheData2ZNodePath string
+	cacheDataZNodePath string
 
 	statusZNodePath          string
 	completeRequestZNodePath string
@@ -36,14 +33,12 @@ func NewClientRequest(digest string) *ClientRequest {
 	(*output).digest = digest
 
 	(*output).rootZNodePath = fmt.Sprintf("%s/%s", PendingRequestsZNodePath, (*output).digest)
-	(*output).cacheData1ZNodePath = fmt.Sprintf("%s/%s", (*output).rootZNodePath, CacheData1ZNodeName)
-	(*output).cacheData2ZNodePath = fmt.Sprintf("%s/%s", (*output).rootZNodePath, CacheData2ZNodeName)
+	(*output).cacheDataZNodePath = fmt.Sprintf("%s/%s", (*output).rootZNodePath, CacheDataZNodeName)
 	(*output).statusZNodePath = fmt.Sprintf("%s/%s", (*output).rootZNodePath, StatusZNodeName)
 	(*output).completeRequestZNodePath = fmt.Sprintf("%s/%s", CompleteRequestsZNodePath, (*output).digest)
 
 	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).rootZNodePath, nil, int32(0))
-	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).cacheData1ZNodePath, nil, int32(0))
-	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).cacheData2ZNodePath, nil, int32(0))
+	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).cacheDataZNodePath, nil, int32(0))
 	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).statusZNodePath, []byte(InitialStatus), int32(0))
 	node.GetZookeeperClient().CreateZNodeCheckingExistence((*output).completeRequestZNodePath, nil, int32(0))
 
@@ -56,13 +51,10 @@ func CheckDuplicatedClientRequest(digest string) bool {
 	return node.GetZookeeperClient().CheckZNodeExistence(completeRequestZNodePath)
 }
 
-func (obj *ClientRequest) CheckPoint(newStatus string, data1 []byte, data2 []byte) {
+func (obj *ClientRequest) CheckPoint(newStatus string, data []byte) {
 
-	if data1 != nil {
-		node.GetZookeeperClient().SetZNodeData((*obj).cacheData1ZNodePath, data1)
-	}
-	if data2 != nil {
-		node.GetZookeeperClient().SetZNodeData((*obj).cacheData2ZNodePath, data2)
+	if data != nil {
+		node.GetZookeeperClient().SetZNodeData((*obj).cacheDataZNodePath, data)
 	}
 
 	node.GetZookeeperClient().SetZNodeData((*obj).statusZNodePath, []byte(newStatus))
@@ -74,15 +66,9 @@ func (obj *ClientRequest) getStatus() string {
 	return string(output)
 }
 
-func (obj *ClientRequest) GetDataFromCache1() []byte {
+func (obj *ClientRequest) GetDataFromCache() []byte {
 
-	output, _ := node.GetZookeeperClient().GetZNodeData((*obj).cacheData1ZNodePath)
-	return output
-}
-
-func (obj *ClientRequest) GetDataFromCache2() []byte {
-
-	output, _ := node.GetZookeeperClient().GetZNodeData((*obj).cacheData2ZNodePath)
+	output, _ := node.GetZookeeperClient().GetZNodeData((*obj).cacheDataZNodePath)
 	return output
 }
 
@@ -95,8 +81,7 @@ func (obj *ClientRequest) GetCompleteRequestZNodePath() string {
 }
 
 func (obj *ClientRequest) DeletePendingRequest() {
-	node.GetZookeeperClient().RemoveZNode((*obj).cacheData1ZNodePath)
-	node.GetZookeeperClient().RemoveZNode((*obj).cacheData2ZNodePath)
+	node.GetZookeeperClient().RemoveZNode((*obj).cacheDataZNodePath)
 	node.GetZookeeperClient().RemoveZNode((*obj).statusZNodePath)
 	node.GetZookeeperClient().RemoveZNode((*obj).rootZNodePath)
 }

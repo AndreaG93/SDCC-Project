@@ -42,8 +42,6 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 		}
 	}
 
-	fmt.Println(preSignedURL)
-
 	for {
 		err = amazons3.UploadWithPreSignedURL(data, preSignedURL)
 		if err != nil {

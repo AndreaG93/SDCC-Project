@@ -16,7 +16,7 @@ func NewMapReplyRegistry(requiredNumberOfMatches int) *MapReplyRegistry {
 	output := new(MapReplyRegistry)
 
 	(*output).registry = make(map[string]*sameDigestMapReply)
-	(*output).requiredNumberOfMatches = requiredNumberOfMatches + 1
+	(*output).requiredNumberOfMatches = requiredNumberOfMatches
 
 	return output
 }

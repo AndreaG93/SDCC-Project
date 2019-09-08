@@ -63,13 +63,13 @@ func sendDataToWorker(data []byte, dataDigest string, receiverAssociatedDataDige
 
 		worker, err := rpc.Dial("tcp", address)
 		if err != nil {
-			node.GetLogger().PrintPanicErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
+			node.GetLogger().PrintErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
 			continue
 		}
 
 		err = worker.Call("Receive.Execute", &input, &output)
 		if err != nil {
-			node.GetLogger().PrintPanicErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
+			node.GetLogger().PrintErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
 		}
 	}
 }
@@ -95,7 +95,10 @@ func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int,
 		(*input).ReceiversInternetAddresses = receiverInternetAddresses
 
 		worker, err := rpc.Dial("tcp", sender)
-		utility.CheckError(err)
+		if err != nil {
+			node.GetLogger().PrintErrorTaskMessage(SendTaskName, "Send operation failed!...")
+			continue
+		}
 
 		err = worker.Call("Send.Execute", input, output)
 		utility.CheckError(worker.Close())
@@ -103,6 +106,4 @@ func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int,
 			return
 		}
 	}
-
-	node.GetLogger().PrintPanicErrorTaskMessage(SendTaskName, "Send operation failed! aborting...")
 }

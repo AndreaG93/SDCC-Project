@@ -27,20 +27,35 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	node.GetLogger().PrintInfoStartingTaskMessage(MapTaskName)
 
-	digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
+	inputDigest := utility.GenerateDigestUsingSHA512([]byte(input.Text))
 
-	node.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize())
+	if node.GetDataRegistry().Get(inputDigest) == nil {
+
+		digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
+
+		node.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize())
+
+		(*output).ReplayDigest = digest
+		(*output).MappedDataSizes = mappedDataSizes
+
+		node.GetDataRegistry().Set(inputDigest, []byte((*output).ReplayDigest))
+		node.GetDataRegistry().Set(inputDigest+"map", utility.Encode(mappedDataSizes))
+
+		node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
+
+	} else {
+
+		(*output).ReplayDigest = string(node.GetDataRegistry().Get(inputDigest))
+
+		mappedDataSizes := map[int]int{}
+		utility.Decode(node.GetDataRegistry().Get(inputDigest+"map"), &mappedDataSizes)
+
+		(*output).MappedDataSizes = mappedDataSizes
+
+	}
 
 	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).IdNode = node.GetPropertyAsInteger(property.NodeID)
-	(*output).ReplayDigest = digest
-	(*output).MappedDataSizes = mappedDataSizes
-
-	if node.GetPropertyAsInteger(property.NodeID) == 1 || node.GetPropertyAsInteger(property.NodeID) == 4 {
-		(*output).ReplayDigest = "dsadasdasdas"
-	}
-
-	node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
 
 	return nil
 }

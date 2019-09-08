@@ -99,9 +99,14 @@ done
 
 WORKER_SERVERS_PUBLIC_IP()
 
-for id in 0 1 2 3 4 5 6 7 8
-for groupid in 0 1 2
+for workerGroupId in 0 1 2 3 4 5
+for workerGroupId in 0 1
 do
+    echo $groupid
+    echo $workerGroupId
+done
+done
+
     EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=Worker" "Name=tag:ID,Values=$id","Name=tag:ID-Group,Values=$groupid")
 
     OUTPUT1=$(echo $EC2_OUTPUT | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')

@@ -4,7 +4,6 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/registry/reply"
-	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 	"math"
 	"net/rpc"
@@ -73,7 +72,7 @@ func (obj *AFTReduceTask) Execute() *AFTReduceTaskOutput {
 func (obj *AFTReduceTask) startListeningWorkersReplies() {
 
 	repliesReceived := 0
-	timeout := time.NewTimer(3 * time.Second)
+	timeout := time.NewTimer(1 * time.Second)
 
 	for {
 		select {
@@ -84,7 +83,7 @@ func (obj *AFTReduceTask) startListeningWorkersReplies() {
 				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
 				(*obj).requestsSend++
 			} else {
-				panic("number of available WP isn't enough")
+				panic(fmt.Sprintf("number of available WP isn't enough -- Group ID %d", (*obj).output.IdGroup))
 			}
 
 		case myReply := <-(*obj).replyChannel:
@@ -96,17 +95,17 @@ func (obj *AFTReduceTask) startListeningWorkersReplies() {
 			}
 
 			if repliesReceived < (*obj).requestsSend {
+				timeout.Reset(1 * time.Second)
 				continue
 			}
 
 			if (*obj).requestsSend < len((*obj).targetNodesFullRPCInternetAddresses) {
 				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
 				(*obj).requestsSend++
+				timeout.Reset(1 * time.Second)
 			} else {
-				panic("number of available WP isn't enough")
+				panic(fmt.Sprintf("number of available WP isn't enough -- Group ID %d", (*obj).output.IdGroup))
 			}
-
-			timeout.Reset(3 * time.Second)
 		}
 	}
 }
@@ -122,7 +121,10 @@ func executeSingleReduceTaskReplica(localDataDigest string, ReduceWorkIndex int,
 	(*input).ReduceWorkIndex = ReduceWorkIndex
 
 	worker, err := rpc.Dial("tcp", fullRPCInternetAddress)
-	utility.CheckError(err)
+	if err != nil {
+		node.GetLogger().PrintErrorTaskMessage(ReduceTaskName, err.Error())
+		return
+	}
 
 	err = worker.Call("Reduce.Execute", input, output)
 	if err == nil {

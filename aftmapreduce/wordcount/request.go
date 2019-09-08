@@ -59,12 +59,12 @@ func ManageRequest(clientRequest *ClientRequest) {
 			mapTaskOutput = mapTask(splits)
 
 			rawData = utility.Encode(mapTaskOutput)
-			(*clientRequest).CheckPoint(AfterMapStatus, rawData, nil)
+			(*clientRequest).CheckPoint(AfterMap, rawData)
 
-		case AfterMapStatus:
+		case AfterMap:
 
 			if mapTaskOutput == nil {
-				rawData = (*clientRequest).GetDataFromCache1()
+				rawData = (*clientRequest).GetDataFromCache()
 				utility.Decode(rawData, &mapTaskOutput)
 			}
 
@@ -73,30 +73,16 @@ func ManageRequest(clientRequest *ClientRequest) {
 			localityAwarenessData = getLocalityAwareReduceTaskMappedToNodeGroupId(mapTaskOutput)
 			localityAwareShuffleTask(mapTaskOutput, localityAwarenessData)
 
-			rawData = utility.Encode(localityAwarenessData)
-
-			(*clientRequest).CheckPoint(AfterLocalityAwareShuffle, nil, rawData)
-
-		case AfterLocalityAwareShuffle:
-
-			if localityAwarenessData == nil || mapTaskOutput == nil {
-				rawData = (*clientRequest).GetDataFromCache1()
-				utility.Decode(rawData, &mapTaskOutput)
-
-				rawData = (*clientRequest).GetDataFromCache2()
-				utility.Decode(rawData, &localityAwarenessData)
-			}
-
 			reduceTaskOutput = reduceTask(mapTaskOutput, localityAwarenessData)
 
 			rawData = utility.Encode(reduceTaskOutput)
 
-			(*clientRequest).CheckPoint(AfterReduce, rawData, nil)
+			(*clientRequest).CheckPoint(AfterReduce, rawData)
 
 		case AfterReduce:
 
 			if reduceTaskOutput == nil {
-				rawData = (*clientRequest).GetDataFromCache1()
+				rawData = (*clientRequest).GetDataFromCache()
 				utility.Decode(rawData, &reduceTaskOutput)
 			}
 
@@ -107,7 +93,7 @@ func ManageRequest(clientRequest *ClientRequest) {
 
 			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), finalRawData)
 
-			(*clientRequest).CheckPoint(Complete, nil, nil)
+			(*clientRequest).CheckPoint(Complete, nil)
 
 		case Complete:
 			clientRequest.DeletePendingRequest()

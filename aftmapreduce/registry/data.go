@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	timeout = 1 * time.Minute
+	timeout = 10 * time.Minute
 )
 
 type DataRegistry struct {

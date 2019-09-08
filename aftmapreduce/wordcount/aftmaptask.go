@@ -5,7 +5,6 @@ import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/registry/reply"
-	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 	"math"
 	"net/rpc"
@@ -38,9 +37,11 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 	(*output).workersReplyChannel = make(chan *MapOutput)
 	(*output).requestSend = 0
 	(*output).workersAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
-	(*output).registry = reply.NewMapReplyRegistry((*output).faultToleranceLevel + 1)
+
 	(*output).split = split
+
 	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workersAddresses) - 1) / 2)))
+	(*output).registry = reply.NewMapReplyRegistry((*output).faultToleranceLevel + 1)
 
 	return output
 }
@@ -67,7 +68,7 @@ func (obj *MapTask) Execute() *AFTMapTaskOutput {
 func (obj *MapTask) startListeningWorkersReplies() {
 
 	repliesReceived := 0
-	timeout := time.NewTimer(3 * time.Second)
+	timeout := time.NewTimer(1 * time.Second)
 
 	for {
 		select {
@@ -93,17 +94,17 @@ func (obj *MapTask) startListeningWorkersReplies() {
 			}
 
 			if repliesReceived < (*obj).requestSend {
+				timeout.Reset(1 * time.Second)
 				continue
 			}
 
 			if (*obj).requestSend < len((*obj).workersAddresses) {
 				go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
 				(*obj).requestSend++
+				timeout.Reset(1 * time.Second)
 			} else {
-				panic("number of available WP isn't enough")
+				panic(fmt.Sprintf("number of available WP isn't enough -- Group ID %d", (*obj).mapTaskOutput.IdGroup))
 			}
-
-			timeout.Reset(3 * time.Second)
 		}
 	}
 }
@@ -117,7 +118,10 @@ func executeSingleMapTaskReplica(split string, fullRPCInternetAddress string, re
 	(*input).MappingCardinality = node.GetPropertyAsInteger(property.MapCardinality)
 
 	worker, err := rpc.Dial("tcp", fullRPCInternetAddress)
-	utility.CheckError(err)
+	if err != nil {
+		node.GetLogger().PrintErrorTaskMessage(MapTaskName, err.Error())
+		return
+	}
 
 	err = worker.Call("Map.Execute", input, output)
 	if err == nil {
