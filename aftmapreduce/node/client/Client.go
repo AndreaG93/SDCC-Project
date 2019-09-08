@@ -18,6 +18,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	var err error
 	var currentLeaderInternetAddress string
 	var preSignedURL string
+	var outputDigest string
 
 	zookeeperClient = zookeeper.New(zookeeperAddresses)
 
@@ -34,7 +35,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 			continue
 		}
 
-		preSignedURL, err = sendRequestForPreSignedURL(sourceFileDigest, currentLeaderInternetAddress)
+		preSignedURL, err = sendRequestForPreSignedURL(sourceFileDigest, currentLeaderInternetAddress, true, false)
 		if err != nil {
 			continue
 		} else {
@@ -76,19 +77,47 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 			<-watcher
 			rawData, _ = zookeeperClient.GetZNodeData(finalOutputPath)
 		} else {
-			printResult(rawData)
+			outputDigest = string(rawData)
+			break
+		}
+	}
+
+	for {
+
+		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
+		if err != nil {
+			continue
+		}
+
+		preSignedURL, err = sendRequestForPreSignedURL(outputDigest, currentLeaderInternetAddress, false, true)
+		if err != nil {
+			continue
+		} else {
+			break
+		}
+	}
+
+	for {
+		outputBytes, err := amazons3.DownloadPreSignedURL(preSignedURL)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		} else {
+			printResult(outputBytes)
 			return
 		}
 	}
+
 }
 
-func sendRequestForPreSignedURL(sourceFileDigest string, currentLeaderInternetAddress string) (string, error) {
+func sendRequestForPreSignedURL(sourceFileDigest string, currentLeaderInternetAddress string, upload bool, download bool) (string, error) {
 
 	input := new(wordcount.RequestInput)
 	output := new(wordcount.RequestOutput)
 
 	(*input).SourceFileDigest = sourceFileDigest
-	(*input).RequestPreSignedURL = true
+	(*input).RequestPreSignedURLForUpload = upload
+	(*input).RequestPreSignedURLForDownload = download
 
 	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
 	if err != nil {
@@ -109,7 +138,8 @@ func sendRequestForJob(sourceFileDigest string, currentLeaderInternetAddress str
 	output := new(wordcount.RequestOutput)
 
 	(*input).SourceFileDigest = sourceFileDigest
-	(*input).RequestPreSignedURL = false
+	(*input).RequestPreSignedURLForDownload = false
+	(*input).RequestPreSignedURLForUpload = false
 
 	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
 	if err != nil {

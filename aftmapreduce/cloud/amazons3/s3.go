@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -52,6 +53,21 @@ func (obj *S3Client) GetPreSignedURL(key string) string {
 	svc := s3.New((*obj).session)
 
 	req, _ := svc.PutObjectRequest(&s3.PutObjectInput{
+		Bucket: aws.String(AmazonS3BucketName),
+		Key:    aws.String(key),
+	})
+
+	url, err := req.Presign(15 * time.Minute)
+	utility.CheckError(err)
+
+	return url
+}
+
+func (obj *S3Client) GetPreSignedURLForDownloadOperation(key string) string {
+
+	svc := s3.New((*obj).session)
+
+	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(AmazonS3BucketName),
 		Key:    aws.String(key),
 	})
@@ -112,4 +128,26 @@ func UploadWithPreSignedURL(data []byte, preSignedURL string) error {
 	} else {
 		return nil
 	}
+}
+
+func DownloadPreSignedURL(preSignedURL string) ([]byte, error) {
+
+	var err error
+
+	request, err := http.NewRequest("GET", preSignedURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	s3objectBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	return s3objectBytes, nil
 }

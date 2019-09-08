@@ -5,15 +5,18 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
+	"io/ioutil"
+	"os"
 )
 
 type Request struct {
 }
 
 type RequestInput struct {
-	FileContent         string
-	RequestPreSignedURL bool
-	SourceFileDigest    string
+	FileContent                    string
+	RequestPreSignedURLForUpload   bool
+	RequestPreSignedURLForDownload bool
+	SourceFileDigest               string
 }
 
 type RequestOutput struct {
@@ -22,9 +25,13 @@ type RequestOutput struct {
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
-	if input.RequestPreSignedURL {
-
+	if input.RequestPreSignedURLForUpload {
 		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURL(input.SourceFileDigest)
+		return nil
+	}
+
+	if input.RequestPreSignedURLForDownload {
+		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURLForDownloadOperation(input.SourceFileDigest)
 		return nil
 	}
 
@@ -91,7 +98,20 @@ func ManageRequest(clientRequest *ClientRequest) {
 			finalOutput := computeFinalOutputTask(dataArray)
 			finalRawData := finalOutput.Serialize()
 
-			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), finalRawData)
+			finalOutputDigestData := utility.GenerateDigestUsingSHA512(finalRawData)
+
+			output, err := ioutil.TempFile(os.TempDir(), finalOutputDigestData)
+			utility.CheckError(err)
+
+			_, err = output.Write(finalRawData)
+			utility.CheckError(err)
+			utility.CheckError(output.Sync())
+			_, err = output.Seek(0, 0)
+			utility.CheckError(err)
+
+			node.GetAmazonS3Client().Upload(output, finalOutputDigestData)
+
+			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), []byte(finalOutputDigestData))
 
 			(*clientRequest).CheckPoint(Complete, nil)
 
