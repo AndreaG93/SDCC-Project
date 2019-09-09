@@ -16,7 +16,7 @@ func Initialize(id int, internetAddress string, zookeeperAddresses []string) {
 	node.SetProperty(property.NodeID, id)
 	node.SetProperty(property.NodeType, "Primary")
 	node.SetProperty(property.InternetAddress, internetAddress)
-	node.SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountRequestRPCBasePort+id))
+	node.SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountRequestRPCBasePort+id))
 }
 
 func StartWork() {

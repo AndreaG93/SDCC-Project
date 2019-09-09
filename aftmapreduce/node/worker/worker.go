@@ -17,11 +17,11 @@ func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses 
 	node.SetProperty(property.NodeType, "Worker")
 	node.SetProperty(property.InternetAddress, internetAddress)
 
-	node.SetProperty(property.WordCountMapRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountMapTaskRPCBasePort+id))
-	node.SetProperty(property.WordCountReduceRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReduceTaskRPCBasePort+id))
-	node.SetProperty(property.WordCountReceiveRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountReceiveRPCBasePort+id))
-	node.SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountSendRPCBasePort+id))
-	node.SetProperty(property.WordCountRetrieveRPCFullAddress, fmt.Sprintf("%s:%d", internetAddress, aftmapreduce.WordCountRetrieverRPCBasePort+id))
+	node.SetProperty(property.WordCountMapRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountMapTaskRPCBasePort+id))
+	node.SetProperty(property.WordCountReduceRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountReduceTaskRPCBasePort+id))
+	node.SetProperty(property.WordCountReceiveRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountReceiveRPCBasePort+id))
+	node.SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountSendRPCBasePort+id))
+	node.SetProperty(property.WordCountRetrieveRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountRetrieverRPCBasePort+id))
 
 }
 
