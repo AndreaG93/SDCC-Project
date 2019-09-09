@@ -1,12 +1,11 @@
-sudo apt install python-pip
-sudo pip install awscli
-chmod 077 graziani-01.pem
+# sudo apt install awscli (on Ubuntu)
+# chmod 077 graziani.pem
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # Zookeeper nodes configuration on Amazon EC2
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-# Information retrival...
+# 1 - Information retrival...
 # ==================================================================================================================== #
 ZOOKEEPER_SERVER_PRIVATE_IP=()
 ZOOKEEPER_SERVER_PUBLIC_IP=()
@@ -22,14 +21,14 @@ do
     ZOOKEEPER_SERVER_PUBLIC_IP+=("$OUTPUT2")
 done
 
-# Configuration
+# 2 - Configuration
 # ==================================================================================================================== #
 
 index=0
 for i in "${ZOOKEEPER_SERVER_PUBLIC_IP[@]}"
 do
     ((index++))
-    ssh -i "graziani-01.pem" ubuntu@$i "
+    ssh -i "graziani.pem" ubuntu@$i "
 
 sudo apt update -y && sudo apt upgrade -y && sudo apt install -y default-jre
 
@@ -104,13 +103,9 @@ for workerGroupId in 0 1
 do
     echo $groupid
     echo $workerGroupId
-done
-done
 
     EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=Worker" "Name=tag:ID,Values=$id","Name=tag:ID-Group,Values=$groupid")
-
     OUTPUT1=$(echo $EC2_OUTPUT | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
-
     WORKER_SERVERS_PUBLIC_IP+=("$OUTPUT1")
 done
 done
@@ -132,7 +127,5 @@ go get -u github.com/samuel/go-zookeeper/z
 
 git -C ./go/src clone https://github.com/AndreaG93/SDCC-Project
 
-jq -n "{ZookeeperServersPrivateIPs: [\"${ZOOKEEPER_SERVER_PRIVATE_IP[0]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[1]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[2]}\"], NodeID: $index, NodeClass: \"Worker\"}" > ./go/src/SDCC-Project/main/conf.json
-
-    "
+jq -n "{ZookeeperServersPrivateIPs: [\"${ZOOKEEPER_SERVER_PRIVATE_IP[0]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[1]}\",\"${ZOOKEEPER_SERVER_PRIVATE_IP[2]}\"], NodeID: $index, NodeClass: \"Worker\"}" > ./go/src/SDCC-Project/main/conf.json"
 done

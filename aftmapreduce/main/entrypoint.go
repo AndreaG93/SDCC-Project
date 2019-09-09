@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce/node/primary"
 	"SDCC-Project/aftmapreduce/node/worker"
 	"SDCC-Project/aftmapreduce/utility"
+	"fmt"
 	"os/exec"
 )
 
@@ -24,13 +25,13 @@ func main() {
 	zookeeperServers := configuration.ZookeeperServersPrivateIPs
 	nodePublicIP := string(commandOutput)
 
-	if nodeClass == "primary" {
-
+	if nodeClass == "Primary" {
+		fmt.Printf("Start as Primary -- Node %d", nodeID)
 		primary.Initialize(nodeID, nodePublicIP, zookeeperServers)
 		primary.StartWork()
 
-	} else if nodeClass == "worker" {
-
+	} else if nodeClass == "Worker" {
+		fmt.Printf("Start as Worker -- Node %d, Group %d", nodeID, nodeGroupId)
 		worker.Initialize(nodeID, nodeGroupId, nodePublicIP, zookeeperServers)
 		worker.StartWork()
 	}
