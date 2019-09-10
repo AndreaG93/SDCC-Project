@@ -58,7 +58,7 @@ done
 # Information retrival...
 for i in 1 2 3
 do
-    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=PrimaryServer" "Name=tag:ID,Values=$i")
+    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=ZookeeperServer" "Name=tag:ID,Values=$i")
     OUTPUT=$(echo $EC2_OUTPUT | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
 
     PRIMARY_INSTENCES_PUBLIC_IP+=("$OUTPUT")
@@ -87,7 +87,7 @@ done
 # 3 - Start
 for i in 1 2 3
 do
-    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=PrimaryServer" "Name=tag:ID,Values=$i")
+    EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Role,Values=ZookeeperServer" "Name=tag:ID,Values=$i")
     IP=$(echo $EC2_OUTPUT | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
 
     ssh -i "graziani.pem" ubuntu@$IP "
