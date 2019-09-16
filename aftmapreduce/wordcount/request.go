@@ -1,22 +1,31 @@
 package wordcount
 
 import (
+	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/utility"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+)
+
+const (
+	// Request's types
+	AcceptanceJobRequestType        = uint8(0)
+	UploadPreSignedURLRequestType   = uint8(1)
+	DownloadPreSignedURLRequestType = uint8(2)
+
+	// Request's status
 )
 
 type Request struct {
 }
 
 type RequestInput struct {
-	FileContent                    string
-	RequestPreSignedURLForUpload   bool
-	RequestPreSignedURLForDownload bool
-	SourceFileDigest               string
+	Type             uint8
+	SourceFileDigest string
 }
 
 type RequestOutput struct {
@@ -25,27 +34,30 @@ type RequestOutput struct {
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
-	if input.RequestPreSignedURLForUpload {
-		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURL(input.SourceFileDigest)
+	switch input.Type {
+	case UploadPreSignedURLRequestType:
+		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURLForUploadTask(input.SourceFileDigest)
 		return nil
-	}
-
-	if input.RequestPreSignedURLForDownload {
-		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURLForDownloadOperation(input.SourceFileDigest)
+	case DownloadPreSignedURLRequestType:
+		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURLForDownloadTask(input.SourceFileDigest)
 		return nil
-	}
+	case AcceptanceJobRequestType:
 
-	if CheckDuplicatedClientRequest(input.SourceFileDigest) {
-		return nil
-	}
+		if isRequestAlreadyAccepted(input.SourceFileDigest) {
+			return nil
+		} else {
+			myClientRequest := zookeeper.NewClientRequest(input.SourceFileDigest)
+			go ManageClientRequest(input.SourceFileDigest)
+		}
 
-	myClientRequest := NewClientRequest(input.SourceFileDigest)
-	go ManageRequest(myClientRequest)
+	default:
+		return errors.New("request type not recognized")
+	}
 
 	return nil
 }
 
-func ManageRequest(clientRequest *ClientRequest) {
+func ManageClientRequest(guid string) {
 
 	var mapTaskOutput []*AFTMapTaskOutput
 	var reduceTaskOutput []*AFTReduceTaskOutput
@@ -60,15 +72,15 @@ func ManageRequest(clientRequest *ClientRequest) {
 		node.GetLogger().PrintInfoStartingTaskMessage(fmt.Sprintf("%s for %s", currentClientRequestStatus, (*clientRequest).digest))
 
 		switch currentClientRequestStatus {
-		case InitialStatus:
+		case zookeeper.InitialStatus:
 
 			splits := getSplits(clientRequest.digest, node.GetPropertyAsInteger(property.MapCardinality))
 			mapTaskOutput = mapTask(splits)
 
 			rawData = utility.Encode(mapTaskOutput)
-			(*clientRequest).CheckPoint(AfterMap, rawData)
+			(*clientRequest).CheckPoint(zookeeper.AfterMap, rawData)
 
-		case AfterMap:
+		case zookeeper.AfterMap:
 
 			if mapTaskOutput == nil {
 				rawData = (*clientRequest).GetDataFromCache()
@@ -84,9 +96,9 @@ func ManageRequest(clientRequest *ClientRequest) {
 
 			rawData = utility.Encode(reduceTaskOutput)
 
-			(*clientRequest).CheckPoint(AfterReduce, rawData)
+			(*clientRequest).CheckPoint(zookeeper.AfterReduce, rawData)
 
-		case AfterReduce:
+		case zookeeper.AfterReduce:
 
 			if reduceTaskOutput == nil {
 				rawData = (*clientRequest).GetDataFromCache()
@@ -113,9 +125,9 @@ func ManageRequest(clientRequest *ClientRequest) {
 
 			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), []byte(finalOutputDigestData))
 
-			(*clientRequest).CheckPoint(Complete, nil)
+			(*clientRequest).CheckPoint(zookeeper.Complete, nil)
 
-		case Complete:
+		case zookeeper.Complete:
 			clientRequest.DeletePendingRequest()
 			return
 		}

@@ -4,7 +4,6 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
-	"fmt"
 	"sync"
 )
 
@@ -68,7 +67,7 @@ func localityAwareShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeG
 		nodeWithoutCorrectData := make([]int, 0)
 
 		nodeWithCorrectData := (*mapOutput).NodeIdsWithCorrectResult
-		allNode := node.GetZookeeperClient().GetGroupIDs(mapOutput.IdGroup)
+		allNode := (*node.GetMembershipRegister()).GetWorkerProcessIDs(mapOutput.IdGroup)
 
 		for _, nodeID := range allNode {
 
@@ -92,7 +91,7 @@ func localityAwareShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeG
 	for index, bestGroupId := range reduceTaskMappedToNodeGroupId {
 
 		receiverDigestData := input[bestGroupId].ReplayDigest
-		receiverNodeId := node.GetZookeeperClient().GetGroupIDs(bestGroupId)
+		receiverNodeId := (*node.GetMembershipRegister()).GetWorkerProcessIDs(bestGroupId)
 
 		for _, mapOutput := range input {
 
@@ -124,7 +123,6 @@ func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int
 
 	mapWaitGroup.Wait()
 
-	node.GetLogger().PrintInfoTaskMessage(ReduceTaskName, fmt.Sprintf("Output: %s", output))
 	node.GetLogger().PrintInfoCompleteTaskMessage(ReduceTaskName)
 	return output
 }
@@ -135,7 +133,7 @@ func retrieveTask(input []*AFTReduceTaskOutput) []*WordTokenList.WordTokenList {
 
 	for index, aftReduceTaskOutput := range input {
 
-		targetNodeIP := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(aftReduceTaskOutput.IdGroup, aftmapreduce.WordCountRetrieverRPCBasePort, aftReduceTaskOutput.NodeIdsWithCorrectResult)
+		targetNodeIP := (*node.GetMembershipRegister()).GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(aftReduceTaskOutput.IdGroup, aftReduceTaskOutput.NodeIdsWithCorrectResult, aftmapreduce.WordCountRetrieverRPCBasePort)
 
 		rawData := retrieveFrom(targetNodeIP, aftReduceTaskOutput.ReplayDigest)
 		serializedData := WordTokenList.Deserialize(rawData)

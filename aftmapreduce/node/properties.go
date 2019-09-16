@@ -1,16 +1,20 @@
 package node
 
 import (
+	"SDCC-Project/aftmapreduce/cloud"
 	"SDCC-Project/aftmapreduce/cloud/amazons3"
 	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/registry"
+	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 )
 
-var zookeeperClient *zookeeper.Client
+var systemCoordinator cloud.SystemCoordinator
+var keyValueStorageService cloud.KeyValueStorageService
+var membershipRegister cloud.MembershipRegister
+
 var logger *Logger
 var properties map[string]interface{}
-var amazonS3Client *amazons3.S3Client
 
 var dataRegistry *registry.DataRegistry
 var digestRegistry *registry.DigestRegistry
@@ -19,7 +23,7 @@ func InitializePrimary(zookeeperAddresses []string, nodeId int) {
 
 	initializeNode(zookeeperAddresses)
 
-	amazonS3Client = amazons3.New()
+	keyValueStorageService = amazons3.New()
 	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Primary%d", nodeId), false)
 }
 
@@ -33,14 +37,25 @@ func InitializeWorker(zookeeperAddresses []string, nodeId int) {
 
 func initializeNode(zookeeperAddresses []string) {
 
-	zookeeperClient = zookeeper.New(zookeeperAddresses)
-	logger = NewLogger()
+	var err error
 
+	systemCoordinator, err = zookeeper.New(zookeeperAddresses)
+	utility.CheckError(err)
+
+	logger = NewLogger()
 	properties = make(map[string]interface{})
 }
 
-func GetZookeeperClient() *zookeeper.Client {
-	return zookeeperClient
+func GetSystemCoordinator() *cloud.SystemCoordinator {
+	return &systemCoordinator
+}
+
+func GetKeyValueStorageService() *cloud.KeyValueStorageService {
+	return &keyValueStorageService
+}
+
+func GetMembershipRegister() *cloud.MembershipRegister {
+	return &membershipRegister
 }
 
 func GetLogger() *Logger {
@@ -57,10 +72,6 @@ func GetPropertyAsString(key string) string {
 
 func GetPropertyAsInteger(key string) int {
 	return properties[key].(int)
-}
-
-func GetAmazonS3Client() *amazons3.S3Client {
-	return amazonS3Client
 }
 
 func GetDataRegistry() *registry.DataRegistry {

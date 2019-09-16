@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"encoding/gob"
 	"fmt"
@@ -21,22 +22,22 @@ func Initialize(id int, internetAddress string, zookeeperAddresses []string) {
 
 func StartWork() {
 
-	isLeader := make(chan bool)
+	var err error
+	var allPendingClientRequestGuid []string
 
-	go node.GetZookeeperClient().RunAsLeaderCandidate(isLeader, node.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
+	err = (*node.GetSystemCoordinator()).WaitUntilLeader(node.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
+	utility.CheckError(err)
 
-	<-isLeader
-
-	node.GetLogger().PrintInfoTaskMessage("Initialization", "I'm leader")
+	(*node.GetLogger()).PrintInfoTaskMessage("Initialization", "I'm leader")
 
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})
 
-	go node.GetZookeeperClient().KeepConnectionAlive()
-	wordcount.InitNeededZNodePathsToManageClientRequests()
+	allPendingClientRequestGuid, err = (*node.GetSystemCoordinator()).GetAllPendingClientRequestGuid()
+	utility.CheckError(err)
 
-	for _, request := range wordcount.GetPendingClientsRequests() {
-		go wordcount.ManageRequest(request)
+	for _, request := range allPendingClientRequestGuid {
+		go wordcount.ManageClientRequest(request)
 	}
 
 	aftmapreduce.StartAcceptingRPCRequest(&wordcount.Request{}, node.GetPropertyAsString(property.WordCountRequestRPCFullAddress))

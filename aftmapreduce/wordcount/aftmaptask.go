@@ -36,7 +36,7 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 	(*(*output).mapTaskOutput).IdGroup = workerGroupId
 	(*output).workersReplyChannel = make(chan *MapOutput)
 	(*output).requestSend = 0
-	(*output).workersAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
+	(*output).workersAddresses = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
 
 	(*output).split = split
 

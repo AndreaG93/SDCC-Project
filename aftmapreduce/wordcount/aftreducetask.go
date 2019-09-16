@@ -34,7 +34,7 @@ func NewAFTReduceTask(targetNodeGroupId int, reduceTaskIdentifierDigest string, 
 
 	output := new(AFTReduceTask)
 
-	(*output).targetNodesFullRPCInternetAddresses = node.GetZookeeperClient().GetWorkerInternetAddressesForRPC(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort)
+	(*output).targetNodesFullRPCInternetAddresses = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort)
 
 	(*output).replyChannel = make(chan *ReduceOutput)
 	(*output).arbitraryFaultToleranceLevel = int(math.Floor(float64((len((*output).targetNodesFullRPCInternetAddresses) - 1) / 2)))

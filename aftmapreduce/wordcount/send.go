@@ -76,8 +76,8 @@ func sendDataToWorker(data []byte, dataDigest string, receiverAssociatedDataDige
 
 func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int, receiverGroupId int, senderDataDigest string, receiverAssociatedDataDigest string, receiverReduceTaskId int) {
 
-	senderInternetAddresses := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(sourceGroupId, aftmapreduce.WordCountSendRPCBasePort, sourceNodeIds)
-	receiverInternetAddresses := node.GetZookeeperClient().GetWorkerInternetAddressesForRPCWithIdConstraints(receiverGroupId, aftmapreduce.WordCountReceiveRPCBasePort, receiverNodeIds)
+	senderInternetAddresses := node.GetMembershipRegister().GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(sourceGroupId, sourceNodeIds, aftmapreduce.WordCountSendRPCBasePort)
+	receiverInternetAddresses := node.GetMembershipRegister().GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(receiverGroupId, receiverNodeIds, aftmapreduce.WordCountReceiveRPCBasePort)
 
 	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker IDs:           %d", sourceNodeIds))
 	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker group IDs:     %d", sourceGroupId))

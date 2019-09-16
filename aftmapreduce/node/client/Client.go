@@ -68,7 +68,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 		}
 	}
 
-	finalOutputPath := fmt.Sprintf("%s/%s", wordcount.CompleteRequestsZNodePath, sourceFileDigest)
+	finalOutputPath := fmt.Sprintf("%s/%s", zookeeper.AcceptedRequests, sourceFileDigest)
 
 	for {
 

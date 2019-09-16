@@ -13,7 +13,11 @@ func downloadSourceDataFromCloud(sourceDataDigest string) *os.File {
 	output, err := ioutil.TempFile(os.TempDir(), sourceDataDigest)
 	utility.CheckError(err)
 
-	node.GetAmazonS3Client().Download(sourceDataDigest, output)
+	rawData, err := (*node.GetKeyValueStorageService()).Get(sourceDataDigest)
+	utility.CheckError(err)
+
+	_, err = output.Write(rawData)
+	utility.CheckError(err)
 
 	_, err = output.Seek(0, 0)
 	utility.CheckError(err)
