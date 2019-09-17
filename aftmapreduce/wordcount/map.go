@@ -5,6 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
+	"fmt"
 	"strings"
 )
 
@@ -27,37 +28,35 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	node.GetLogger().PrintInfoStartingTaskMessage(MapTaskName)
 
-	inputDigest := utility.GenerateDigestUsingSHA512([]byte(input.Text))
+	guid := utility.GenerateDigestUsingSHA512([]byte(input.Text))
 
-	if node.GetDataRegistry().Get(inputDigest) == nil {
+	if !isMapTaskRequestDuplicated(guid) {
 
 		digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
 
 		node.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize())
+		node.GetDataRegistry().Set(guid, []byte(digest))
+		node.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(mappedDataSizes))
 
 		(*output).ReplayDigest = digest
 		(*output).MappedDataSizes = mappedDataSizes
-
-		node.GetDataRegistry().Set(inputDigest, []byte((*output).ReplayDigest))
-		node.GetDataRegistry().Set(inputDigest+"map", utility.Encode(mappedDataSizes))
 
 		node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
 
 	} else {
 
-		(*output).ReplayDigest = string(node.GetDataRegistry().Get(inputDigest))
-
-		mappedDataSizes := map[int]int{}
-		utility.Decode(node.GetDataRegistry().Get(inputDigest+"map"), &mappedDataSizes)
-
-		(*output).MappedDataSizes = mappedDataSizes
-
+		(*output).ReplayDigest = string(node.GetDataRegistry().Get(guid))
+		utility.Decode(node.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid)), &output.MappedDataSizes)
 	}
 
 	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).IdNode = node.GetPropertyAsInteger(property.NodeID)
 
 	return nil
+}
+
+func isMapTaskRequestDuplicated(guid string) bool {
+	return node.GetDataRegistry().Get(guid) != nil
 }
 
 func performMapTask(text string, mappingCardinality int) (string, *WordTokenHashTable.WordTokenHashTable, map[int]int) {

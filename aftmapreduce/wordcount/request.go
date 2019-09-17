@@ -113,10 +113,12 @@ func ManageClientRequest(guid string) {
 
 func startAFTMapTask(guid string) ([]*AFTMapTaskOutput, error) {
 
-	splits := getSplits(guid, (*node.GetMembershipRegister()).GetGroupAmount())
-	output := mapTask(splits)
-
-	return output, (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, mapComplete, utility.Encode(output))
+	if splits, err := getSplits(guid, (*node.GetMembershipRegister()).GetGroupAmount()); err != nil {
+		return nil, err
+	} else {
+		output := mapTask(splits)
+		return output, (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, mapComplete, utility.Encode(output))
+	}
 }
 
 func startAFTReduceTask(guid string, AFTMapTaskOutput []*AFTMapTaskOutput) ([]*AFTReduceTaskOutput, error) {
