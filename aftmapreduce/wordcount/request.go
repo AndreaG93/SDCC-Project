@@ -5,6 +5,7 @@ import (
 	"SDCC-Project/aftmapreduce/utility"
 	"errors"
 	"fmt"
+	"sync"
 )
 
 const (
@@ -67,39 +68,48 @@ func ManageClientRequest(guid string) {
 	var data []byte
 	var err error
 
-	var AFTMapTaskOutput []*AFTMapTaskOutput
-	var AFTReduceTaskOutput []*AFTReduceTaskOutput
+	var myAFTMapTaskOutput []*AFTMapTaskOutput
+	var myAFTReduceTaskOutput []*AFTReduceTaskOutput
 
-	status, data, err = (*node.GetSystemCoordinator()).GetClientRequestInformation(guid)
-	utility.CheckError(err)
-
-	node.GetLogger().PrintInfoTaskMessage(requestManagementTask, fmt.Sprintf("Request: %s -- Status %d", guid, status))
+	predictionSuccessfulChannel := make(chan bool)
+	AFTMapTaskOutputComputedWithStandardAlgorithm := make(chan []*AFTMapTaskOutput)
 
 	for {
+
+		status, data, err = (*node.GetSystemCoordinator()).GetClientRequestInformation(guid)
+		utility.CheckError(err)
+		node.GetLogger().PrintInfoTaskMessage(requestManagementTask, fmt.Sprintf("Request: %s -- Status %d", guid, status))
+
 		switch status {
 		case accepted:
 
-			if AFTMapTaskOutput, err = startAFTMapTask(guid); err == nil {
-				status = mapComplete
+			if myAFTMapTaskOutput, err = startAFTMapTask(guid, AFTMapTaskOutputComputedWithStandardAlgorithm, predictionSuccessfulChannel); err == nil {
+
+				predictedResultIsCorrect := <-predictionSuccessfulChannel
+				if predictedResultIsCorrect {
+					status = reduceComplete
+				} else {
+					status = mapComplete
+				}
 			}
 
 		case mapComplete:
 
-			if AFTMapTaskOutput == nil {
-				utility.Decode(data, &AFTMapTaskOutput)
+			if myAFTMapTaskOutput == nil {
+				utility.Decode(data, &myAFTMapTaskOutput)
 			}
 
-			if AFTReduceTaskOutput, err = startAFTReduceTask(guid, AFTMapTaskOutput); err == nil {
+			if myAFTReduceTaskOutput, err = startAFTReduceTask(guid, myAFTMapTaskOutput); err == nil {
 				status = reduceComplete
 			}
 
 		case reduceComplete:
 
-			if AFTReduceTaskOutput == nil {
-				utility.Decode(data, &AFTReduceTaskOutput)
+			if myAFTReduceTaskOutput == nil {
+				utility.Decode(data, &myAFTReduceTaskOutput)
 			}
 
-			if err = startCollectTask(guid, AFTReduceTaskOutput); err == nil {
+			if err = startCollectTask(guid, myAFTReduceTaskOutput); err == nil {
 				status = complete
 			}
 
@@ -111,14 +121,98 @@ func ManageClientRequest(guid string) {
 	}
 }
 
-func startAFTMapTask(guid string) ([]*AFTMapTaskOutput, error) {
+func startAFTMapTask(guid string, AFTMapTaskOutputComputedWithStandardAlgorithm chan []*AFTMapTaskOutput, predictionSuccessfulChannel chan bool) ([]*AFTMapTaskOutput, error) {
+
+	var mapWaitGroup sync.WaitGroup
 
 	if splits, err := getSplits(guid, (*node.GetMembershipRegister()).GetGroupAmount()); err != nil {
 		return nil, err
 	} else {
-		output := mapTask(splits)
+
+		output := make([]*AFTMapTaskOutput, len(splits))
+		channels := getChannelsUsedForFirstReplyPredictedAsCorrect(guid, len(splits), AFTMapTaskOutputComputedWithStandardAlgorithm, predictionSuccessfulChannel)
+
+		for index := range splits {
+
+			mapWaitGroup.Add(1)
+			go func(mySplit string, myChannel chan interface{}, myGroupId int) {
+
+				output[myGroupId] = Execute(NewMapTask(mySplit, myGroupId, myChannel)).(*AFTMapTaskOutput)
+				mapWaitGroup.Done()
+
+			}(splits[index], channels[index], index)
+		}
+
+		mapWaitGroup.Wait()
+		node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
+
+		AFTMapTaskOutputComputedWithStandardAlgorithm <- output
+
 		return output, (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, mapComplete, utility.Encode(output))
 	}
+}
+
+func getChannelsUsedForFirstReplyPredictedAsCorrect(guid string, splitsAmount int, AFTMapTaskOutputComputedWithStandardAlgorithm chan []*AFTMapTaskOutput, predictionSuccessfulChannel chan bool) []chan interface{} {
+
+	var mapWaitGroup sync.WaitGroup
+	isPredictionCorrect := true
+
+	output := make([]chan interface{}, splitsAmount)
+	for index := range output {
+		output[index] = make(chan interface{})
+	}
+
+	go func(myChannel []chan interface{}) {
+
+		myAFTMapTaskOutput := make([]*AFTMapTaskOutput, splitsAmount)
+
+		for index := range myChannel {
+
+			mapWaitGroup.Add(1)
+			go func(myIndex int, myChannel chan interface{}) {
+
+				reply := <-myChannel
+
+				myAFTMapTaskOutput[myIndex] = new(AFTMapTaskOutput)
+				myAFTMapTaskOutput[myIndex].IdGroup = myIndex
+				myAFTMapTaskOutput[myIndex].ReplayDigest = reply.(*MapOutput).ReplayDigest
+				myAFTMapTaskOutput[myIndex].NodeIdsWithCorrectResult = []int{reply.(*MapOutput).IdNode}
+				myAFTMapTaskOutput[myIndex].MappedDataSizes = reply.(*MapOutput).MappedDataSizes
+
+				mapWaitGroup.Done()
+
+			}(index, myChannel[index])
+		}
+		mapWaitGroup.Wait()
+
+		localityAwarenessData := getLocalityAwareReduceTaskMappedToNodeGroupId(myAFTMapTaskOutput)
+		localityAwareShuffleTask(myAFTMapTaskOutput, localityAwarenessData)
+
+		output := reduceTask(myAFTMapTaskOutput, localityAwarenessData)
+
+		mapTaskFromStandardAlgorithm := <-AFTMapTaskOutputComputedWithStandardAlgorithm
+
+		for x := range myAFTMapTaskOutput {
+			if myAFTMapTaskOutput[x].IdGroup != mapTaskFromStandardAlgorithm[x].IdGroup {
+				isPredictionCorrect = false
+				break
+			}
+			if myAFTMapTaskOutput[x].ReplayDigest != mapTaskFromStandardAlgorithm[x].ReplayDigest {
+				isPredictionCorrect = false
+				break
+			}
+		}
+
+		if isPredictionCorrect {
+			utility.CheckError((*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reduceComplete, utility.Encode(output)))
+			predictionSuccessfulChannel <- true
+		} else {
+			predictionSuccessfulChannel <- false
+		}
+
+	}(output)
+
+	return output
 }
 
 func startAFTReduceTask(guid string, AFTMapTaskOutput []*AFTMapTaskOutput) ([]*AFTReduceTaskOutput, error) {

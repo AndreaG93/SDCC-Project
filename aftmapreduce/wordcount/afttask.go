@@ -13,11 +13,13 @@ type AFTTask interface {
 	DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool
 	ExecuteRPCCallTo(fullRPCInternetAddress string)
 	GetOutput() interface{}
+	GetChannelToSendFirstReplyPredictedAsCorrect() chan interface{}
 }
 
 func Execute(task AFTTask) interface{} {
 
 	workerProcessesRPCInternetAddresses := task.GetAvailableWorkerProcessesRPCInternetAddresses()
+	firstReply := true
 	repliesReceived := 0
 	RPCCallSent := 0
 	timer := time.NewTimer(timeout)
@@ -40,6 +42,11 @@ func Execute(task AFTTask) interface{} {
 			}
 
 		case reply := <-task.GetReplyChannel():
+
+			if firstReply {
+				makePredictionFirstReplayIsCorrect(task, reply)
+				firstReply = false
+			}
 
 			timer.Stop()
 			repliesReceived++
@@ -67,4 +74,13 @@ func Execute(task AFTTask) interface{} {
 
 func thereAreOtherAvailableWorkerProcesses(task AFTTask, RPCCallSentSoFar int) bool {
 	return RPCCallSentSoFar < len(task.GetAvailableWorkerProcessesRPCInternetAddresses())
+}
+
+func makePredictionFirstReplayIsCorrect(task AFTTask, reply interface{}) {
+
+	channel := task.GetChannelToSendFirstReplyPredictedAsCorrect()
+
+	if channel != nil {
+		channel <- reply
+	}
 }

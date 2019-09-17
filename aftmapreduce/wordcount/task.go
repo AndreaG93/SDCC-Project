@@ -16,28 +16,6 @@ const (
 	ShuffleTaskName  = "SHUFFLE"
 )
 
-func mapTask(input []string) []*AFTMapTaskOutput {
-
-	output := make([]*AFTMapTaskOutput, len(input))
-
-	var mapWaitGroup sync.WaitGroup
-
-	for index, split := range input {
-
-		mapWaitGroup.Add(1)
-		go func(mySplit string, myGroupId int) {
-
-			output[myGroupId] = Execute(NewMapTask(mySplit, myGroupId)).(*AFTMapTaskOutput)
-			mapWaitGroup.Done()
-
-		}(split, index)
-	}
-
-	mapWaitGroup.Wait()
-	node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
-	return output
-}
-
 func getLocalityAwareReduceTaskMappedToNodeGroupId(input []*AFTMapTaskOutput) map[int]int {
 
 	output := make(map[int]int)

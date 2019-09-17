@@ -15,16 +15,17 @@ type AFTMapTaskOutput struct {
 }
 
 type MapTask struct {
-	mapTaskOutput       *AFTMapTaskOutput
-	workersReplyChannel chan interface{}
-	faultToleranceLevel int
-	requestSend         int
-	workersAddresses    []string
-	registry            *reply.MapReplyRegistry
-	split               string
+	mapTaskOutput                       *AFTMapTaskOutput
+	workersReplyChannel                 chan interface{}
+	firstReplyPredictedAsCorrectChannel chan interface{}
+	faultToleranceLevel                 int
+	requestSend                         int
+	workersAddresses                    []string
+	registry                            *reply.MapReplyRegistry
+	split                               string
 }
 
-func NewMapTask(split string, workerGroupId int) *MapTask {
+func NewMapTask(split string, workerGroupId int, firstReplyPredictedAsCorrectChannel chan interface{}) *MapTask {
 
 	output := new(MapTask)
 
@@ -35,6 +36,7 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 	(*output).split = split
 	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workersAddresses) - 1) / 2)))
 	(*output).registry = reply.NewMapReplyRegistry((*output).faultToleranceLevel + 1)
+	(*output).firstReplyPredictedAsCorrectChannel = firstReplyPredictedAsCorrectChannel
 
 	return output
 }
@@ -78,4 +80,8 @@ func (obj *MapTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 	output := MapOutput{}
 
 	go aftmapreduce.MakeRPCCall("Map.Execute", fullRPCInternetAddress, input, &output, replyChannel)
+}
+
+func (obj *MapTask) GetChannelToSendFirstReplyPredictedAsCorrect() chan interface{} {
+	return (*obj).firstReplyPredictedAsCorrectChannel
 }
