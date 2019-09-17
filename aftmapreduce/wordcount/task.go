@@ -27,7 +27,7 @@ func mapTask(input []string) []*AFTMapTaskOutput {
 		mapWaitGroup.Add(1)
 		go func(mySplit string, myGroupId int) {
 
-			output[myGroupId] = NewMapTask(mySplit, myGroupId).Execute()
+			output[myGroupId] = Execute(NewMapTask(mySplit, myGroupId)).(*AFTMapTaskOutput)
 			mapWaitGroup.Done()
 
 		}(split, index)
@@ -115,7 +115,7 @@ func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int
 		mapWaitGroup.Add(1)
 		go func(targetNodeGroupId int, reduceTaskIdentifierDigest string, reduceTaskIndex int) {
 
-			output[reduceTaskIndex] = NewAFTReduceTask(targetNodeGroupId, reduceTaskIdentifierDigest, reduceTaskIndex).Execute()
+			output[reduceTaskIndex] = Execute(NewAFTReduceTask(targetNodeGroupId, reduceTaskIdentifierDigest, reduceTaskIndex)).(*AFTReduceTaskOutput)
 			mapWaitGroup.Done()
 
 		}(bestGroupId, receiverDigestData, index)

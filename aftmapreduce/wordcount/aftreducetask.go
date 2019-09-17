@@ -4,10 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/registry/reply"
-	"fmt"
 	"math"
-	"net/rpc"
-	"time"
 )
 
 type AFTReduceTaskOutput struct {
@@ -17,28 +14,25 @@ type AFTReduceTaskOutput struct {
 }
 
 type AFTReduceTask struct {
-	output *AFTReduceTaskOutput
-
-	replyRegistry *reply.ReduceReplyRegistry
-	replyChannel  chan *ReduceOutput
-
-	arbitraryFaultToleranceLevel        int
-	requestsSend                        int
-	targetNodesFullRPCInternetAddresses []string
-
-	reduceTaskIndex            int
-	reduceTaskIdentifierDigest string
+	output                      *AFTReduceTaskOutput
+	replyRegistry               *reply.ReduceReplyRegistry
+	replyChannel                chan interface{}
+	faultToleranceLevel         int
+	requestsSend                int
+	workerProcessesRPCAddresses []string
+	reduceTaskIndex             int
+	reduceTaskIdentifierDigest  string
 }
 
 func NewAFTReduceTask(targetNodeGroupId int, reduceTaskIdentifierDigest string, reduceTaskIndex int) *AFTReduceTask {
 
 	output := new(AFTReduceTask)
 
-	(*output).targetNodesFullRPCInternetAddresses, _ = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort)
+	(*output).workerProcessesRPCAddresses, _ = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort)
 
-	(*output).replyChannel = make(chan *ReduceOutput)
-	(*output).arbitraryFaultToleranceLevel = int(math.Floor(float64((len((*output).targetNodesFullRPCInternetAddresses) - 1) / 2)))
-	(*output).replyRegistry = reply.NewReduceReplyRegistry((*output).arbitraryFaultToleranceLevel + 1)
+	(*output).replyChannel = make(chan interface{})
+	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workerProcessesRPCAddresses) - 1) / 2)))
+	(*output).replyRegistry = reply.NewReduceReplyRegistry((*output).faultToleranceLevel + 1)
 
 	(*output).output = new(AFTReduceTaskOutput)
 	(*(*output).output).IdGroup = targetNodeGroupId
@@ -51,15 +45,7 @@ func NewAFTReduceTask(targetNodeGroupId int, reduceTaskIdentifierDigest string, 
 	return output
 }
 
-func (obj *AFTReduceTask) Execute() *AFTReduceTaskOutput {
-
-	defer close((*obj).replyChannel)
-
-	for ; (*obj).requestsSend <= (*obj).arbitraryFaultToleranceLevel; (*obj).requestsSend++ {
-		go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
-	}
-
-	(*obj).startListeningWorkersReplies()
+func (obj *AFTReduceTask) GetOutput() interface{} {
 
 	digest, nodeIds := (*obj).replyRegistry.GetMostMatchedReply()
 
@@ -69,65 +55,32 @@ func (obj *AFTReduceTask) Execute() *AFTReduceTaskOutput {
 	return (*obj).output
 }
 
-func (obj *AFTReduceTask) startListeningWorkersReplies() {
-
-	repliesReceived := 0
-	timeout := time.NewTimer(1 * time.Second)
-
-	for {
-		select {
-		case <-timeout.C:
-			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", "Timout expired!")
-
-			if (*obj).requestsSend < len((*obj).targetNodesFullRPCInternetAddresses) {
-				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
-				(*obj).requestsSend++
-			} else {
-				panic(fmt.Sprintf("number of available WP isn't enough -- Group ID %d", (*obj).output.IdGroup))
-			}
-
-		case myReply := <-(*obj).replyChannel:
-
-			timeout.Stop()
-
-			if (*obj).replyRegistry.Add(myReply.Digest, myReply.NodeId) {
-				return
-			}
-
-			if repliesReceived < (*obj).requestsSend {
-				timeout.Reset(1 * time.Second)
-				continue
-			}
-
-			if (*obj).requestsSend < len((*obj).targetNodesFullRPCInternetAddresses) {
-				go executeSingleReduceTaskReplica((*obj).reduceTaskIdentifierDigest, (*obj).reduceTaskIndex, (*obj).targetNodesFullRPCInternetAddresses[(*obj).requestsSend], (*obj).replyChannel)
-				(*obj).requestsSend++
-				timeout.Reset(1 * time.Second)
-			} else {
-				panic(fmt.Sprintf("number of available WP isn't enough -- Group ID %d", (*obj).output.IdGroup))
-			}
-		}
-	}
+func (obj *AFTReduceTask) GetReplyChannel() chan interface{} {
+	return (*obj).replyChannel
 }
 
-func executeSingleReduceTaskReplica(localDataDigest string, ReduceWorkIndex int, fullRPCInternetAddress string, reply chan *ReduceOutput) {
+func (obj *AFTReduceTask) GetFaultToleranceLevel() int {
+	return (*obj).faultToleranceLevel
+}
 
-	node.GetLogger().PrintInfoTaskMessage("SINGLE-REDUCE-REPLICA", fmt.Sprintf("Send a 'REDUCE' command to: %s -- Reduce Task Index %d", fullRPCInternetAddress, ReduceWorkIndex))
+func (obj *AFTReduceTask) GetAvailableWorkerProcessesRPCInternetAddresses() []string {
+	return (*obj).workerProcessesRPCAddresses
+}
 
-	input := new(ReduceInput)
-	output := new(ReduceOutput)
+func (obj *AFTReduceTask) DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool {
+	reduceLastReply := lastReply.(*ReduceOutput)
+	return (*obj).replyRegistry.Add(reduceLastReply.Digest, reduceLastReply.NodeId)
+}
 
-	(*input).LocalDataDigest = localDataDigest
-	(*input).ReduceWorkIndex = ReduceWorkIndex
+func (obj *AFTReduceTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 
-	worker, err := rpc.Dial("tcp", fullRPCInternetAddress)
-	if err != nil {
-		node.GetLogger().PrintErrorTaskMessage(ReduceTaskName, err.Error())
-		return
+	replyChannel := (*obj).replyChannel
+
+	input := ReduceInput{
+		LocalDataDigest: (*obj).reduceTaskIdentifierDigest,
+		ReduceWorkIndex: (*obj).reduceTaskIndex,
 	}
+	output := ReduceOutput{}
 
-	err = worker.Call("Reduce.Execute", input, output)
-	if err == nil {
-		reply <- output
-	}
+	go aftmapreduce.MakeRPCCall("Reduce.Execute", fullRPCInternetAddress, input, &output, replyChannel)
 }

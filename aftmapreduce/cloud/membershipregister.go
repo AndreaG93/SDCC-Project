@@ -3,6 +3,7 @@ package cloud
 import (
 	"fmt"
 	"os/exec"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -109,12 +110,18 @@ func orderPublicInternetRPCAddressByAverageResponseTime(input []string) ([]strin
 
 func getAverageResponseTime(publicInternetAddress string) (float64, error) {
 
+	var command *exec.Cmd
 	var err error
 	var averageResponseTimeString string
 	var averageResponseTime float64
 
-	cmd := exec.Command("wsl.exe", "/bin/bash", "-c", fmt.Sprintf("ping -c 1 %s | cut -d '/' -s -f5", publicInternetAddress))
-	output, err := cmd.Output()
+	if runtime.GOOS == "windows" {
+		command = exec.Command("wsl.exe", "/bin/bash", "-c", fmt.Sprintf("ping -c 1 %s | cut -d '/' -s -f5", publicInternetAddress))
+	} else {
+		command = exec.Command("/bin/bash", "-c", fmt.Sprintf("ping -c 1 %s | cut -d '/' -s -f5", publicInternetAddress))
+	}
+
+	output, err := command.Output()
 	if err != nil {
 		return 0.0, err
 	}

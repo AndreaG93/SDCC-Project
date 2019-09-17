@@ -4,10 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/registry/reply"
-	"fmt"
 	"math"
-	"net/rpc"
-	"time"
 )
 
 type AFTMapTaskOutput struct {
@@ -19,7 +16,7 @@ type AFTMapTaskOutput struct {
 
 type MapTask struct {
 	mapTaskOutput       *AFTMapTaskOutput
-	workersReplyChannel chan *MapOutput
+	workersReplyChannel chan interface{}
 	faultToleranceLevel int
 	requestSend         int
 	workersAddresses    []string
@@ -33,27 +30,16 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 
 	(*output).mapTaskOutput = new(AFTMapTaskOutput)
 	(*(*output).mapTaskOutput).IdGroup = workerGroupId
-	(*output).workersReplyChannel = make(chan *MapOutput)
-	(*output).requestSend = 0
+	(*output).workersReplyChannel = make(chan interface{})
 	(*output).workersAddresses, _ = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
-
 	(*output).split = split
-
 	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workersAddresses) - 1) / 2)))
 	(*output).registry = reply.NewMapReplyRegistry((*output).faultToleranceLevel + 1)
 
 	return output
 }
 
-func (obj *MapTask) Execute() *AFTMapTaskOutput {
-
-	defer close((*obj).workersReplyChannel)
-
-	for ; (*obj).requestSend <= (*obj).faultToleranceLevel; (*obj).requestSend++ {
-		go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
-	}
-
-	(*obj).startListeningWorkersReplies()
+func (obj *MapTask) GetOutput() interface{} {
 
 	digest, nodeIds, mappedDataSizes := (*obj).registry.GetMostMatchedReply()
 
@@ -64,66 +50,32 @@ func (obj *MapTask) Execute() *AFTMapTaskOutput {
 	return (*obj).mapTaskOutput
 }
 
-func (obj *MapTask) startListeningWorkersReplies() {
-
-	repliesReceived := 0
-	timeout := time.NewTimer(1 * time.Second)
-
-	for {
-		select {
-		case <-timeout.C:
-			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", "Timout expired!")
-
-			if (*obj).requestSend < len((*obj).workersAddresses) {
-				go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
-				(*obj).requestSend++
-			} else {
-				panic("number of available WP isn't enough")
-			}
-
-		case myReply := <-(*obj).workersReplyChannel:
-
-			timeout.Stop()
-			repliesReceived++
-
-			node.GetLogger().PrintInfoTaskMessage("AFT-MAP-TASK", fmt.Sprintf("Received reply by node id %d group %d", myReply.IdNode, myReply.IdGroup))
-
-			if (*obj).registry.Add(myReply.ReplayDigest, myReply.IdNode, myReply.MappedDataSizes) {
-				return
-			}
-
-			if repliesReceived < (*obj).requestSend {
-				timeout.Reset(1 * time.Second)
-				continue
-			}
-
-			if (*obj).requestSend < len((*obj).workersAddresses) {
-				go executeSingleMapTaskReplica((*obj).split, (*obj).workersAddresses[(*obj).requestSend], (*obj).workersReplyChannel)
-				(*obj).requestSend++
-				timeout.Reset(1 * time.Second)
-			} else {
-				panic(fmt.Sprintf("number of available WP isn't enough -- Group ID %d", (*obj).mapTaskOutput.IdGroup))
-			}
-		}
-	}
+func (obj *MapTask) GetReplyChannel() chan interface{} {
+	return (*obj).workersReplyChannel
 }
 
-func executeSingleMapTaskReplica(split string, fullRPCInternetAddress string, reply chan *MapOutput) {
+func (obj *MapTask) GetFaultToleranceLevel() int {
+	return (*obj).faultToleranceLevel
+}
 
-	input := new(MapInput)
-	output := new(MapOutput)
+func (obj *MapTask) GetAvailableWorkerProcessesRPCInternetAddresses() []string {
+	return (*obj).workersAddresses
+}
 
-	(*input).Text = split
-	(*input).MappingCardinality = (*node.GetMembershipRegister()).GetGroupAmount()
+func (obj *MapTask) DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool {
+	mapLastReply := lastReply.(*MapOutput)
+	return (*obj).registry.Add(mapLastReply.ReplayDigest, mapLastReply.IdNode, mapLastReply.MappedDataSizes)
+}
 
-	worker, err := rpc.Dial("tcp", fullRPCInternetAddress)
-	if err != nil {
-		node.GetLogger().PrintErrorTaskMessage(MapTaskName, err.Error())
-		return
+func (obj *MapTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
+
+	replyChannel := (*obj).workersReplyChannel
+
+	input := MapInput{
+		Text:               (*obj).split,
+		MappingCardinality: (*node.GetMembershipRegister()).GetGroupAmount(),
 	}
+	output := MapOutput{}
 
-	err = worker.Call("Map.Execute", input, output)
-	if err == nil {
-		reply <- output
-	}
+	go aftmapreduce.MakeRPCCall("Map.Execute", fullRPCInternetAddress, input, &output, replyChannel)
 }

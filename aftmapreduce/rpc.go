@@ -1,7 +1,6 @@
 package aftmapreduce
 
 import (
-	"SDCC-Project/aftmapreduce/utility"
 	"net"
 	"net/rpc"
 )
@@ -17,15 +16,31 @@ const (
 
 func StartAcceptingRPCRequest(serviceTypeRequest interface{}, address string) {
 
-	var listener net.Listener
+	if listener, err := net.Listen("tcp", address); err != nil {
+		panic(err)
+	} else {
 
-	listener, _ = net.Listen("tcp", address)
-	utility.CheckError(rpc.Register(serviceTypeRequest))
+		if err := rpc.Register(serviceTypeRequest); err != nil {
+			panic(err)
+		} else {
 
-	defer func() {
-		utility.CheckError(listener.Close())
-	}()
-	for {
-		rpc.Accept(listener)
+			defer func() {
+				if err := listener.Close(); err != nil {
+					panic(err)
+				}
+			}()
+			for {
+				rpc.Accept(listener)
+			}
+		}
+	}
+}
+
+func MakeRPCCall(serviceMethod string, internetAddress string, input interface{}, output interface{}, replyChannel chan interface{}) {
+
+	if worker, err := rpc.Dial("tcp", internetAddress); err == nil {
+		if err = worker.Call(serviceMethod, input, output); err == nil {
+			replyChannel <- output.(interface{})
+		}
 	}
 }
