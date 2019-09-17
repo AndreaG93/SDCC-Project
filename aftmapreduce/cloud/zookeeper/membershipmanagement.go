@@ -13,17 +13,23 @@ func (obj *Client) RegisterNewWorkerProcess(processId int, processGroupId int, p
 	return (*obj).createZNodeCheckingExistence(zNodePath, []byte(processPublicInternetAddress), zk.FlagEphemeral)
 }
 
-func (obj *Client) WaitUntilProcessMembershipChanges() (map[int]map[int]string, error) {
+func (obj *Client) WaitUntilProcessMembershipChanges() error {
 
 	var err error
 	var watcher <-chan zk.Event
-	var zNodeNames []string
 
 	if _, _, watcher, err = (*obj).zooKeeperConnection.ChildrenW(membershipZNodePath); err != nil {
-		return nil, err
+		return err
 	}
 
 	<-watcher
+	return nil
+}
+
+func (obj *Client) UpdateProcessMembershipRegister() (map[int]map[int]string, error) {
+
+	var err error
+	var zNodeNames []string
 
 	if zNodeNames, _, err = (*obj).zooKeeperConnection.Children(membershipZNodePath); err != nil {
 		return nil, err

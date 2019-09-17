@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	electionZNodePath                = "/election"
-	membershipZNodePath              = "/membership"
-	pendingClientRequestsZNodePath   = "/pending-requests"
-	finalizedClientRequestsZNodePath = "/finalized-requests"
-	zkSessionTimeOut                 = 15 * time.Second
+	electionZNodePath               = "/election"
+	membershipZNodePath             = "/membership"
+	pendingClientRequestsZNodePath  = "/pending-requests"
+	completeClientRequestsZNodePath = "/complete-requests"
+	zkSessionTimeOut                = 15 * time.Second
 )
 
 type Client struct {
@@ -29,7 +29,7 @@ func New(zooKeeperServerPoolAddresses []string) (*Client, error) {
 	return output, err
 }
 
-func (obj *Client) initializeAllNeededZNodes() error {
+func (obj *Client) Initialize() error {
 
 	var err error
 
@@ -42,7 +42,7 @@ func (obj *Client) initializeAllNeededZNodes() error {
 	if err = (*obj).createZNodeCheckingExistence(pendingClientRequestsZNodePath, nil, int32(0)); err != nil {
 		return err
 	}
-	if err = (*obj).createZNodeCheckingExistence(finalizedClientRequestsZNodePath, nil, int32(0)); err != nil {
+	if err = (*obj).createZNodeCheckingExistence(completeClientRequestsZNodePath, nil, int32(0)); err != nil {
 		return err
 	}
 
@@ -54,7 +54,7 @@ func (obj *Client) createZNodeCheckingExistence(zNodePath string, data []byte, f
 	var err error
 	var isZNodeExistent bool
 
-	if isZNodeExistent, _, err = (*obj).zooKeeperConnection.Exists(electionZNodePath); err != nil {
+	if isZNodeExistent, _, err = (*obj).zooKeeperConnection.Exists(zNodePath); err != nil {
 		return err
 	} else if !isZNodeExistent {
 		if _, err = (*obj).zooKeeperConnection.Create(zNodePath, data, flags, zk.WorldACL(zk.PermAll)); err != nil {

@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/registry/reply"
 	"fmt"
 	"math"
@@ -36,7 +35,7 @@ func NewMapTask(split string, workerGroupId int) *MapTask {
 	(*(*output).mapTaskOutput).IdGroup = workerGroupId
 	(*output).workersReplyChannel = make(chan *MapOutput)
 	(*output).requestSend = 0
-	(*output).workersAddresses = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
+	(*output).workersAddresses, _ = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
 
 	(*output).split = split
 
@@ -115,7 +114,7 @@ func executeSingleMapTaskReplica(split string, fullRPCInternetAddress string, re
 	output := new(MapOutput)
 
 	(*input).Text = split
-	(*input).MappingCardinality = node.GetPropertyAsInteger(property.MapCardinality)
+	(*input).MappingCardinality = (*node.GetMembershipRegister()).GetGroupAmount()
 
 	worker, err := rpc.Dial("tcp", fullRPCInternetAddress)
 	if err != nil {

@@ -1,0 +1,1 @@
+ping -c 1 -q $1 | cut -d "/" -s -f5

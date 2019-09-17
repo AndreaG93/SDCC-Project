@@ -1,7 +1,7 @@
 package client
 
 import (
-	"SDCC-Project/aftmapreduce/cloud/amazons3"
+	"SDCC-Project/aftmapreduce/cloud"
 	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount"
@@ -20,7 +20,8 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	var preSignedURL string
 	var outputDigest string
 
-	zookeeperClient = zookeeper.New(zookeeperAddresses)
+	zookeeperClient, err = zookeeper.New(zookeeperAddresses)
+	utility.CheckError(err)
 
 	data, err := ioutil.ReadFile(sourceFilePath)
 	utility.CheckError(err)
@@ -30,12 +31,13 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 
 	for {
 
-		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
+		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderPublicInternetAddress()
+		fmt.Println("Current Leader IP: " + currentLeaderInternetAddress)
 		if err != nil {
 			continue
 		}
 
-		preSignedURL, err = sendRequestForPreSignedURL(sourceFileDigest, currentLeaderInternetAddress, true, false)
+		preSignedURL, err = sendRequest(sourceFileDigest, currentLeaderInternetAddress, wordcount.UploadPreSignedURLRequestType)
 		if err != nil {
 			continue
 		} else {
@@ -44,7 +46,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	}
 
 	for {
-		err = amazons3.UploadWithPreSignedURL(data, preSignedURL)
+		err = cloud.Upload(preSignedURL, data)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -55,41 +57,12 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 
 	for {
 
-		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
+		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderPublicInternetAddress()
 		if err != nil {
 			continue
 		}
 
-		err := sendRequestForJob(sourceFileDigest, currentLeaderInternetAddress)
-		if err != nil {
-			continue
-		} else {
-			break
-		}
-	}
-
-	finalOutputPath := fmt.Sprintf("%s/%s", zookeeper.AcceptedRequests, sourceFileDigest)
-
-	for {
-
-		rawData, watcher := zookeeperClient.GetZNodeData(finalOutputPath)
-		if rawData == nil {
-			<-watcher
-			rawData, _ = zookeeperClient.GetZNodeData(finalOutputPath)
-		} else {
-			outputDigest = string(rawData)
-			break
-		}
-	}
-
-	for {
-
-		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderRequestRPCInternetAddress()
-		if err != nil {
-			continue
-		}
-
-		preSignedURL, err = sendRequestForPreSignedURL(outputDigest, currentLeaderInternetAddress, false, true)
+		_, err := sendRequest(sourceFileDigest, currentLeaderInternetAddress, wordcount.AcceptanceJobRequestType)
 		if err != nil {
 			continue
 		} else {
@@ -98,7 +71,29 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	}
 
 	for {
-		outputBytes, err := amazons3.DownloadPreSignedURL(preSignedURL)
+		outputDigest, err = zookeeperClient.WaitForClientRequestCompletion(sourceFileDigest)
+		if err == nil {
+			break
+		}
+	}
+
+	for {
+
+		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderPublicInternetAddress()
+		if err != nil {
+			continue
+		}
+
+		preSignedURL, err = sendRequest(outputDigest, currentLeaderInternetAddress, wordcount.DownloadPreSignedURLRequestType)
+		if err != nil {
+			continue
+		} else {
+			break
+		}
+	}
+
+	for {
+		outputBytes, err := cloud.Download(preSignedURL)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -110,14 +105,13 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 
 }
 
-func sendRequestForPreSignedURL(sourceFileDigest string, currentLeaderInternetAddress string, upload bool, download bool) (string, error) {
+func sendRequest(sourceFileDigest string, currentLeaderInternetAddress string, requestType uint8) (string, error) {
 
 	input := new(wordcount.RequestInput)
 	output := new(wordcount.RequestOutput)
 
 	(*input).SourceFileDigest = sourceFileDigest
-	(*input).RequestPreSignedURLForUpload = upload
-	(*input).RequestPreSignedURLForDownload = download
+	(*input).Type = requestType
 
 	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
 	if err != nil {
@@ -129,29 +123,7 @@ func sendRequestForPreSignedURL(sourceFileDigest string, currentLeaderInternetAd
 		return "", err
 	}
 
-	return output.PreSignedURL, nil
-}
-
-func sendRequestForJob(sourceFileDigest string, currentLeaderInternetAddress string) error {
-
-	input := new(wordcount.RequestInput)
-	output := new(wordcount.RequestOutput)
-
-	(*input).SourceFileDigest = sourceFileDigest
-	(*input).RequestPreSignedURLForDownload = false
-	(*input).RequestPreSignedURLForUpload = false
-
-	client, err := rpc.Dial("tcp", currentLeaderInternetAddress)
-	if err != nil {
-		return err
-	}
-
-	err = client.Call("Request.Execute", &input, &output)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return output.Url, nil
 }
 
 func printResult(rawData []byte) {

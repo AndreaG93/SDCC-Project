@@ -133,7 +133,7 @@ func retrieveTask(input []*AFTReduceTaskOutput) []*WordTokenList.WordTokenList {
 
 	for index, aftReduceTaskOutput := range input {
 
-		targetNodeIP := (*node.GetMembershipRegister()).GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(aftReduceTaskOutput.IdGroup, aftReduceTaskOutput.NodeIdsWithCorrectResult, aftmapreduce.WordCountRetrieverRPCBasePort)
+		targetNodeIP, _ := (*node.GetMembershipRegister()).GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(aftReduceTaskOutput.IdGroup, aftReduceTaskOutput.NodeIdsWithCorrectResult, aftmapreduce.WordCountRetrieverRPCBasePort)
 
 		rawData := retrieveFrom(targetNodeIP, aftReduceTaskOutput.ReplayDigest)
 		serializedData := WordTokenList.Deserialize(rawData)

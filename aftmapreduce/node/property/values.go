@@ -12,6 +12,4 @@ const (
 	WordCountReceiveRPCFullAddress  = "WordCountReceiveRPCFullAddress"
 	WordCountRequestRPCFullAddress  = "WordCountRequestRPCFullAddress"
 	WordCountRetrieveRPCFullAddress = "WordCountRetrieveRPCFullAddress"
-
-	MapCardinality = "MapCardinality"
 )

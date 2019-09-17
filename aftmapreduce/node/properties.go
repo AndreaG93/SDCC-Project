@@ -5,7 +5,6 @@ import (
 	"SDCC-Project/aftmapreduce/cloud/amazons3"
 	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/registry"
-	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 )
 
@@ -19,31 +18,43 @@ var properties map[string]interface{}
 var dataRegistry *registry.DataRegistry
 var digestRegistry *registry.DigestRegistry
 
-func InitializePrimary(zookeeperAddresses []string, nodeId int) {
-
-	initializeNode(zookeeperAddresses)
-
-	keyValueStorageService = amazons3.New()
-	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Primary%d", nodeId), false)
-}
-
-func InitializeWorker(zookeeperAddresses []string, nodeId int) {
-
-	initializeNode(zookeeperAddresses)
-
-	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Worker%d", nodeId), true)
-	digestRegistry = registry.NewDigestRegistry()
-}
-
-func initializeNode(zookeeperAddresses []string) {
+func InitializePrimary(nodeId int, zookeeperAddresses []string) error {
 
 	var err error
 
-	systemCoordinator, err = zookeeper.New(zookeeperAddresses)
-	utility.CheckError(err)
+	if systemCoordinator, err = zookeeper.New(zookeeperAddresses); err != nil {
+		return err
+	}
+	if err = systemCoordinator.Initialize(); err != nil {
+		return err
+	}
+
+	membershipRegister = *cloud.NewMembershipRegister()
+	keyValueStorageService = amazons3.New()
+	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Primary%d", nodeId), false)
+	logger = NewLogger()
+	properties = make(map[string]interface{})
+
+	go membershipRegister.StartMembershipRegisterListener(systemCoordinator)
+
+	return nil
+}
+
+func InitializeWorker(nodeId int, zookeeperAddresses []string) error {
+
+	var err error
+
+	if systemCoordinator, err = zookeeper.New(zookeeperAddresses); err != nil {
+		return err
+	}
+
+	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Worker%d", nodeId), true)
+	digestRegistry = registry.NewDigestRegistry()
 
 	logger = NewLogger()
 	properties = make(map[string]interface{})
+
+	return nil
 }
 
 func GetSystemCoordinator() *cloud.SystemCoordinator {

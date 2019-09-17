@@ -1,23 +1,25 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/cloud/zookeeper"
 	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/node/property"
 	"SDCC-Project/aftmapreduce/utility"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 )
 
 const (
+	requestManagementTask = "REQUEST MANAGEMENT"
+
 	// Request's types
 	AcceptanceJobRequestType        = uint8(0)
 	UploadPreSignedURLRequestType   = uint8(1)
 	DownloadPreSignedURLRequestType = uint8(2)
 
 	// Request's status
+	accepted       = uint8(0)
+	mapComplete    = uint8(1)
+	reduceComplete = uint8(2)
+	complete       = uint8(3)
 )
 
 type Request struct {
@@ -29,108 +31,119 @@ type RequestInput struct {
 }
 
 type RequestOutput struct {
-	PreSignedURL string
+	Url string
 }
 
 func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
+	var err error
+	var isRequestAlreadyAccepted bool
+
 	switch input.Type {
 	case UploadPreSignedURLRequestType:
-		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURLForUploadTask(input.SourceFileDigest)
-		return nil
+		output.Url, err = (*node.GetKeyValueStorageService()).RetrieveURLForPutOperation(input.SourceFileDigest)
 	case DownloadPreSignedURLRequestType:
-		output.PreSignedURL = node.GetAmazonS3Client().GetPreSignedURLForDownloadTask(input.SourceFileDigest)
-		return nil
+		output.Url, err = (*node.GetKeyValueStorageService()).RetrieveURLForGetOperation(input.SourceFileDigest)
 	case AcceptanceJobRequestType:
 
-		if isRequestAlreadyAccepted(input.SourceFileDigest) {
-			return nil
+		isRequestAlreadyAccepted, err = (*node.GetSystemCoordinator()).ClientRequestExist(input.SourceFileDigest)
+		if err != nil || isRequestAlreadyAccepted {
+			break
 		} else {
-			myClientRequest := zookeeper.NewClientRequest(input.SourceFileDigest)
-			go ManageClientRequest(input.SourceFileDigest)
+			if err = (*node.GetSystemCoordinator()).RegisterClientRequest(input.SourceFileDigest, accepted); err == nil {
+				go ManageClientRequest(input.SourceFileDigest)
+			}
 		}
-
 	default:
 		return errors.New("request type not recognized")
 	}
 
-	return nil
+	return err
 }
 
 func ManageClientRequest(guid string) {
 
-	var mapTaskOutput []*AFTMapTaskOutput
-	var reduceTaskOutput []*AFTReduceTaskOutput
-	var localityAwarenessData map[int]int
-	var rawData []byte
+	var status uint8
+	var data []byte
+	var err error
+
+	var AFTMapTaskOutput []*AFTMapTaskOutput
+	var AFTReduceTaskOutput []*AFTReduceTaskOutput
+
+	status, data, err = (*node.GetSystemCoordinator()).GetClientRequestInformation(guid)
+	utility.CheckError(err)
+
+	node.GetLogger().PrintInfoTaskMessage(requestManagementTask, fmt.Sprintf("Request: %s -- Status %d", guid, status))
 
 	for {
+		switch status {
+		case accepted:
 
-		currentClientRequestStatus := clientRequest.getStatus()
-
-		node.SetProperty(property.MapCardinality, node.GetZookeeperClient().GetGroupAmount())
-		node.GetLogger().PrintInfoStartingTaskMessage(fmt.Sprintf("%s for %s", currentClientRequestStatus, (*clientRequest).digest))
-
-		switch currentClientRequestStatus {
-		case zookeeper.InitialStatus:
-
-			splits := getSplits(clientRequest.digest, node.GetPropertyAsInteger(property.MapCardinality))
-			mapTaskOutput = mapTask(splits)
-
-			rawData = utility.Encode(mapTaskOutput)
-			(*clientRequest).CheckPoint(zookeeper.AfterMap, rawData)
-
-		case zookeeper.AfterMap:
-
-			if mapTaskOutput == nil {
-				rawData = (*clientRequest).GetDataFromCache()
-				utility.Decode(rawData, &mapTaskOutput)
+			if AFTMapTaskOutput, err = startAFTMapTask(guid); err == nil {
+				status = mapComplete
 			}
 
-			node.GetAmazonS3Client().Delete((*clientRequest).digest)
+		case mapComplete:
 
-			localityAwarenessData = getLocalityAwareReduceTaskMappedToNodeGroupId(mapTaskOutput)
-			localityAwareShuffleTask(mapTaskOutput, localityAwarenessData)
-
-			reduceTaskOutput = reduceTask(mapTaskOutput, localityAwarenessData)
-
-			rawData = utility.Encode(reduceTaskOutput)
-
-			(*clientRequest).CheckPoint(zookeeper.AfterReduce, rawData)
-
-		case zookeeper.AfterReduce:
-
-			if reduceTaskOutput == nil {
-				rawData = (*clientRequest).GetDataFromCache()
-				utility.Decode(rawData, &reduceTaskOutput)
+			if AFTMapTaskOutput == nil {
+				utility.Decode(data, &AFTMapTaskOutput)
 			}
 
-			dataArray := retrieveTask(reduceTaskOutput)
+			if AFTReduceTaskOutput, err = startAFTReduceTask(guid, AFTMapTaskOutput); err == nil {
+				status = reduceComplete
+			}
 
-			finalOutput := computeFinalOutputTask(dataArray)
-			finalRawData := finalOutput.Serialize()
+		case reduceComplete:
 
-			finalOutputDigestData := utility.GenerateDigestUsingSHA512(finalRawData)
+			if AFTReduceTaskOutput == nil {
+				utility.Decode(data, &AFTReduceTaskOutput)
+			}
 
-			output, err := ioutil.TempFile(os.TempDir(), finalOutputDigestData)
-			utility.CheckError(err)
+			if err = startCollectTask(guid, AFTReduceTaskOutput); err == nil {
+				status = complete
+			}
 
-			_, err = output.Write(finalRawData)
-			utility.CheckError(err)
-			utility.CheckError(output.Sync())
-			_, err = output.Seek(0, 0)
-			utility.CheckError(err)
-
-			node.GetAmazonS3Client().Upload(output, finalOutputDigestData)
-
-			node.GetZookeeperClient().SetZNodeData((*clientRequest).GetCompleteRequestZNodePath(), []byte(finalOutputDigestData))
-
-			(*clientRequest).CheckPoint(zookeeper.Complete, nil)
-
-		case zookeeper.Complete:
-			clientRequest.DeletePendingRequest()
-			return
+		case complete:
+			if err = (*node.GetSystemCoordinator()).DeletePendingRequest(guid); err == nil {
+				return
+			}
 		}
-		node.GetLogger().PrintInfoCompleteTaskMessage(fmt.Sprintf("%s for %s", currentClientRequestStatus, (*clientRequest).digest))
 	}
+}
+
+func startAFTMapTask(guid string) ([]*AFTMapTaskOutput, error) {
+
+	splits := getSplits(guid, (*node.GetMembershipRegister()).GetGroupAmount())
+	output := mapTask(splits)
+
+	return output, (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, mapComplete, utility.Encode(output))
+}
+
+func startAFTReduceTask(guid string, AFTMapTaskOutput []*AFTMapTaskOutput) ([]*AFTReduceTaskOutput, error) {
+
+	localityAwarenessData := getLocalityAwareReduceTaskMappedToNodeGroupId(AFTMapTaskOutput)
+	localityAwareShuffleTask(AFTMapTaskOutput, localityAwarenessData)
+
+	output := reduceTask(AFTMapTaskOutput, localityAwarenessData)
+
+	return output, (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reduceComplete, utility.Encode(output))
+}
+
+func startCollectTask(guid string, AFTReduceTaskOutput []*AFTReduceTaskOutput) error {
+
+	var err error
+
+	dataArray := retrieveTask(AFTReduceTaskOutput)
+
+	output := computeFinalOutputTask(dataArray)
+	outputSerialized := output.Serialize()
+	outputGUID := utility.GenerateDigestUsingSHA512(outputSerialized)
+
+	if err = (*node.GetKeyValueStorageService()).Put(outputGUID, outputSerialized); err == nil {
+		if err = (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, complete, nil); err == nil {
+			err = (*node.GetSystemCoordinator()).RegisterClientRequestAsComplete(guid, outputGUID)
+		}
+	}
+
+	return err
 }

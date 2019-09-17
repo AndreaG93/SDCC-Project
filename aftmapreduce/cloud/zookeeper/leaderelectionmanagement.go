@@ -45,7 +45,9 @@ func (obj *Client) WaitUntilLeader(myOwnPublicInternetAddress string) error {
 
 func (obj *Client) createProposalsZNode(internetAddress string) (string, error) {
 
-	if path, err := (*obj).zooKeeperConnection.Create(electionZNodePath, []byte(internetAddress), zk.FlagEphemeral|zk.FlagSequence, zk.WorldACL(zk.PermAll)); err == nil {
+	zNodePath := fmt.Sprintf("%s/", electionZNodePath)
+
+	if path, err := (*obj).zooKeeperConnection.Create(zNodePath, []byte(internetAddress), zk.FlagEphemeral|zk.FlagSequence, zk.WorldACL(zk.PermAll)); err == nil {
 		return strings.Split(path, "/")[2], nil
 	} else {
 		return "", nil
@@ -71,7 +73,7 @@ func (obj *Client) GetCurrentLeaderPublicInternetAddress() (string, error) {
 		if len(candidates) == 0 {
 			return "", errors.New("no leader candidate")
 		} else {
-			leaderZNodePath := fmt.Sprintf("%s%s", electionZNodePath, candidates[0])
+			leaderZNodePath := fmt.Sprintf("%s/%s", electionZNodePath, candidates[0])
 			if output, _, err := (*obj).zooKeeperConnection.Get(leaderZNodePath); err == nil {
 				return string(output), nil
 			}

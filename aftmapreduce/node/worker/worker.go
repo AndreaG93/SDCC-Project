@@ -4,13 +4,14 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"fmt"
 )
 
 func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses []string) {
 
-	node.InitializeWorker(zookeeperAddresses, id)
+	utility.CheckError(node.InitializeWorker(id, zookeeperAddresses))
 
 	node.SetProperty(property.NodeID, id)
 	node.SetProperty(property.NodeGroupID, groupId)
@@ -27,12 +28,13 @@ func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses 
 
 func StartWork() {
 
-	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Map{}, node.GetPropertyAsString(property.WordCountMapRPCFullAddress))
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Reduce{}, node.GetPropertyAsString(property.WordCountReduceRPCFullAddress))
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Receive{}, node.GetPropertyAsString(property.WordCountReceiveRPCFullAddress))
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Send{}, node.GetPropertyAsString(property.WordCountSendRPCFullAddress))
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Retrieve{}, node.GetPropertyAsString(property.WordCountRetrieveRPCFullAddress))
 
-	node.GetZookeeperClient().RegisterNodeMembership(node.GetPropertyAsInteger(property.NodeID), node.GetPropertyAsInteger(property.NodeGroupID), node.GetPropertyAsString(property.InternetAddress))
-	node.GetZookeeperClient().KeepConnectionAlive()
+	err := (*node.GetSystemCoordinator()).RegisterNewWorkerProcess(node.GetPropertyAsInteger(property.NodeID), node.GetPropertyAsInteger(property.NodeGroupID), node.GetPropertyAsString(property.InternetAddress))
+	utility.CheckError(err)
+
+	aftmapreduce.StartAcceptingRPCRequest(&wordcount.Map{}, node.GetPropertyAsString(property.WordCountMapRPCFullAddress))
 }
