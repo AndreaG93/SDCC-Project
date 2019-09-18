@@ -1,55 +1,63 @@
 package node
 
 import (
-	"SDCC-Project/aftmapreduce/cloud"
-	"SDCC-Project/aftmapreduce/cloud/amazons3"
-	"SDCC-Project/aftmapreduce/cloud/zookeeper"
-	"SDCC-Project/aftmapreduce/registry"
-	"fmt"
+	"SDCC-Project/aftmapreduce/data"
+	"SDCC-Project/aftmapreduce/membership"
+	"SDCC-Project/aftmapreduce/storage"
+	"SDCC-Project/aftmapreduce/storage/amazons3"
+	"SDCC-Project/aftmapreduce/system"
+	"SDCC-Project/aftmapreduce/system/zookeeper"
 )
 
-var systemCoordinator cloud.SystemCoordinator
-var keyValueStorageService cloud.KeyValueStorageService
-var membershipRegister cloud.MembershipRegister
+var systemCoordinator system.Coordinator
+var keyValueRegister storage.KeyValueRegister
+var membershipRegister *membership.Register
+var membershipCoordinator membership.Coordinator
+var dataRegistry *data.Registry
 
-var logger *Logger
 var properties map[string]interface{}
 
-var dataRegistry *registry.DataRegistry
-var digestRegistry *registry.DigestRegistry
+var logger *Logger
 
-func InitializePrimary(nodeId int, zookeeperAddresses []string) error {
+func InitializePrimary(guid uint, zookeeperAddresses []string) error {
 
 	var err error
 
-	if systemCoordinator, err = zookeeper.New(zookeeperAddresses); err != nil {
+	if zookeeperClient, err := zookeeper.New(zookeeperAddresses); err != nil {
 		return err
+	} else {
+
+		systemCoordinator = zookeeperClient
+		membershipCoordinator = zookeeperClient
 	}
+
 	if err = systemCoordinator.Initialize(); err != nil {
 		return err
 	}
+	if dataRegistry, err = data.New(guid, "Primary", true); err != nil {
+		return err
+	}
+	if membershipRegister, err = membership.New(membershipCoordinator); err != nil {
+		return err
+	}
 
-	membershipRegister = *cloud.NewMembershipRegister()
-	keyValueStorageService = amazons3.New()
-	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Primary%d", nodeId), false)
+	keyValueRegister = amazons3.New()
 	logger = NewLogger()
 	properties = make(map[string]interface{})
-
-	go membershipRegister.StartMembershipRegisterListener(systemCoordinator)
 
 	return nil
 }
 
-func InitializeWorker(nodeId int, zookeeperAddresses []string) error {
+func InitializeWorker(guid uint, zookeeperAddresses []string) error {
 
 	var err error
 
 	if systemCoordinator, err = zookeeper.New(zookeeperAddresses); err != nil {
 		return err
 	}
-
-	dataRegistry = registry.NewDataRegistry(fmt.Sprintf("Worker%d", nodeId), true)
-	digestRegistry = registry.NewDigestRegistry()
+	if dataRegistry, err = data.New(guid, "Worker", false); err != nil {
+		return err
+	}
 
 	logger = NewLogger()
 	properties = make(map[string]interface{})
@@ -57,16 +65,20 @@ func InitializeWorker(nodeId int, zookeeperAddresses []string) error {
 	return nil
 }
 
-func GetSystemCoordinator() *cloud.SystemCoordinator {
+func GetSystemCoordinator() *system.Coordinator {
 	return &systemCoordinator
 }
 
-func GetKeyValueStorageService() *cloud.KeyValueStorageService {
-	return &keyValueStorageService
+func GetStorageKeyValueRegister() *storage.KeyValueRegister {
+	return &keyValueRegister
 }
 
-func GetMembershipRegister() *cloud.MembershipRegister {
-	return &membershipRegister
+func GetMembershipRegister() *membership.Register {
+	return membershipRegister
+}
+
+func GetMembershipCoordinator() *membership.Coordinator {
+	return &membershipCoordinator
 }
 
 func GetLogger() *Logger {
@@ -85,10 +97,6 @@ func GetPropertyAsInteger(key string) int {
 	return properties[key].(int)
 }
 
-func GetDataRegistry() *registry.DataRegistry {
+func GetDataRegistry() *data.Registry {
 	return dataRegistry
-}
-
-func GetDigestRegistry() *registry.DigestRegistry {
-	return digestRegistry
 }

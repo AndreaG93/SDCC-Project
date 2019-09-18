@@ -42,9 +42,9 @@ func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
 	switch input.Type {
 	case UploadPreSignedURLRequestType:
-		output.Url, err = (*node.GetKeyValueStorageService()).RetrieveURLForPutOperation(input.SourceFileDigest)
+		output.Url, err = (*node.GetStorageKeyValueRegister()).RetrieveURLForPutOperation(input.SourceFileDigest)
 	case DownloadPreSignedURLRequestType:
-		output.Url, err = (*node.GetKeyValueStorageService()).RetrieveURLForGetOperation(input.SourceFileDigest)
+		output.Url, err = (*node.GetStorageKeyValueRegister()).RetrieveURLForGetOperation(input.SourceFileDigest)
 	case AcceptanceJobRequestType:
 
 		isRequestAlreadyAccepted, err = (*node.GetSystemCoordinator()).ClientRequestExist(input.SourceFileDigest)
@@ -235,7 +235,7 @@ func startCollectTask(guid string, AFTReduceTaskOutput []*AFTReduceTaskOutput) e
 	outputSerialized := output.Serialize()
 	outputGUID := utility.GenerateDigestUsingSHA512(outputSerialized)
 
-	if err = (*node.GetKeyValueStorageService()).Put(outputGUID, outputSerialized); err == nil {
+	if err = (*node.GetStorageKeyValueRegister()).Put(outputGUID, outputSerialized); err == nil {
 		if err = (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, complete, nil); err == nil {
 			err = (*node.GetSystemCoordinator()).RegisterClientRequestAsComplete(guid, outputGUID)
 		}

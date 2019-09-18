@@ -1,7 +1,7 @@
-package cloud
+package storage
 
 import (
-	"SDCC-Project/aftmapreduce/cloud/amazons3"
+	"SDCC-Project/aftmapreduce/storage/amazons3"
 	"SDCC-Project/aftmapreduce/utility"
 	"io/ioutil"
 	"testing"

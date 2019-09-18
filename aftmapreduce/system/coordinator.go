@@ -1,9 +1,6 @@
-package cloud
+package system
 
-type SystemCoordinator interface {
-	WaitUntilProcessMembershipChanges() error
-	UpdateProcessMembershipRegister() (map[int]map[int]string, error)
-	RegisterNewWorkerProcess(processId int, processGroupId int, processPublicInternetAddress string) error
+type Coordinator interface {
 	RegisterClientRequest(guid string, initialStatus uint8) error
 	DeletePendingRequest(guid string) error
 	GetAllPendingClientRequestGuid() ([]string, error)

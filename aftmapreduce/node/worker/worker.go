@@ -11,7 +11,7 @@ import (
 
 func Initialize(id int, groupId int, internetAddress string, zookeeperAddresses []string) {
 
-	utility.CheckError(node.InitializeWorker(id, zookeeperAddresses))
+	utility.CheckError(node.InitializeWorker(uint(id), zookeeperAddresses))
 
 	node.SetProperty(property.NodeID, id)
 	node.SetProperty(property.NodeGroupID, groupId)
@@ -33,7 +33,7 @@ func StartWork() {
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Send{}, node.GetPropertyAsString(property.WordCountSendRPCFullAddress))
 	go aftmapreduce.StartAcceptingRPCRequest(&wordcount.Retrieve{}, node.GetPropertyAsString(property.WordCountRetrieveRPCFullAddress))
 
-	err := (*node.GetSystemCoordinator()).RegisterNewWorkerProcess(node.GetPropertyAsInteger(property.NodeID), node.GetPropertyAsInteger(property.NodeGroupID), node.GetPropertyAsString(property.InternetAddress))
+	err := (*node.GetMembershipCoordinator()).RegisterNewWorkerProcess(node.GetPropertyAsInteger(property.NodeID), node.GetPropertyAsInteger(property.NodeGroupID), node.GetPropertyAsString(property.InternetAddress))
 	utility.CheckError(err)
 
 	aftmapreduce.StartAcceptingRPCRequest(&wordcount.Map{}, node.GetPropertyAsString(property.WordCountMapRPCFullAddress))

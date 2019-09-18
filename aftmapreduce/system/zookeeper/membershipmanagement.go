@@ -26,7 +26,7 @@ func (obj *Client) WaitUntilProcessMembershipChanges() error {
 	return nil
 }
 
-func (obj *Client) UpdateProcessMembershipRegister() (map[int]map[int]string, error) {
+func (obj *Client) GetProcessMembershipTable() (map[int]map[int]string, error) {
 
 	var err error
 	var zNodeNames []string

@@ -1,8 +1,8 @@
 package client
 
 import (
-	"SDCC-Project/aftmapreduce/cloud"
-	"SDCC-Project/aftmapreduce/cloud/zookeeper"
+	"SDCC-Project/aftmapreduce/storage"
+	"SDCC-Project/aftmapreduce/system/zookeeper"
 	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
@@ -46,7 +46,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	}
 
 	for {
-		err = cloud.Upload(preSignedURL, data)
+		err = storage.Upload(preSignedURL, data)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -93,7 +93,7 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	}
 
 	for {
-		outputBytes, err := cloud.Download(preSignedURL)
+		outputBytes, err := storage.Download(preSignedURL)
 		if err != nil {
 			fmt.Println(err)
 			continue

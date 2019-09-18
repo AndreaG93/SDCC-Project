@@ -17,7 +17,7 @@ func getSplits(guid string, splitsAmount int) ([]string, error) {
 
 func downloadTextFromCloud(guid string) (string, error) {
 
-	if rawData, err := (*node.GetKeyValueStorageService()).Get(guid); err == nil {
+	if rawData, err := (*node.GetStorageKeyValueRegister()).Get(guid); err == nil {
 		return string(rawData), nil
 	} else {
 		return "", err

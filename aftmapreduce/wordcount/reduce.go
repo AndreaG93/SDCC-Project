@@ -3,6 +3,7 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/node"
 	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"fmt"
@@ -27,7 +28,7 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 	digest, rawData := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
 
-	node.GetDataRegistry().Set(digest, rawData)
+	utility.CheckError(node.GetDataRegistry().Set(digest, rawData))
 	(*output).Digest = digest
 	(*output).NodeId = node.GetPropertyAsInteger(property.NodeID)
 
@@ -39,7 +40,8 @@ func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, []b
 	localWordTokenHashTable := WordTokenHashTable.Deserialize(node.GetDataRegistry().Get(localDataDigest))
 
 	localWordTokenList := localWordTokenHashTable.GetWordTokenListAt(reduceTaskIndex)
-	receivedDataDigest := node.GetDigestRegistry().GetAssociatedDigest(localDataDigest)
+
+	receivedDataDigest := GetGuidAssociation(localDataDigest)
 
 	for _, digest := range receivedDataDigest {
 

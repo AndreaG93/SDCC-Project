@@ -1,6 +1,6 @@
-package cloud
+package storage
 
-type KeyValueStorageService interface {
+type KeyValueRegister interface {
 	Put(key string, value []byte) error
 	Get(key string) ([]byte, error)
 	Remove(key string) error

@@ -58,12 +58,15 @@ func Execute(task AFTTask) interface{} {
 
 			} else {
 
-				if repliesReceived == RPCCallSent && thereAreOtherAvailableWorkerProcesses(task, RPCCallSent) {
-					fullRPCInternetAddress := workerProcessesRPCInternetAddresses[RPCCallSent]
-					task.ExecuteRPCCallTo(fullRPCInternetAddress)
-					RPCCallSent++
-				} else {
-					panic("not enough worker processes")
+				if repliesReceived == RPCCallSent {
+
+					if thereAreOtherAvailableWorkerProcesses(task, RPCCallSent) {
+						fullRPCInternetAddress := workerProcessesRPCInternetAddresses[RPCCallSent]
+						task.ExecuteRPCCallTo(fullRPCInternetAddress)
+						RPCCallSent++
+					} else {
+						panic("not enough worker processes")
+					}
 				}
 
 				timer.Reset(timeout)

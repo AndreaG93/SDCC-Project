@@ -2,8 +2,8 @@ package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce"
+	"SDCC-Project/aftmapreduce/data/reply"
 	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/registry/reply"
 	"math"
 )
 

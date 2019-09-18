@@ -12,7 +12,7 @@ import (
 
 func Initialize(id int, internetAddress string, zookeeperAddresses []string) {
 
-	utility.CheckError(node.InitializePrimary(id, zookeeperAddresses))
+	utility.CheckError(node.InitializePrimary(uint(id), zookeeperAddresses))
 
 	node.SetProperty(property.NodeID, id)
 	node.SetProperty(property.NodeType, "Primary")
