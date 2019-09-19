@@ -70,12 +70,14 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 		}
 	}
 
+	fmt.Println("Waiting for job completion...")
 	for {
 		outputDigest, err = zookeeperClient.WaitForClientRequestCompletion(sourceFileDigest)
 		if err == nil {
 			break
 		}
 	}
+	fmt.Println("Job completion signal received...")
 
 	for {
 

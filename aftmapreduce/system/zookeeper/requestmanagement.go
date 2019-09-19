@@ -83,7 +83,6 @@ func (obj *Client) RegisterClientRequestAsComplete(guid string, outputGuid strin
 }
 
 func (obj *Client) WaitForClientRequestCompletion(guid string) (string, error) {
-
 	zNodePath := fmt.Sprintf("%s/%s", completeClientRequestsZNodePath, guid)
 
 	for {
