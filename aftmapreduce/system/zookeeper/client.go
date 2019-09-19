@@ -65,6 +65,27 @@ func (obj *Client) createZNodeCheckingExistence(zNodePath string, data []byte, f
 	return nil
 }
 
+func (obj *Client) createZNodeOverWritingExistent(zNodePath string, data []byte, flags int32) error {
+
+	var err error
+	var isZNodeExistent bool
+	var actualStat *zk.Stat
+
+	if isZNodeExistent, actualStat, err = (*obj).zooKeeperConnection.Exists(zNodePath); err != nil {
+		return err
+	} else if isZNodeExistent {
+		if err = (*obj).zooKeeperConnection.Delete(zNodePath, actualStat.Version); err != nil {
+			return err
+		}
+	}
+
+	if _, err = (*obj).zooKeeperConnection.Create(zNodePath, data, flags, zk.WorldACL(zk.PermAll)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (obj *Client) removeZNodeCheckingExistence(zNodePath string) error {
 
 	var err error

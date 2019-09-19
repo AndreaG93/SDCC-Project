@@ -20,9 +20,14 @@ type ReduceInput struct {
 type ReduceOutput struct {
 	Digest string
 	NodeId int
+
+	MyInternetAddress string
+	CPUUtilization    int
 }
 
 func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
+
+	var err error
 
 	process.GetLogger().PrintInfoTaskMessage(ReduceTaskName, fmt.Sprintf("Local data digest: %s -- Reduce work index: %d", input.LocalDataDigest, input.ReduceWorkIndex))
 
@@ -31,6 +36,11 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 	utility.CheckError(process.GetDataRegistry().Set(digest, rawData))
 	(*output).Digest = digest
 	(*output).NodeId = process.GetPropertyAsInteger(property.NodeID)
+
+	(*output).CPUUtilization, err = utility.GetCPUPercentageUtilizationAsInteger()
+	utility.CheckError(err)
+
+	(*output).MyInternetAddress = process.GetPropertyAsString(property.InternetAddress)
 
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 func (obj *Client) RegisterNewWorkerProcess(processId int, processGroupId int, processPublicInternetAddress string) error {
 
 	zNodePath := fmt.Sprintf("%s/%d_%d", membershipZNodePath, processGroupId, processId)
-	return (*obj).createZNodeCheckingExistence(zNodePath, []byte(processPublicInternetAddress), zk.FlagEphemeral)
+	return (*obj).createZNodeOverWritingExistent(zNodePath, []byte(processPublicInternetAddress), zk.FlagEphemeral)
 }
 
 func (obj *Client) WaitUntilProcessMembershipChanges() error {

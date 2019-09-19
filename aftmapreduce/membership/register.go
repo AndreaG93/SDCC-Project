@@ -5,8 +5,9 @@ import (
 )
 
 type Register struct {
-	coordinator Coordinator
-	register    map[int]map[int]string
+	coordinator                         Coordinator
+	register                            map[int]map[int]string
+	workerProcessCPUUtilizationRegistry map[string]int
 }
 
 func New(coordinator Coordinator) (*Register, error) {
@@ -14,6 +15,7 @@ func New(coordinator Coordinator) (*Register, error) {
 	var err error
 	output := new(Register)
 	(*output).coordinator = coordinator
+	(*output).workerProcessCPUUtilizationRegistry = make(map[string]int)
 
 	if (*output).register, err = ((*output).coordinator).GetProcessMembershipTable(); err != nil {
 		return nil, err
@@ -39,6 +41,11 @@ func (obj *Register) startListeningForMembershipChanges() {
 	}
 }
 
+func (obj *Register) AddProcessCPUUtilization(publicInternetAddress string, utilization int) {
+	fmt.Printf("CPU utilization of %d of process located to %s", utilization, publicInternetAddress)
+	(*obj).workerProcessCPUUtilizationRegistry[publicInternetAddress] = utilization
+}
+
 func (obj *Register) GetWorkerProcessPublicInternetAddressesForRPC(groupId int, rpcBasePort int) ([]string, error) {
 
 	output := make([]string, len((*obj).register[groupId]))
@@ -49,7 +56,7 @@ func (obj *Register) GetWorkerProcessPublicInternetAddressesForRPC(groupId int, 
 		index++
 	}
 
-	return networkLocalitySort(output)
+	return (*obj).networkLocalitySort(output)
 }
 
 func (obj *Register) GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(groupId int, processIds []int, rpcBasePort int) ([]string, error) {
@@ -62,7 +69,7 @@ func (obj *Register) GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(grou
 		output[index] = fmt.Sprintf("%s:%d", publicInternetAddress, processId+rpcBasePort)
 	}
 
-	return networkLocalitySort(output)
+	return (*obj).networkLocalitySort(output)
 }
 
 func (obj *Register) GetWorkerProcessIDs(groupId int) []int {

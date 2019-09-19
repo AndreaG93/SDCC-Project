@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func networkLocalitySort(publicInternetAddresses []string) ([]string, error) {
+func (obj *Register) networkLocalitySort(publicInternetAddresses []string) ([]string, error) {
 
 	output := make([]string, len(publicInternetAddresses))
 	averageResponseTimes := make([]float64, 0)
@@ -17,7 +17,7 @@ func networkLocalitySort(publicInternetAddresses []string) ([]string, error) {
 
 	for _, ip := range publicInternetAddresses {
 
-		if averageResponseTime, err := getRoundTripTime(strings.Split(ip, ":")[0]); err != nil {
+		if averageResponseTime, err := (*obj).getRoundTripTime(strings.Split(ip, ":")[0]); err != nil {
 			return nil, err
 		} else {
 
@@ -39,7 +39,7 @@ func networkLocalitySort(publicInternetAddresses []string) ([]string, error) {
 	return output, nil
 }
 
-func getRoundTripTime(publicInternetAddress string) (float64, error) {
+func (obj *Register) getRoundTripTime(publicInternetAddress string) (float64, error) {
 
 	var command *exec.Cmd
 	var err error
@@ -62,5 +62,19 @@ func getRoundTripTime(publicInternetAddress string) (float64, error) {
 		return 0.0, err
 	}
 
-	return averageResponseTime, nil
+	multiplier := getCPUPercentageUtilizationMultiplier((*obj).workerProcessCPUUtilizationRegistry[publicInternetAddress])
+	return averageResponseTime * multiplier, nil
+}
+
+func getCPUPercentageUtilizationMultiplier(CPUPercentageUtilization int) float64 {
+
+	if CPUPercentageUtilization <= 25 {
+		return 1.0
+	} else if CPUPercentageUtilization > 25 && CPUPercentageUtilization <= 50 {
+		return 1.25
+	} else if CPUPercentageUtilization > 50 && CPUPercentageUtilization <= 75 {
+		return 1.50
+	} else {
+		return 2.0
+	}
 }

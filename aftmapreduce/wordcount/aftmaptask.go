@@ -66,6 +66,8 @@ func (obj *MapTask) GetAvailableWorkerProcessesRPCInternetAddresses() []string {
 
 func (obj *MapTask) DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool {
 	mapLastReply := lastReply.(*MapOutput)
+
+	process.GetMembershipRegister().AddProcessCPUUtilization(mapLastReply.MyInternetAddress, mapLastReply.CPUUtilization)
 	return (*obj).registry.AddReplyCheckingRequiredMatches(mapLastReply.ReplayDigest, mapLastReply.IdNode, mapLastReply.MappedDataSizes)
 }
 

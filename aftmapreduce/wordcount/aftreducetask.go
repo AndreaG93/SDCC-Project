@@ -69,6 +69,9 @@ func (obj *AFTReduceTask) GetAvailableWorkerProcessesRPCInternetAddresses() []st
 
 func (obj *AFTReduceTask) DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool {
 	reduceLastReply := lastReply.(*ReduceOutput)
+
+	process.GetMembershipRegister().AddProcessCPUUtilization(reduceLastReply.MyInternetAddress, reduceLastReply.CPUUtilization)
+
 	return (*obj).replyRegistry.AddReplyCheckingRequiredMatches(reduceLastReply.Digest, reduceLastReply.NodeId, nil)
 }
 

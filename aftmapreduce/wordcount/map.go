@@ -22,6 +22,9 @@ type MapOutput struct {
 	IdGroup         int
 	ReplayDigest    string
 	MappedDataSizes map[int]int
+
+	MyInternetAddress string
+	CPUUtilization    int
 }
 
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
@@ -56,6 +59,11 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	(*output).IdGroup = process.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).IdNode = process.GetPropertyAsInteger(property.NodeID)
+
+	(*output).CPUUtilization, err = utility.GetCPUPercentageUtilizationAsInteger()
+	utility.CheckError(err)
+
+	(*output).MyInternetAddress = process.GetPropertyAsString(property.InternetAddress)
 
 	return nil
 }

@@ -31,7 +31,7 @@ func divideIntoSplits(input string, splitsAmount int) []string {
 	splitSize := int(math.Floor(float64(len(input) / splitsAmount)))
 
 	currentSplitLowerLimit := 0
-	currentSplitUpperLimit := splitSize
+	currentSplitUpperLimit := splitSize - 1
 
 	for {
 		currentChar := string(input[currentSplitUpperLimit])

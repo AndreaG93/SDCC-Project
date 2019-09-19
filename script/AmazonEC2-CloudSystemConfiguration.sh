@@ -112,7 +112,7 @@ for i in "${WORKER_GROUP_0_INSTENCES_PUBLIC_IP[@]}"
 do
     ssh -i "graziani.pem" ubuntu@$i "
 
-sudo apt update && sudo apt install -y golang jq
+sudo apt update && sudo apt install -y golang jq sysstat
 
 go get -u github.com/aws/aws-sdk-go/service/s3/...
 go get -u github.com/aws/aws-sdk-go/aws/...
