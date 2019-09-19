@@ -2,7 +2,7 @@ package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce"
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/process"
 	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"fmt"
@@ -28,10 +28,10 @@ func (x *Send) Execute(input SendInput, output *SendOutput) error {
 	var rawData []byte
 	var dataDigest string
 
-	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
-	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
+	process.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
+	process.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
 
-	currentWordTokenHashTable := WordTokenHashTable.Deserialize(node.GetDataRegistry().Get(input.SourceDataDigest))
+	currentWordTokenHashTable := WordTokenHashTable.Deserialize(process.GetDataRegistry().Get(input.SourceDataDigest))
 
 	if input.WordTokenListIndex == -1 {
 
@@ -63,26 +63,26 @@ func sendDataToWorker(data []byte, dataDigest string, receiverAssociatedDataDige
 
 		worker, err := rpc.Dial("tcp", address)
 		if err != nil {
-			node.GetLogger().PrintErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
+			process.GetLogger().PrintErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
 			continue
 		}
 
 		err = worker.Call("Receive.Execute", &input, &output)
 		if err != nil {
-			node.GetLogger().PrintErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
+			process.GetLogger().PrintErrorTaskMessage(SendTaskName, fmt.Sprintf("Error during data transmission to %s: %s", address, err.Error()))
 		}
 	}
 }
 
 func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int, receiverGroupId int, senderDataDigest string, receiverAssociatedDataDigest string, receiverReduceTaskId int) {
 
-	senderInternetAddresses, _ := node.GetMembershipRegister().GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(sourceGroupId, sourceNodeIds, aftmapreduce.WordCountSendRPCBasePort)
-	receiverInternetAddresses, _ := node.GetMembershipRegister().GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(receiverGroupId, receiverNodeIds, aftmapreduce.WordCountReceiveRPCBasePort)
+	senderInternetAddresses, _ := process.GetMembershipRegister().GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(sourceGroupId, sourceNodeIds, aftmapreduce.WordCountSendRPCBasePort)
+	receiverInternetAddresses, _ := process.GetMembershipRegister().GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(receiverGroupId, receiverNodeIds, aftmapreduce.WordCountReceiveRPCBasePort)
 
-	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker IDs:           %d", sourceNodeIds))
-	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker group IDs:     %d", sourceGroupId))
-	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IDs:      %d", receiverNodeIds))
-	node.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker group ID: %d", receiverGroupId))
+	process.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker IDs:           %d", sourceNodeIds))
+	process.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Source worker group IDs:     %d", sourceGroupId))
+	process.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker IDs:      %d", receiverNodeIds))
+	process.GetLogger().PrintInfoTaskMessage(SendTaskName, fmt.Sprintf("Destination worker group ID: %d", receiverGroupId))
 
 	for _, sender := range senderInternetAddresses {
 
@@ -96,7 +96,7 @@ func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int,
 
 		worker, err := rpc.Dial("tcp", sender)
 		if err != nil {
-			node.GetLogger().PrintErrorTaskMessage(SendTaskName, "Send operation failed!...")
+			process.GetLogger().PrintErrorTaskMessage(SendTaskName, "Send operation failed!...")
 			continue
 		}
 

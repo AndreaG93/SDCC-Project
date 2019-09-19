@@ -1,8 +1,8 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/node"
-	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/process"
+	"SDCC-Project/aftmapreduce/process/property"
 	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"fmt"
@@ -26,7 +26,9 @@ type MapOutput struct {
 
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
-	node.GetLogger().PrintInfoStartingTaskMessage(MapTaskName)
+	var err error
+
+	process.GetLogger().PrintInfoStartingTaskMessage(MapTaskName)
 
 	guid := utility.GenerateDigestUsingSHA512([]byte(input.Text))
 
@@ -34,29 +36,32 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 		digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
 
-		node.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize())
-		node.GetDataRegistry().Set(guid, []byte(digest))
-		node.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(mappedDataSizes))
+		err = process.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize())
+		utility.CheckError(err)
+		err = process.GetDataRegistry().Set(guid, []byte(digest))
+		utility.CheckError(err)
+		err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(mappedDataSizes))
+		utility.CheckError(err)
 
 		(*output).ReplayDigest = digest
 		(*output).MappedDataSizes = mappedDataSizes
 
-		node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
+		process.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
 
 	} else {
 
-		(*output).ReplayDigest = string(node.GetDataRegistry().Get(guid))
-		utility.Decode(node.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid)), &output.MappedDataSizes)
+		(*output).ReplayDigest = string(process.GetDataRegistry().Get(guid))
+		utility.Decode(process.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid)), &output.MappedDataSizes)
 	}
 
-	(*output).IdGroup = node.GetPropertyAsInteger(property.NodeGroupID)
-	(*output).IdNode = node.GetPropertyAsInteger(property.NodeID)
+	(*output).IdGroup = process.GetPropertyAsInteger(property.NodeGroupID)
+	(*output).IdNode = process.GetPropertyAsInteger(property.NodeID)
 
 	return nil
 }
 
 func isMapTaskRequestDuplicated(guid string) bool {
-	return node.GetDataRegistry().Get(guid) != nil
+	return process.GetDataRegistry().Get(guid) != nil
 }
 
 func performMapTask(text string, mappingCardinality int) (string, *WordTokenHashTable.WordTokenHashTable, map[int]int) {

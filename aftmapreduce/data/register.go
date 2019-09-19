@@ -17,7 +17,7 @@ type Registry struct {
 	path       string
 }
 
-func New(processGuid uint, processType string, isRegisterVolatile bool) (*Registry, error) {
+func New(processID int, processType string, isRegisterVolatile bool) (*Registry, error) {
 
 	output := new(Registry)
 
@@ -26,7 +26,7 @@ func New(processGuid uint, processType string, isRegisterVolatile bool) (*Regist
 
 	if !isRegisterVolatile {
 
-		(*output).path = fmt.Sprintf("./registry-%s-%d/", processType, processGuid)
+		(*output).path = fmt.Sprintf("./registry-%s-%d/", processType, processID)
 
 		if err := os.MkdirAll((*output).path, 0755); err != nil {
 			return nil, err

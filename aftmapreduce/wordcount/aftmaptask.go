@@ -2,8 +2,8 @@ package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce"
-	"SDCC-Project/aftmapreduce/data/reply"
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/process"
+	"SDCC-Project/aftmapreduce/replyregister"
 	"math"
 )
 
@@ -21,7 +21,7 @@ type MapTask struct {
 	faultToleranceLevel                 int
 	requestSend                         int
 	workersAddresses                    []string
-	registry                            *reply.MapReplyRegistry
+	registry                            *replyregister.Register
 	split                               string
 }
 
@@ -32,10 +32,10 @@ func NewMapTask(split string, workerGroupId int, firstReplyPredictedAsCorrectCha
 	(*output).mapTaskOutput = new(AFTMapTaskOutput)
 	(*(*output).mapTaskOutput).IdGroup = workerGroupId
 	(*output).workersReplyChannel = make(chan interface{})
-	(*output).workersAddresses, _ = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
+	(*output).workersAddresses, _ = process.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(workerGroupId, aftmapreduce.WordCountMapTaskRPCBasePort)
 	(*output).split = split
 	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workersAddresses) - 1) / 2)))
-	(*output).registry = reply.NewMapReplyRegistry((*output).faultToleranceLevel + 1)
+	(*output).registry = replyregister.New((*output).faultToleranceLevel + 1)
 	(*output).firstReplyPredictedAsCorrectChannel = firstReplyPredictedAsCorrectChannel
 
 	return output
@@ -46,7 +46,7 @@ func (obj *MapTask) GetOutput() interface{} {
 	digest, nodeIds, mappedDataSizes := (*obj).registry.GetMostMatchedReply()
 
 	(*(*obj).mapTaskOutput).ReplayDigest = digest
-	(*(*obj).mapTaskOutput).MappedDataSizes = mappedDataSizes
+	(*(*obj).mapTaskOutput).MappedDataSizes = mappedDataSizes.(map[int]int)
 	(*(*obj).mapTaskOutput).NodeIdsWithCorrectResult = nodeIds
 
 	return (*obj).mapTaskOutput
@@ -66,7 +66,7 @@ func (obj *MapTask) GetAvailableWorkerProcessesRPCInternetAddresses() []string {
 
 func (obj *MapTask) DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool {
 	mapLastReply := lastReply.(*MapOutput)
-	return (*obj).registry.Add(mapLastReply.ReplayDigest, mapLastReply.IdNode, mapLastReply.MappedDataSizes)
+	return (*obj).registry.AddReplyCheckingRequiredMatches(mapLastReply.ReplayDigest, mapLastReply.IdNode, mapLastReply.MappedDataSizes)
 }
 
 func (obj *MapTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
@@ -75,7 +75,7 @@ func (obj *MapTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 
 	input := MapInput{
 		Text:               (*obj).split,
-		MappingCardinality: (*node.GetMembershipRegister()).GetGroupAmount(),
+		MappingCardinality: (*process.GetMembershipRegister()).GetGroupAmount(),
 	}
 	output := MapOutput{}
 

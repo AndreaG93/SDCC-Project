@@ -1,7 +1,7 @@
-package node
+package process
 
 import (
-	"SDCC-Project/aftmapreduce/node/property"
+	"SDCC-Project/aftmapreduce/process/property"
 	"github.com/Sirupsen/logrus"
 	"os"
 	"strings"

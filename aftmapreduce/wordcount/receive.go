@@ -1,7 +1,7 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/process"
 	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
 )
@@ -20,8 +20,8 @@ type ReceiveOutput struct {
 
 func (x *Receive) Execute(input ReceiveInput, output *ReceiveOutput) error {
 
-	node.GetLogger().PrintInfoTaskMessage(ReceiveTaskName, fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
-	utility.CheckError(node.GetDataRegistry().Set(input.ReceivedDataDigest, input.Data))
+	process.GetLogger().PrintInfoTaskMessage(ReceiveTaskName, fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
+	utility.CheckError(process.GetDataRegistry().Set(input.ReceivedDataDigest, input.Data))
 
 	if input.AssociatedDataDigest != "" {
 		utility.CheckError(SaveGuidAssociation(input.AssociatedDataDigest, input.ReceivedDataDigest))
@@ -35,7 +35,7 @@ func GetGuidAssociation(guid string) []string {
 	output := []string{}
 
 	key := fmt.Sprintf("%s-GUID-ASSOCIATIONS", guid)
-	rawData := node.GetDataRegistry().Get(key)
+	rawData := process.GetDataRegistry().Get(key)
 
 	utility.Decode(rawData, &output)
 
@@ -45,14 +45,14 @@ func GetGuidAssociation(guid string) []string {
 func SaveGuidAssociation(guid string, associatedGuid string) error {
 
 	key := fmt.Sprintf("%s-GUID-ASSOCIATIONS", guid)
-	rawData := node.GetDataRegistry().Get(key)
+	rawData := process.GetDataRegistry().Get(key)
 
 	if rawData == nil {
 
 		newAssociationGuidVector := make([]string, 1)
 		newAssociationGuidVector[0] = associatedGuid
 
-		return node.GetDataRegistry().Set(key, utility.Encode(newAssociationGuidVector))
+		return process.GetDataRegistry().Set(key, utility.Encode(newAssociationGuidVector))
 	} else {
 
 		existentAssociatedGuidVector := []string{}
@@ -65,6 +65,6 @@ func SaveGuidAssociation(guid string, associatedGuid string) error {
 		}
 
 		existentAssociatedGuidVector = append(existentAssociatedGuidVector, associatedGuid)
-		return node.GetDataRegistry().Set(key, utility.Encode(existentAssociatedGuidVector))
+		return process.GetDataRegistry().Set(key, utility.Encode(existentAssociatedGuidVector))
 	}
 }

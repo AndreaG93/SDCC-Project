@@ -1,7 +1,7 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/process"
 	"SDCC-Project/aftmapreduce/utility"
 	"errors"
 	"fmt"
@@ -42,16 +42,16 @@ func (x *Request) Execute(input RequestInput, output *RequestOutput) error {
 
 	switch input.Type {
 	case UploadPreSignedURLRequestType:
-		output.Url, err = (*node.GetStorageKeyValueRegister()).RetrieveURLForPutOperation(input.SourceFileDigest)
+		output.Url, err = (*process.GetStorageKeyValueRegister()).RetrieveURLForPutOperation(input.SourceFileDigest)
 	case DownloadPreSignedURLRequestType:
-		output.Url, err = (*node.GetStorageKeyValueRegister()).RetrieveURLForGetOperation(input.SourceFileDigest)
+		output.Url, err = (*process.GetStorageKeyValueRegister()).RetrieveURLForGetOperation(input.SourceFileDigest)
 	case AcceptanceJobRequestType:
 
-		isRequestAlreadyAccepted, err = (*node.GetSystemCoordinator()).ClientRequestExist(input.SourceFileDigest)
+		isRequestAlreadyAccepted, err = (*process.GetSystemCoordinator()).ClientRequestExist(input.SourceFileDigest)
 		if err != nil || isRequestAlreadyAccepted {
 			break
 		} else {
-			if err = (*node.GetSystemCoordinator()).RegisterClientRequest(input.SourceFileDigest, accepted); err == nil {
+			if err = (*process.GetSystemCoordinator()).RegisterClientRequest(input.SourceFileDigest, accepted); err == nil {
 				go ManageClientRequest(input.SourceFileDigest)
 			}
 		}
@@ -76,9 +76,9 @@ func ManageClientRequest(guid string) {
 
 	for {
 
-		status, data, err = (*node.GetSystemCoordinator()).GetClientRequestInformation(guid)
+		status, data, err = (*process.GetSystemCoordinator()).GetClientRequestInformation(guid)
 		utility.CheckError(err)
-		node.GetLogger().PrintInfoTaskMessage(requestManagementTask, fmt.Sprintf("Request: %s -- Status %d", guid, status))
+		process.GetLogger().PrintInfoTaskMessage(requestManagementTask, fmt.Sprintf("Request: %s -- Status %d", guid, status))
 
 		switch status {
 		case accepted:
@@ -114,7 +114,7 @@ func ManageClientRequest(guid string) {
 			}
 
 		case complete:
-			if err = (*node.GetSystemCoordinator()).DeletePendingRequest(guid); err == nil {
+			if err = (*process.GetSystemCoordinator()).DeletePendingRequest(guid); err == nil {
 				return
 			}
 		}
@@ -125,7 +125,7 @@ func startAFTMapTask(guid string, AFTMapTaskOutputComputedWithStandardAlgorithm 
 
 	var mapWaitGroup sync.WaitGroup
 
-	if splits, err := getSplits(guid, (*node.GetMembershipRegister()).GetGroupAmount()); err != nil {
+	if splits, err := getSplits(guid, (*process.GetMembershipRegister()).GetGroupAmount()); err != nil {
 		return nil, err
 	} else {
 
@@ -144,11 +144,11 @@ func startAFTMapTask(guid string, AFTMapTaskOutputComputedWithStandardAlgorithm 
 		}
 
 		mapWaitGroup.Wait()
-		node.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
+		process.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
 
 		AFTMapTaskOutputComputedWithStandardAlgorithm <- output
 
-		return output, (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, mapComplete, utility.Encode(output))
+		return output, (*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, mapComplete, utility.Encode(output))
 	}
 }
 
@@ -204,7 +204,7 @@ func getChannelsUsedForFirstReplyPredictedAsCorrect(guid string, splitsAmount in
 		}
 
 		if isPredictionCorrect {
-			utility.CheckError((*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reduceComplete, utility.Encode(output)))
+			utility.CheckError((*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reduceComplete, utility.Encode(output)))
 			predictionSuccessfulChannel <- true
 		} else {
 			predictionSuccessfulChannel <- false
@@ -222,7 +222,7 @@ func startAFTReduceTask(guid string, AFTMapTaskOutput []*AFTMapTaskOutput) ([]*A
 
 	output := reduceTask(AFTMapTaskOutput, localityAwarenessData)
 
-	return output, (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reduceComplete, utility.Encode(output))
+	return output, (*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reduceComplete, utility.Encode(output))
 }
 
 func startCollectTask(guid string, AFTReduceTaskOutput []*AFTReduceTaskOutput) error {
@@ -235,9 +235,9 @@ func startCollectTask(guid string, AFTReduceTaskOutput []*AFTReduceTaskOutput) e
 	outputSerialized := output.Serialize()
 	outputGUID := utility.GenerateDigestUsingSHA512(outputSerialized)
 
-	if err = (*node.GetStorageKeyValueRegister()).Put(outputGUID, outputSerialized); err == nil {
-		if err = (*node.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, complete, nil); err == nil {
-			err = (*node.GetSystemCoordinator()).RegisterClientRequestAsComplete(guid, outputGUID)
+	if err = (*process.GetStorageKeyValueRegister()).Put(outputGUID, outputSerialized); err == nil {
+		if err = (*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, complete, nil); err == nil {
+			err = (*process.GetSystemCoordinator()).RegisterClientRequestAsComplete(guid, outputGUID)
 		}
 	}
 

@@ -1,7 +1,7 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/process"
 	"SDCC-Project/aftmapreduce/utility"
 	"errors"
 	"fmt"
@@ -21,9 +21,9 @@ type RetrieveOutput struct {
 
 func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
-	node.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
+	process.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
 
-	output.RawData = node.GetDataRegistry().Get(input.DataDigest)
+	output.RawData = process.GetDataRegistry().Get(input.DataDigest)
 	if output.RawData == nil {
 		return errors.New("no data with given digest")
 	}
@@ -33,7 +33,7 @@ func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
 func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 
-	node.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Target Nodes are %s", NodeIPs))
+	process.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Target Nodes are %s", NodeIPs))
 
 	var input RetrieveInput
 	var output RetrieveOutput
@@ -44,7 +44,7 @@ func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 
 		worker, err := rpc.Dial("tcp", ip)
 		if err != nil {
-			node.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
+			process.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
 			continue
 		}
 
@@ -53,11 +53,11 @@ func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 		if err == nil {
 			return output.RawData
 		} else {
-			node.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
+			process.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
 		}
 	}
 
-	node.GetLogger().PrintPanicErrorTaskMessage(RetrieveTaskName, "Task failed! Aborting...")
+	process.GetLogger().PrintPanicErrorTaskMessage(RetrieveTaskName, "Task failed! Aborting...")
 
 	return nil
 }

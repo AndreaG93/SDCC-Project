@@ -2,8 +2,8 @@ package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce"
-	"SDCC-Project/aftmapreduce/data/reply"
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/process"
+	"SDCC-Project/aftmapreduce/replyregister"
 	"math"
 )
 
@@ -15,7 +15,7 @@ type AFTReduceTaskOutput struct {
 
 type AFTReduceTask struct {
 	output                      *AFTReduceTaskOutput
-	replyRegistry               *reply.ReduceReplyRegistry
+	replyRegistry               *replyregister.Register
 	replyChannel                chan interface{}
 	faultToleranceLevel         int
 	requestsSend                int
@@ -28,11 +28,11 @@ func NewAFTReduceTask(targetNodeGroupId int, reduceTaskIdentifierDigest string, 
 
 	output := new(AFTReduceTask)
 
-	(*output).workerProcessesRPCAddresses, _ = node.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort)
+	(*output).workerProcessesRPCAddresses, _ = process.GetMembershipRegister().GetWorkerProcessPublicInternetAddressesForRPC(targetNodeGroupId, aftmapreduce.WordCountReduceTaskRPCBasePort)
 
 	(*output).replyChannel = make(chan interface{})
 	(*output).faultToleranceLevel = int(math.Floor(float64((len((*output).workerProcessesRPCAddresses) - 1) / 2)))
-	(*output).replyRegistry = reply.NewReduceReplyRegistry((*output).faultToleranceLevel + 1)
+	(*output).replyRegistry = replyregister.New((*output).faultToleranceLevel + 1)
 
 	(*output).output = new(AFTReduceTaskOutput)
 	(*(*output).output).IdGroup = targetNodeGroupId
@@ -47,7 +47,7 @@ func NewAFTReduceTask(targetNodeGroupId int, reduceTaskIdentifierDigest string, 
 
 func (obj *AFTReduceTask) GetOutput() interface{} {
 
-	digest, nodeIds := (*obj).replyRegistry.GetMostMatchedReply()
+	digest, nodeIds, _ := (*obj).replyRegistry.GetMostMatchedReply()
 
 	(*(*obj).output).ReplayDigest = digest
 	(*(*obj).output).NodeIdsWithCorrectResult = nodeIds
@@ -69,7 +69,7 @@ func (obj *AFTReduceTask) GetAvailableWorkerProcessesRPCInternetAddresses() []st
 
 func (obj *AFTReduceTask) DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool {
 	reduceLastReply := lastReply.(*ReduceOutput)
-	return (*obj).replyRegistry.Add(reduceLastReply.Digest, reduceLastReply.NodeId)
+	return (*obj).replyRegistry.AddReplyCheckingRequiredMatches(reduceLastReply.Digest, reduceLastReply.NodeId, nil)
 }
 
 func (obj *AFTReduceTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {

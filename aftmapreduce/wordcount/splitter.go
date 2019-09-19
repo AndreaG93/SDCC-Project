@@ -1,7 +1,7 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce/node"
+	"SDCC-Project/aftmapreduce/process"
 	"math"
 	"strings"
 )
@@ -17,7 +17,7 @@ func getSplits(guid string, splitsAmount int) ([]string, error) {
 
 func downloadTextFromCloud(guid string) (string, error) {
 
-	if rawData, err := (*node.GetStorageKeyValueRegister()).Get(guid); err == nil {
+	if rawData, err := (*process.GetStorageKeyValueRegister()).Get(guid); err == nil {
 		return string(rawData), nil
 	} else {
 		return "", err
