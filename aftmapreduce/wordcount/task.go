@@ -39,7 +39,7 @@ func startShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId m
 				nodeWithoutCorrectData = append(nodeWithoutCorrectData, nodeID)
 			}
 		}
-
+		crash()
 		sendDataTask((*mapOutput).NodeIdsWithCorrectResult, (*mapOutput).IdGroup, nodeWithoutCorrectData, (*mapOutput).IdGroup, (*mapOutput).ReplayDigest, "", -1)
 	}
 

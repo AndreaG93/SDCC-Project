@@ -10,7 +10,7 @@ const (
 	membershipZNodePath             = "/membership"
 	pendingClientRequestsZNodePath  = "/pending-requests"
 	completeClientRequestsZNodePath = "/complete-requests"
-	zkSessionTimeOut                = 15 * time.Second
+	zkSessionTimeOut                = 3 * time.Second
 )
 
 type Client struct {

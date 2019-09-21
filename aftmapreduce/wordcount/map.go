@@ -75,6 +75,12 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("A Map task is COMPLETED with Digest %s :: IndexPartitionSize %d", (*output).ReplayDigest, (*output).MappedDataSizes))
 
+	crash()
+
+	if isOccurredAnArbitraryCrash() {
+		(*output).ReplayDigest = "dsadsadasfewhfiuehuiyw7i34yt78f2g3g7823gafsf43fwet34ghdhdgrsgt--GGGGGGGGGG"
+	}
+
 	return nil
 }
 
