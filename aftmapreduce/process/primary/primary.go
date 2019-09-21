@@ -26,7 +26,7 @@ func StartWork() {
 	utility.CheckError(err)
 
 	for _, request := range allPendingClientRequestGuid {
-		go wordcount.ManageClientRequest(request)
+		go wordcount.JobStart(request)
 	}
 
 	aftmapreduce.StartAcceptingRPCRequest(&wordcount.Request{}, process.GetPropertyAsString(property.WordCountRequestRPCFullAddress))

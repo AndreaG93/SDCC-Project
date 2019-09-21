@@ -2,6 +2,7 @@ package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce/process"
+	"fmt"
 	"math"
 	"strings"
 )
@@ -11,6 +12,7 @@ func getSplits(guid string, splitsAmount int) ([]string, error) {
 	if text, err := downloadTextFromCloud(guid); err != nil {
 		return nil, err
 	} else {
+		process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Start SPLIT phase :: splitsAmount %d", splitsAmount))
 		return divideIntoSplits(text, splitsAmount), nil
 	}
 }
@@ -31,7 +33,7 @@ func divideIntoSplits(input string, splitsAmount int) []string {
 	splitSize := int(math.Floor(float64(len(input) / splitsAmount)))
 
 	currentSplitLowerLimit := 0
-	currentSplitUpperLimit := splitSize - 1
+	currentSplitUpperLimit := splitSize
 
 	for {
 		currentChar := string(input[currentSplitUpperLimit])
@@ -51,13 +53,11 @@ func divideIntoSplits(input string, splitsAmount int) []string {
 
 		} else {
 
-			currentSplitUpperLimit++
-
-			if currentSplitUpperLimit+splitSize >= len(input) {
+			if currentSplitUpperLimit+1 == len(input) {
 				output[outputIndex] = input[currentSplitLowerLimit:]
 				break
 			} else {
-				continue
+				currentSplitUpperLimit++
 			}
 		}
 	}

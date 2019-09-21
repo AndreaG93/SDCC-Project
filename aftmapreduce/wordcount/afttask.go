@@ -27,6 +27,7 @@ func Execute(task AFTTask) interface{} {
 	for ; RPCCallSent <= task.GetFaultToleranceLevel(); RPCCallSent++ {
 		fullRPCInternetAddress := workerProcessesRPCInternetAddresses[RPCCallSent]
 		task.ExecuteRPCCallTo(fullRPCInternetAddress)
+
 	}
 
 	for {

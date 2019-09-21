@@ -31,7 +31,8 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	var err error
 	var digest string
-	var mappedDataSizes map[int]int
+	var indexPartitionSize map[int]int
+	var wordTokenHashTable *WordTokenHashTable.WordTokenHashTable
 	var rawData []byte
 
 	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Received %s task! -- Mapping Cardinality %d", MapTaskName, input.MappingCardinality))
@@ -40,7 +41,7 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	if rawData = process.GetDataRegistry().Get(guid); rawData == nil {
 
-		digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
+		digest, wordTokenHashTable, indexPartitionSize = performMapTask(input.Text, input.MappingCardinality)
 
 		if err = process.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize()); err != nil {
 			return err
@@ -48,7 +49,7 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 		if err = process.GetDataRegistry().Set(guid, []byte(digest)); err != nil {
 			return err
 		}
-		if err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(mappedDataSizes)); err != nil {
+		if err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(indexPartitionSize)); err != nil {
 			return err
 		}
 
@@ -56,7 +57,10 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 		digest = string(rawData)
 		rawData = process.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid))
-		utility.Decode(rawData, &mappedDataSizes)
+
+		if err = utility.Decoding(rawData, &indexPartitionSize); err != nil {
+			return err
+		}
 	}
 
 	if (*output).CPUUtilization, err = utility.GetCPUPercentageUtilizationAsInteger(); err != nil {
@@ -67,14 +71,16 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 	(*output).IdGroup = process.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).IdNode = process.GetPropertyAsInteger(property.NodeID)
 	(*output).ReplayDigest = digest
-	(*output).MappedDataSizes = mappedDataSizes
+	(*output).MappedDataSizes = indexPartitionSize
 
-	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("%s task complete!", MapTaskName))
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("A Map task is COMPLETED with Digest %s :: IndexPartitionSize %d", (*output).ReplayDigest, (*output).MappedDataSizes))
 
 	return nil
 }
 
 func performMapTask(text string, mappingCardinality int) (string, *WordTokenHashTable.WordTokenHashTable, map[int]int) {
+
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Test received: %s", text))
 
 	mappedDataSizes := make(map[int]int)
 
