@@ -15,7 +15,7 @@ func startMapPhase(guid string) error {
 		return err
 	} else {
 
-		output := buildAFTMapTaskOutputsArray()
+		output := make([]*AFTMapTaskOutput, (*process.GetMembershipRegister()).GetGroupAmount())
 		firstRepliesChannel := make(chan interface{})
 		isSpeculativeExecutionSucceeded := make(chan bool)
 		mapPhaseOutputChannel := make(chan []*AFTMapTaskOutput)
@@ -24,7 +24,7 @@ func startMapPhase(guid string) error {
 
 		for workerProcessGroupID, split := range splits {
 			syncWaitGroup.Add(1)
-			go startAFTMapTask(split, workerProcessGroupID, output[workerProcessGroupID], &syncWaitGroup, firstRepliesChannel)
+			go startAFTMapTask(split, workerProcessGroupID, &output[workerProcessGroupID], &syncWaitGroup, firstRepliesChannel)
 		}
 
 		syncWaitGroup.Wait()
@@ -53,8 +53,8 @@ func startMapPhase(guid string) error {
 	}
 }
 
-func startAFTMapTask(split string, workerProcessGroupID int, output *AFTMapTaskOutput, syncWaitGroup *sync.WaitGroup, firstRepliesChannel chan interface{}) {
-	output = Execute(NewAFTMapTask(split, workerProcessGroupID, firstRepliesChannel)).(*AFTMapTaskOutput)
+func startAFTMapTask(split string, workerProcessGroupID int, output **AFTMapTaskOutput, syncWaitGroup *sync.WaitGroup, firstRepliesChannel chan interface{}) {
+	*output = Execute(NewAFTMapTask(split, workerProcessGroupID, firstRepliesChannel)).(*AFTMapTaskOutput)
 	syncWaitGroup.Done()
 }
 
@@ -116,10 +116,12 @@ func startReducePhaseAfterMapPhaseSpeculativeExecution(guid string, mapPhaseOutp
 
 	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Reduce-Phase AFTER speculative execution STARTED for Request GUID: %s", guid))
 
-	localityAwarenessData := getLocalityAwareReduceTaskMappedToNodeGroupId(mapPhaseOutput)
-	localityAwareShuffleTask(mapPhaseOutput, localityAwarenessData)
+	localityAwareReduceTaskSchedule := getLocalityAwareReduceTaskSchedule(mapPhaseOutput)
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("The Locality-Aware AFT-Reduce Task Schedule (For Speculative Execution) for Request %s is :: %d", guid, localityAwareReduceTaskSchedule))
 
-	output := reduceTask(mapPhaseOutput, localityAwarenessData)
+	startShuffleTask(mapPhaseOutput, localityAwareReduceTaskSchedule)
+
+	output := reduceTask(mapPhaseOutput, localityAwareReduceTaskSchedule)
 
 	if rawOutput, err := utility.Encoding(output); err != nil {
 		reducePhaseOutputRawDataChannel <- nil

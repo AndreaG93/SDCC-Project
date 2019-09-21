@@ -39,7 +39,7 @@ func NewAFTMapTask(split string, workerGroupId int, firstReplyPredictedAsCorrect
 	(*output).registry = replyregister.New((*output).faultToleranceLevel + 1)
 	(*output).firstReplyPredictedAsCorrectChannel = firstReplyPredictedAsCorrectChannel
 
-	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("An AFT Map-Task is STARTING with FT %d :: WPG %d :: avalaible WPs: %s", (*output).faultToleranceLevel, workerGroupId, (*output).workersAddresses))
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("An AFT Map-Task is STARTING with FT %d :: WPG %d :: available WPs: %s", (*output).faultToleranceLevel, workerGroupId, (*output).workersAddresses))
 
 	return output
 }

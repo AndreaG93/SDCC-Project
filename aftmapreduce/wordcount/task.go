@@ -15,29 +15,7 @@ const (
 	RetrieveTaskName = "RETRIEVE"
 )
 
-func getLocalityAwareReduceTaskMappedToNodeGroupId(input []*AFTMapTaskOutput) map[int]int {
-
-	output := make(map[int]int)
-
-	for reduceTaskIndex := 0; reduceTaskIndex < len(input); reduceTaskIndex++ {
-
-		maxDataSize := 0
-
-		for _, reply := range input {
-
-			currentDataSize := (*reply).MappedDataSizes[reduceTaskIndex]
-
-			if currentDataSize > maxDataSize {
-				maxDataSize = currentDataSize
-				output[reduceTaskIndex] = (*reply).IdGroup
-			}
-		}
-	}
-
-	return output
-}
-
-func localityAwareShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) {
+func startShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) {
 
 	for _, mapOutput := range input {
 
