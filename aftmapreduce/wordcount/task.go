@@ -1,7 +1,6 @@
 package wordcount
 
 import (
-	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/process"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"sync"
@@ -76,23 +75,6 @@ func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int
 	}
 
 	mapWaitGroup.Wait()
-
-	return output
-}
-
-func retrieveTask(input []*AFTReduceTaskOutput) []*WordTokenList.WordTokenList {
-
-	output := make([]*WordTokenList.WordTokenList, len(input))
-
-	for index, aftReduceTaskOutput := range input {
-
-		targetNodeIP, _ := (*process.GetMembershipRegister()).GetSpecifiedWorkerProcessPublicInternetAddressesForRPC(aftReduceTaskOutput.IdGroup, aftReduceTaskOutput.NodeIdsWithCorrectResult, aftmapreduce.WordCountRetrieverRPCBasePort)
-
-		rawData := retrieveFrom(targetNodeIP, aftReduceTaskOutput.ReplayDigest)
-		serializedData := WordTokenList.Deserialize(rawData)
-
-		output[index] = serializedData
-	}
 
 	return output
 }

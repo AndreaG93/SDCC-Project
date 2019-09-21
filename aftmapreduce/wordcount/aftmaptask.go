@@ -89,6 +89,6 @@ func (obj *AFTMapTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 	go aftmapreduce.MakeRPCCall("Map.Execute", fullRPCInternetAddress, input, &output, replyChannel)
 }
 
-func (obj *AFTMapTask) GetChannelToSendFirstReplyPredictedAsCorrect() chan interface{} {
+func (obj *AFTMapTask) GetChannelToSendFirstReply() chan interface{} {
 	return (*obj).firstReplyPredictedAsCorrectChannel
 }

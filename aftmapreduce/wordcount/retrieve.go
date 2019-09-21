@@ -2,10 +2,8 @@ package wordcount
 
 import (
 	"SDCC-Project/aftmapreduce/process"
-	"SDCC-Project/aftmapreduce/utility"
 	"errors"
 	"fmt"
-	"net/rpc"
 )
 
 type Retrieve struct {
@@ -27,37 +25,6 @@ func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 	if output.RawData == nil {
 		return errors.New("no data with given digest")
 	}
-
-	return nil
-}
-
-func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
-
-	process.GetLogger().PrintInfoLevelLabeledMessage(RetrieveTaskName, fmt.Sprintf("Target Nodes are %s", NodeIPs))
-
-	var input RetrieveInput
-	var output RetrieveOutput
-
-	input.DataDigest = dataDigest
-
-	for _, ip := range NodeIPs {
-
-		worker, err := rpc.Dial("tcp", ip)
-		if err != nil {
-			process.GetLogger().PrintInfoLevelLabeledMessage(RetrieveTaskName, err.Error())
-			continue
-		}
-
-		err = worker.Call("Retrieve.Execute", &input, &output)
-		utility.CheckError(worker.Close())
-		if err == nil {
-			return output.RawData
-		} else {
-			process.GetLogger().PrintInfoLevelLabeledMessage(RetrieveTaskName, err.Error())
-		}
-	}
-
-	process.GetLogger().PrintPanicLevelMessage("Retrieve Task failed! Aborting...")
 
 	return nil
 }

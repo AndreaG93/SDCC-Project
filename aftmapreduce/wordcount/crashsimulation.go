@@ -6,10 +6,6 @@ import (
 )
 
 func crash() {
-	if process.GetPropertyAsInteger(property.NodeID) == 1 {
-		panic("Simulated Crash")
-	}
-
 	if process.GetPropertyAsInteger(property.NodeID) == 0 {
 		panic("Simulated Crash")
 	}

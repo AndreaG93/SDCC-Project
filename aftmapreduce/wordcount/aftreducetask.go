@@ -88,6 +88,6 @@ func (obj *AFTReduceTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 	go aftmapreduce.MakeRPCCall("Reduce.Execute", fullRPCInternetAddress, input, &output, replyChannel)
 }
 
-func (obj *AFTReduceTask) GetChannelToSendFirstReplyPredictedAsCorrect() chan interface{} {
+func (obj *AFTReduceTask) GetChannelToSendFirstReply() chan interface{} {
 	return nil
 }

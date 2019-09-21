@@ -32,30 +32,30 @@ func New(processID int, processType string, processWorkerGroupID int) (*Logger, 
 }
 
 func (obj *Logger) PrintInfoLevelMessage(message string) {
-	(*obj).logger.SetLevel(logrus.InfoLevel)
-	(*obj).printMessage(message)
+	myMessage := (*obj).getFormattedMessage(message)
+	(*obj).logger.Info(myMessage)
 }
 
 func (obj *Logger) PrintInfoLevelLabeledMessage(label string, message string) {
-	(*obj).logger.SetLevel(logrus.InfoLevel)
-	(*obj).printMessage(fmt.Sprintf("%s :: %s", label, message))
+	myMessage := (*obj).getFormattedMessage(fmt.Sprintf("%s :: %s", label, message))
+	(*obj).logger.Info(myMessage)
 }
 
 func (obj *Logger) PrintErrorLevelMessage(message string) {
-	(*obj).logger.SetLevel(logrus.ErrorLevel)
-	(*obj).printMessage(message)
+	myMessage := (*obj).getFormattedMessage(message)
+	(*obj).logger.Error(myMessage)
 }
 
 func (obj *Logger) PrintPanicLevelMessage(message string) {
-	(*obj).logger.SetLevel(logrus.PanicLevel)
-	(*obj).printMessage(message)
+	myMessage := (*obj).getFormattedMessage(message)
+	(*obj).logger.Panic(myMessage)
 }
 
-func (obj *Logger) printMessage(message string) {
+func (obj *Logger) getFormattedMessage(message string) string {
 
 	if (*obj).processWorkerGroupID != -1 {
-		(*obj).logger.Printf("%s-%d -- WPG: %d >> %s", (*obj).processType, (*obj).processID, (*obj).processWorkerGroupID, message)
+		return fmt.Sprintf("%s-%d -- WPG: %d >> %s", (*obj).processType, (*obj).processID, (*obj).processWorkerGroupID, message)
 	} else {
-		(*obj).logger.Printf("%s-%d >> %s", (*obj).processType, (*obj).processID, message)
+		return fmt.Sprintf("%s-%d >> %s", (*obj).processType, (*obj).processID, message)
 	}
 }
