@@ -42,7 +42,6 @@ func (obj *Register) startListeningForMembershipChanges() {
 }
 
 func (obj *Register) AddProcessCPUUtilization(publicInternetAddress string, utilization int) {
-	fmt.Printf("CPU utilization of %d of process located to %s", utilization, publicInternetAddress)
 	(*obj).workerProcessCPUUtilizationRegistry[publicInternetAddress] = utilization
 }
 
