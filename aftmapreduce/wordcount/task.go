@@ -13,7 +13,6 @@ const (
 	ReceiveTaskName  = "RECEIVE"
 	SendTaskName     = "SEND"
 	RetrieveTaskName = "RETRIEVE"
-	ShuffleTaskName  = "SHUFFLE"
 )
 
 func getLocalityAwareReduceTaskMappedToNodeGroupId(input []*AFTMapTaskOutput) map[int]int {
@@ -78,7 +77,6 @@ func localityAwareShuffleTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeG
 			}
 		}
 	}
-	process.GetLogger().PrintInfoCompleteTaskMessage(ShuffleTaskName)
 }
 
 func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int]int) []*AFTReduceTaskOutput {
@@ -101,7 +99,6 @@ func reduceTask(input []*AFTMapTaskOutput, reduceTaskMappedToNodeGroupId map[int
 
 	mapWaitGroup.Wait()
 
-	process.GetLogger().PrintInfoCompleteTaskMessage(ReduceTaskName)
 	return output
 }
 
@@ -118,7 +115,7 @@ func retrieveTask(input []*AFTReduceTaskOutput) []*WordTokenList.WordTokenList {
 
 		output[index] = serializedData
 	}
-	process.GetLogger().PrintInfoCompleteTaskMessage(RetrieveTaskName)
+
 	return output
 }
 

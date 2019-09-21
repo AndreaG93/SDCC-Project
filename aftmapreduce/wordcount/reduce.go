@@ -29,7 +29,7 @@ func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
 	var err error
 
-	process.GetLogger().PrintInfoTaskMessage(ReduceTaskName, fmt.Sprintf("Local data digest: %s -- Reduce work index: %d", input.LocalDataDigest, input.ReduceWorkIndex))
+	process.GetLogger().PrintInfoLevelLabeledMessage(ReduceTaskName, fmt.Sprintf("Local data digest: %s -- Reduce work index: %d", input.LocalDataDigest, input.ReduceWorkIndex))
 
 	digest, rawData := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
 

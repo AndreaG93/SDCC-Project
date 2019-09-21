@@ -4,6 +4,7 @@ import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/data"
 	"SDCC-Project/aftmapreduce/membership"
+	"SDCC-Project/aftmapreduce/process/logger"
 	"SDCC-Project/aftmapreduce/process/property"
 	"SDCC-Project/aftmapreduce/storage"
 	"SDCC-Project/aftmapreduce/storage/amazons3"
@@ -16,9 +17,9 @@ var systemCoordinator system.Coordinator
 var keyValueRegister storage.KeyValueRegister
 var membershipRegister *membership.Register
 var membershipCoordinator membership.Coordinator
-var dataRegistry *data.Registry
+var dataRegistry *data.Register
 var properties map[string]interface{}
-var logger *Logger
+var processLogger *logger.Logger
 
 const (
 	PrimaryProcessType = "Primary"
@@ -44,17 +45,24 @@ func initializeServices(zookeeperClusterInternetAddresses []string) error {
 	if err = systemCoordinator.Initialize(); err != nil {
 		return err
 	}
-	if dataRegistry, err = data.New(GetPropertyAsInteger(property.NodeID), GetPropertyAsString(property.NodeType), GetPropertyAsBoolean(property.IsDataRegisterVolatile)); err != nil {
-		return err
-	}
+
 	if membershipRegister, err = membership.New(membershipCoordinator); err != nil {
 		return err
 	}
+
+	if processLogger, err = logger.New(GetPropertyAsInteger(property.NodeID), GetPropertyAsString(property.NodeType), GetPropertyAsInteger(property.NodeGroupID)); err != nil {
+		return err
+	}
+
 	if GetPropertyAsBoolean(property.CanAccessToDFS) {
 		keyValueRegister = amazons3.New()
 	}
 
-	logger = NewLogger()
+	if GetPropertyAsBoolean(property.CanUseDataRegister) {
+		if dataRegistry, err = data.New(GetPropertyAsInteger(property.NodeID), GetPropertyAsString(property.NodeType)); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -70,8 +78,9 @@ func initializeProperties(processID int, processGroupID int, processType string,
 	switch processType {
 	case PrimaryProcessType:
 
+		SetProperty(property.NodeGroupID, -1)
 		SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountRequestRPCBasePort+processID))
-		SetProperty(property.IsDataRegisterVolatile, true)
+		SetProperty(property.CanUseDataRegister, false)
 		SetProperty(property.CanAccessToDFS, true)
 
 	case WorkerProcessType:
@@ -83,7 +92,7 @@ func initializeProperties(processID int, processGroupID int, processType string,
 		SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountSendRPCBasePort+processID))
 		SetProperty(property.WordCountRetrieveRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountRetrieverRPCBasePort+processID))
 
-		SetProperty(property.IsDataRegisterVolatile, false)
+		SetProperty(property.CanUseDataRegister, true)
 		SetProperty(property.CanAccessToDFS, false)
 	}
 }
@@ -104,8 +113,8 @@ func GetMembershipCoordinator() *membership.Coordinator {
 	return &membershipCoordinator
 }
 
-func GetLogger() *Logger {
-	return logger
+func GetLogger() *logger.Logger {
+	return processLogger
 }
 
 func SetProperty(key string, value interface{}) {
@@ -124,6 +133,6 @@ func GetPropertyAsBoolean(key string) bool {
 	return properties[key].(bool)
 }
 
-func GetDataRegistry() *data.Registry {
+func GetDataRegistry() *data.Register {
 	return dataRegistry
 }

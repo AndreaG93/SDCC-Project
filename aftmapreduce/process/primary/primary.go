@@ -17,7 +17,7 @@ func StartWork() {
 	err = (*process.GetSystemCoordinator()).WaitUntilLeader(process.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
 	utility.CheckError(err)
 
-	(*process.GetLogger()).PrintInfoTaskMessage("Initialization", "I'm leader")
+	(*process.GetLogger()).PrintInfoLevelLabeledMessage("Initialization", "I'm leader")
 
 	gob.Register(wordcount.MapInput{})
 	gob.Register(wordcount.ReduceInput{})

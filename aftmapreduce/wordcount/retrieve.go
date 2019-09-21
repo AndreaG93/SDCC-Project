@@ -21,7 +21,7 @@ type RetrieveOutput struct {
 
 func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
-	process.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
+	process.GetLogger().PrintInfoLevelLabeledMessage(RetrieveTaskName, fmt.Sprintf("Received a 'RETRIEVE' request -- Data digest requested is %s", input.DataDigest))
 
 	output.RawData = process.GetDataRegistry().Get(input.DataDigest)
 	if output.RawData == nil {
@@ -33,7 +33,7 @@ func (x *Retrieve) Execute(input RetrieveInput, output *RetrieveOutput) error {
 
 func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 
-	process.GetLogger().PrintInfoTaskMessage(RetrieveTaskName, fmt.Sprintf("Target Nodes are %s", NodeIPs))
+	process.GetLogger().PrintInfoLevelLabeledMessage(RetrieveTaskName, fmt.Sprintf("Target Nodes are %s", NodeIPs))
 
 	var input RetrieveInput
 	var output RetrieveOutput
@@ -44,7 +44,7 @@ func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 
 		worker, err := rpc.Dial("tcp", ip)
 		if err != nil {
-			process.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
+			process.GetLogger().PrintInfoLevelLabeledMessage(RetrieveTaskName, err.Error())
 			continue
 		}
 
@@ -53,11 +53,11 @@ func retrieveFrom(NodeIPs []string, dataDigest string) []byte {
 		if err == nil {
 			return output.RawData
 		} else {
-			process.GetLogger().PrintErrorTaskMessage(RetrieveTaskName, err.Error())
+			process.GetLogger().PrintInfoLevelLabeledMessage(RetrieveTaskName, err.Error())
 		}
 	}
 
-	process.GetLogger().PrintPanicErrorTaskMessage(RetrieveTaskName, "Task failed! Aborting...")
+	process.GetLogger().PrintPanicLevelMessage("Retrieve Task failed! Aborting...")
 
 	return nil
 }

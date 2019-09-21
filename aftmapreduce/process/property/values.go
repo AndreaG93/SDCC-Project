@@ -13,6 +13,6 @@ const (
 	WordCountRequestRPCFullAddress  = "WordCountRequestRPCFullAddress"
 	WordCountRetrieveRPCFullAddress = "WordCountRetrieveRPCFullAddress"
 
-	IsDataRegisterVolatile = "IsDataRegisterVolatile"
-	CanAccessToDFS         = "CanAccessToDFS"
+	CanUseDataRegister = "CanUseDataRegister"
+	CanAccessToDFS     = "CanAccessToDFS"
 )

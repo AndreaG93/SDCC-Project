@@ -20,7 +20,7 @@ type ReceiveOutput struct {
 
 func (x *Receive) Execute(input ReceiveInput, output *ReceiveOutput) error {
 
-	process.GetLogger().PrintInfoTaskMessage(ReceiveTaskName, fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
+	process.GetLogger().PrintInfoLevelLabeledMessage(ReceiveTaskName, fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
 	utility.CheckError(process.GetDataRegistry().Set(input.ReceivedDataDigest, input.Data))
 
 	if input.AssociatedDataDigest != "" {

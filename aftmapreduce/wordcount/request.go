@@ -78,7 +78,7 @@ func ManageClientRequest(guid string) {
 
 		status, data, err = (*process.GetSystemCoordinator()).GetClientRequestInformation(guid)
 		utility.CheckError(err)
-		process.GetLogger().PrintInfoTaskMessage(requestManagementTask, fmt.Sprintf("Request: %s -- Status %d", guid, status))
+		process.GetLogger().PrintInfoLevelLabeledMessage(requestManagementTask, fmt.Sprintf("Request: %s -- Status %d", guid, status))
 
 		switch status {
 		case accepted:
@@ -144,7 +144,7 @@ func startAFTMapTask(guid string, AFTMapTaskOutputComputedWithStandardAlgorithm 
 		}
 
 		mapWaitGroup.Wait()
-		process.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
+		process.GetLogger().PrintInfoLevelLabeledMessage(MapTaskName, "Task finish")
 
 		AFTMapTaskOutputComputedWithStandardAlgorithm <- output
 

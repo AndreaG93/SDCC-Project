@@ -30,46 +30,48 @@ type MapOutput struct {
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	var err error
+	var digest string
+	var mappedDataSizes map[int]int
+	var rawData []byte
 
-	process.GetLogger().PrintInfoStartingTaskMessage(MapTaskName)
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Received %s task! -- Mapping Cardinality %d", MapTaskName, input.MappingCardinality))
 
 	guid := utility.GenerateDigestUsingSHA512([]byte(input.Text))
 
-	if !isMapTaskRequestDuplicated(guid) {
+	if rawData = process.GetDataRegistry().Get(guid); rawData == nil {
 
 		digest, wordTokenHashTable, mappedDataSizes := performMapTask(input.Text, input.MappingCardinality)
 
-		err = process.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize())
-		utility.CheckError(err)
-		err = process.GetDataRegistry().Set(guid, []byte(digest))
-		utility.CheckError(err)
-		err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(mappedDataSizes))
-		utility.CheckError(err)
-
-		(*output).ReplayDigest = digest
-		(*output).MappedDataSizes = mappedDataSizes
-
-		process.GetLogger().PrintInfoCompleteTaskMessage(MapTaskName)
+		if err = process.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize()); err != nil {
+			return err
+		}
+		if err = process.GetDataRegistry().Set(guid, []byte(digest)); err != nil {
+			return err
+		}
+		if err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(mappedDataSizes)); err != nil {
+			return err
+		}
 
 	} else {
 
-		(*output).ReplayDigest = string(process.GetDataRegistry().Get(guid))
-		utility.Decode(process.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid)), &output.MappedDataSizes)
+		digest = string(rawData)
+		rawData = process.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid))
+		utility.Decode(rawData, &mappedDataSizes)
 	}
 
-	(*output).IdGroup = process.GetPropertyAsInteger(property.NodeGroupID)
-	(*output).IdNode = process.GetPropertyAsInteger(property.NodeID)
-
-	(*output).CPUUtilization, err = utility.GetCPUPercentageUtilizationAsInteger()
-	utility.CheckError(err)
+	if (*output).CPUUtilization, err = utility.GetCPUPercentageUtilizationAsInteger(); err != nil {
+		return err
+	}
 
 	(*output).MyInternetAddress = process.GetPropertyAsString(property.InternetAddress)
+	(*output).IdGroup = process.GetPropertyAsInteger(property.NodeGroupID)
+	(*output).IdNode = process.GetPropertyAsInteger(property.NodeID)
+	(*output).ReplayDigest = digest
+	(*output).MappedDataSizes = mappedDataSizes
+
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("%s task complete!", MapTaskName))
 
 	return nil
-}
-
-func isMapTaskRequestDuplicated(guid string) bool {
-	return process.GetDataRegistry().Get(guid) != nil
 }
 
 func performMapTask(text string, mappingCardinality int) (string, *WordTokenHashTable.WordTokenHashTable, map[int]int) {
