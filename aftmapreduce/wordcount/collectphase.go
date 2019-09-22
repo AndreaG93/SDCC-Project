@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/process"
-	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"errors"
 	"fmt"
@@ -17,13 +16,16 @@ func startCollectPhase(guid string, reducePhaseOutput []*AFTReduceTaskOutput) er
 	if dataArray, err := collectReduceTaskOutputFromWPG(reducePhaseOutput); err == nil {
 
 		output := computeFinalOutputTask(dataArray)
-		outputSerialized := output.Serialize()
-		outputGUID := utility.GenerateDigestUsingSHA512(outputSerialized)
+		if outputGUID, outputSerialized, err := output.GetDigestAndSerializedData(); err != nil {
+			return err
+		} else {
 
-		if err = (*process.GetStorageKeyValueRegister()).Put(outputGUID, outputSerialized); err == nil {
-			if err = (*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, collectPhaseComplete, nil); err == nil {
-				err = (*process.GetSystemCoordinator()).RegisterClientRequestAsComplete(guid, outputGUID)
+			if err = (*process.GetStorageKeyValueRegister()).Put(outputGUID, outputSerialized); err == nil {
+				if err = (*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, collectPhaseComplete, nil); err == nil {
+					err = (*process.GetSystemCoordinator()).RegisterClientRequestAsComplete(guid, outputGUID)
+				}
 			}
+
 		}
 	}
 
@@ -41,8 +43,12 @@ func collectReduceTaskOutputFromWPG(reducePhaseOutput []*AFTReduceTaskOutput) ([
 		if rawData, err := retrieveFrom(targetNodeIP, aftReduceTaskOutput.ReplayDigest); err != nil {
 			return nil, err
 		} else {
-			serializedData := WordTokenList.Deserialize(rawData)
-			output[index] = serializedData
+
+			if serializedData, err := WordTokenList.Deserialize(rawData); err != nil {
+				return nil, err
+			} else {
+				output[index] = serializedData
+			}
 		}
 	}
 

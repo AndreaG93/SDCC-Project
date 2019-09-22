@@ -36,11 +36,15 @@ func StartAcceptingRPCRequest(serviceTypeRequest interface{}, address string) {
 	}
 }
 
-func MakeRPCCall(serviceMethod string, internetAddress string, input interface{}, output interface{}, replyChannel chan interface{}) {
+func MakeRPCCall(serviceMethod string, internetAddress string, input interface{}, output interface{}, replyChannel chan interface{}) error {
+
+	var err error
 
 	if worker, err := rpc.Dial("tcp", internetAddress); err == nil {
 		if err = worker.Call(serviceMethod, input, output); err == nil {
 			replyChannel <- output.(interface{})
 		}
 	}
+
+	return err
 }

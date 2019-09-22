@@ -18,53 +18,72 @@ type ReceiveInput struct {
 type ReceiveOutput struct {
 }
 
+const (
+	digestAssociationArrayLabel = "DIGEST-ASSOCIATIONS"
+)
+
 func (x *Receive) Execute(input ReceiveInput, output *ReceiveOutput) error {
 
 	process.GetLogger().PrintInfoLevelLabeledMessage(ReceiveTaskName, fmt.Sprintf("Received Data Digest: %s Associated to Data Digest: %s", input.ReceivedDataDigest, input.AssociatedDataDigest))
-	utility.CheckError(process.GetDataRegistry().Set(input.ReceivedDataDigest, input.Data))
+
+	if err := process.GetDataRegistry().Set(input.ReceivedDataDigest, input.Data); err != nil {
+		return err
+	}
 
 	if input.AssociatedDataDigest != "" {
-		utility.CheckError(SaveGuidAssociation(input.AssociatedDataDigest, input.ReceivedDataDigest))
+		if err := SaveDigestAssociation(input.ReceivedDataDigest, input.AssociatedDataDigest); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func GetGuidAssociation(guid string) []string {
+func GetDigestAssociationArray(localDigest string) ([]string, error) {
 
-	output := []string{}
+	var output []string
 
-	key := fmt.Sprintf("%s-GUID-ASSOCIATIONS", guid)
+	key := fmt.Sprintf("%s-%s", localDigest, digestAssociationArrayLabel)
 	rawData := process.GetDataRegistry().Get(key)
 
-	utility.Decode(rawData, &output)
-
-	return output
+	if err := utility.Decoding(rawData, &output); err != nil {
+		return nil, err
+	} else {
+		return output, nil
+	}
 }
 
-func SaveGuidAssociation(guid string, associatedGuid string) error {
+func SaveDigestAssociation(digest string, localDigest string) error {
 
-	key := fmt.Sprintf("%s-GUID-ASSOCIATIONS", guid)
+	var digestAssociationArray []string
+
+	key := fmt.Sprintf("%s-%s", localDigest, digestAssociationArrayLabel)
 	rawData := process.GetDataRegistry().Get(key)
 
 	if rawData == nil {
 
-		newAssociationGuidVector := make([]string, 1)
-		newAssociationGuidVector[0] = associatedGuid
+		digestAssociationArray := make([]string, 1)
+		digestAssociationArray[0] = digest
 
-		return process.GetDataRegistry().Set(key, utility.Encode(newAssociationGuidVector))
 	} else {
 
-		existentAssociatedGuidVector := []string{}
-		utility.Decode(rawData, &existentAssociatedGuidVector)
+		if err := utility.Decoding(rawData, &digestAssociationArray); err != nil {
+			return err
+		} else {
 
-		for _, elem := range existentAssociatedGuidVector {
-			if elem == associatedGuid {
-				return nil
+			for _, elem := range digestAssociationArray {
+				if elem == digest {
+					return nil
+				}
 			}
-		}
 
-		existentAssociatedGuidVector = append(existentAssociatedGuidVector, associatedGuid)
-		return process.GetDataRegistry().Set(key, utility.Encode(existentAssociatedGuidVector))
+			digestAssociationArray = append(digestAssociationArray, digest)
+		}
+	}
+
+	if rawData, err := utility.Encoding(digestAssociationArray); err != nil {
+		return err
+	} else {
+		return process.GetDataRegistry().Set(key, rawData)
 	}
 }

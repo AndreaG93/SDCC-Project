@@ -15,7 +15,11 @@ func startReducePhase(guid string, AFTMapTaskOutput []*AFTMapTaskOutput) ([]*AFT
 
 	output := reduceTask(AFTMapTaskOutput, localityAwareReduceTaskSchedule)
 
-	return output, (*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reducePhaseComplete, utility.Encode(output))
+	if rawData, err := utility.Encoding(output); err != nil {
+		return nil, err
+	} else {
+		return output, (*process.GetSystemCoordinator()).UpdateClientRequestStatusBackup(guid, reducePhaseComplete, rawData)
+	}
 }
 
 func getLocalityAwareReduceTaskSchedule(input []*AFTMapTaskOutput) map[int]int {

@@ -86,7 +86,11 @@ func (obj *AFTMapTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 	}
 	output := MapOutput{}
 
-	go aftmapreduce.MakeRPCCall("Map.Execute", fullRPCInternetAddress, input, &output, replyChannel)
+	go func() {
+		if err := aftmapreduce.MakeRPCCall("Map.Execute", fullRPCInternetAddress, input, &output, replyChannel); err != nil {
+			process.GetLogger().PrintInfoLevelMessage(err.Error())
+		}
+	}()
 }
 
 func (obj *AFTMapTask) GetChannelToSendFirstReply() chan interface{} {

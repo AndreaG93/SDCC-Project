@@ -25,21 +25,24 @@ func New() *WordTokenList {
 	return output
 }
 
-func Deserialize(input []byte) *WordTokenList {
+func Deserialize(input []byte) (*WordTokenList, error) {
 
 	output := New()
 	serializedData := []WordToken.WordToken{}
 
-	utility.Decode(input, &serializedData)
+	if err := utility.Decoding(input, &serializedData); err != nil {
+		return nil, err
+	} else {
 
-	for index := uint(0); index < uint(len(serializedData)); index++ {
-		(*output).InsertWordToken(&serializedData[index])
+		for index := uint(0); index < uint(len(serializedData)); index++ {
+			(*output).InsertWordToken(&serializedData[index])
+		}
+
+		return output, nil
 	}
-
-	return output
 }
 
-func (obj *WordTokenList) GetDigestAndSerializedData() (string, []byte) {
+func (obj *WordTokenList) GetDigestAndSerializedData() (string, []byte, error) {
 
 	(*obj).IteratorReset()
 
@@ -55,8 +58,11 @@ func (obj *WordTokenList) GetDigestAndSerializedData() (string, []byte) {
 		output[index].Occurrences = (*currentWordToken).Occurrences
 	}
 
-	rawData := utility.Encode(output)
-	return utility.GenerateDigestUsingSHA512(rawData), rawData
+	if rawData, err := utility.Encoding(output); err != nil {
+		return "", nil, err
+	} else {
+		return utility.GenerateDigestUsingSHA512(rawData), rawData, nil
+	}
 }
 
 func (obj *WordTokenList) InsertWord(word string) {
@@ -151,25 +157,6 @@ func (obj *WordTokenList) Merge(input *WordTokenList) {
 		currentWordToken := input.WordToken()
 		(*obj).InsertWordToken(currentWordToken)
 	}
-}
-
-func (obj *WordTokenList) Serialize() []byte {
-
-	(*obj).IteratorReset()
-
-	output := make([]WordToken.WordToken, (*obj).length)
-
-	for index := 0; index < (*obj).length; index++ {
-
-		(*obj).Next()
-
-		currentWordToken := (*obj).WordToken()
-
-		output[index].Word = (*currentWordToken).Word
-		output[index].Occurrences = (*currentWordToken).Occurrences
-	}
-
-	return utility.Encode(output)
 }
 
 func (obj *WordTokenList) GetLength() int {

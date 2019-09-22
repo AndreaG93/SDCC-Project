@@ -12,13 +12,16 @@ type NodeConfiguration struct {
 	NodeClass                  string
 }
 
-func (obj *NodeConfiguration) Load(path string) {
+func (obj *NodeConfiguration) Load(path string) error {
 
-	configurationFile, err := os.Open(path)
-	CheckError(err)
+	if configurationFile, err := os.Open(path); err != nil {
+		return err
+	} else {
+		defer func() {
+			CheckError(configurationFile.Close())
+		}()
 
-	defer func() { CheckError(configurationFile.Close()) }()
-
-	decoder := json.NewDecoder(configurationFile)
-	CheckError(decoder.Decode(obj))
+		decoder := json.NewDecoder(configurationFile)
+		return decoder.Decode(obj)
+	}
 }

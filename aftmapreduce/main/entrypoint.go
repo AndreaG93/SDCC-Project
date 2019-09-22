@@ -12,28 +12,31 @@ import (
 func main() {
 
 	configuration := new(utility.NodeConfiguration)
-	configuration.Load("./conf.json")
-
-	command := exec.Command("curl", "http://169.254.169.254/latest/meta-data/public-ipv4")
-	commandOutput, err := command.Output()
-	if err != nil {
+	if err := configuration.Load("./conf.json"); err != nil {
 		panic(err)
 	}
 
-	nodeID := configuration.NodeID
-	nodeClass := configuration.NodeClass
-	nodeGroupId := configuration.NodeGroupID
-	zookeeperServers := configuration.ZookeeperServersPrivateIPs
-	nodePublicIP := string(commandOutput)
+	command := exec.Command("curl", "http://169.254.169.254/latest/meta-data/public-ipv4")
 
-	utility.CheckError(process.Initialize(nodeID, nodeGroupId, nodeClass, nodePublicIP, zookeeperServers))
+	if commandOutput, err := command.Output(); err != nil {
+		panic(err)
+	} else {
 
-	if nodeClass == "Primary" {
-		fmt.Printf("Start as Primary -- Node %d", nodeID)
-		primary.StartWork()
+		nodeID := configuration.NodeID
+		nodeClass := configuration.NodeClass
+		nodeGroupId := configuration.NodeGroupID
+		zookeeperServers := configuration.ZookeeperServersPrivateIPs
+		nodePublicIP := string(commandOutput)
 
-	} else if nodeClass == "Worker" {
-		fmt.Printf("Start as Worker -- Node %d, Group %d", nodeID, nodeGroupId)
-		worker.StartWork()
+		utility.CheckError(process.Initialize(nodeID, nodeGroupId, nodeClass, nodePublicIP, zookeeperServers))
+
+		if nodeClass == "Primary" {
+			fmt.Printf("Start as Primary -- Node %d", nodeID)
+			primary.StartWork()
+
+		} else if nodeClass == "Worker" {
+			fmt.Printf("Start as Worker -- Node %d, Group %d", nodeID, nodeGroupId)
+			worker.StartWork()
+		}
 	}
 }

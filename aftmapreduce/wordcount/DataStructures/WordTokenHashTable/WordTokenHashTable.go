@@ -64,7 +64,7 @@ func (obj *WordTokenHashTable) GetWordTokenListAt(index int) *WordTokenList.Word
 	return obj.hashTable[index]
 }
 
-func (obj *WordTokenHashTable) Serialize() []byte {
+func (obj *WordTokenHashTable) GetDigestAndSerializedData() (string, []byte, error) {
 
 	var output []WordToken.WordToken
 	var currentWordTokenList *WordTokenList.WordTokenList
@@ -98,27 +98,34 @@ func (obj *WordTokenHashTable) Serialize() []byte {
 		}
 	}
 
-	return utility.Encode(output)
+	if rawData, err := utility.Encoding(output); err != nil {
+		return "", nil, err
+	} else {
+		return utility.GenerateDigestUsingSHA512(rawData), rawData, nil
+	}
 }
 
-func Deserialize(input []byte) *WordTokenHashTable {
+func Deserialize(input []byte) (*WordTokenHashTable, error) {
 
 	var output *WordTokenHashTable
 	var currentWordToken *WordToken.WordToken
 
 	serializedData := []WordToken.WordToken{}
 
-	utility.Decode(input, &serializedData)
+	if err := utility.Decoding(input, &serializedData); err != nil {
+		return nil, err
+	} else {
 
-	output = New(serializedData[0].Occurrences)
+		output = New(serializedData[0].Occurrences)
 
-	for index := uint(1); index < uint(len(serializedData)); index++ {
+		for index := uint(1); index < uint(len(serializedData)); index++ {
 
-		currentWordToken = WordToken.New(serializedData[index].Word, serializedData[index].Occurrences)
-		err := (*output).InsertWordToken(currentWordToken)
-		utility.CheckError(err)
+			currentWordToken = WordToken.New(serializedData[index].Word, serializedData[index].Occurrences)
+			err := (*output).InsertWordToken(currentWordToken)
+			utility.CheckError(err)
 
+		}
+
+		return output, nil
 	}
-
-	return output
 }

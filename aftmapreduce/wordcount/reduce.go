@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce/process"
 	"SDCC-Project/aftmapreduce/process/property"
-	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenList"
 	"fmt"
@@ -20,46 +19,49 @@ type ReduceInput struct {
 type ReduceOutput struct {
 	Digest string
 	NodeId int
-
-	MyInternetAddress string
-	CPUUtilization    int
 }
 
 func (x *Reduce) Execute(input ReduceInput, output *ReduceOutput) error {
 
-	var err error
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Start a Reduce Task involving a local data with digest: %s -- Reduce work index: %d", input.LocalDataDigest, input.ReduceWorkIndex))
 
-	process.GetLogger().PrintInfoLevelLabeledMessage(ReduceTaskName, fmt.Sprintf("Local data digest: %s -- Reduce work index: %d", input.LocalDataDigest, input.ReduceWorkIndex))
+	if digestData, serializedData, err := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex); err != nil {
+		return err
+	} else {
 
-	digest, rawData := performReduceTask(input.LocalDataDigest, input.ReduceWorkIndex)
+		if err = process.GetDataRegistry().Set(digestData, serializedData); err != nil {
+			return err
+		} else {
+			(*output).Digest = digestData
+			(*output).NodeId = process.GetPropertyAsInteger(property.NodeID)
 
-	utility.CheckError(process.GetDataRegistry().Set(digest, rawData))
-	(*output).Digest = digest
-	(*output).NodeId = process.GetPropertyAsInteger(property.NodeID)
-
-	(*output).CPUUtilization, err = utility.GetCPUPercentageUtilizationAsInteger()
-	utility.CheckError(err)
-
-	(*output).MyInternetAddress = process.GetPropertyAsString(property.InternetAddress)
-
-	return nil
+			return nil
+		}
+	}
 }
 
-func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, []byte) {
+func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, []byte, error) {
 
-	localWordTokenHashTable := WordTokenHashTable.Deserialize(process.GetDataRegistry().Get(localDataDigest))
+	if localWordTokenHashTable, err := WordTokenHashTable.Deserialize(process.GetDataRegistry().Get(localDataDigest)); err != nil {
+		return "", nil, err
+	} else {
 
-	localWordTokenList := localWordTokenHashTable.GetWordTokenListAt(reduceTaskIndex)
+		localWordTokenList := localWordTokenHashTable.GetWordTokenListAt(reduceTaskIndex)
 
-	receivedDataDigest := GetGuidAssociation(localDataDigest)
+		if digestsOfReceivedPartitions, err := GetDigestAssociationArray(localDataDigest); err != nil {
+			return "", nil, err
+		} else {
 
-	for _, digest := range receivedDataDigest {
+			for _, digest := range digestsOfReceivedPartitions {
 
-		currentWordTokenList := WordTokenList.Deserialize(process.GetDataRegistry().Get(digest))
-		localWordTokenList.Merge(currentWordTokenList)
+				if currentWordTokenList, err := WordTokenList.Deserialize(process.GetDataRegistry().Get(digest)); err != nil {
+					return "", nil, err
+				} else {
+					localWordTokenList.Merge(currentWordTokenList)
+				}
+			}
+
+			return localWordTokenList.GetDigestAndSerializedData()
+		}
 	}
-
-	digest, rawData := localWordTokenList.GetDigestAndSerializedData()
-
-	return digest, rawData
 }

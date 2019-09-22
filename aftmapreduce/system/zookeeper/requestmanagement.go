@@ -32,8 +32,6 @@ func (obj *Client) ClientRequestExist(guid string) (bool, error) {
 
 func (obj *Client) RegisterClientRequest(guid string, initialStatus uint8) error {
 
-	var err error
-
 	zNodeData := new(clientRequestZNodeData)
 	(*zNodeData).Data = make([]byte, 0)
 	(*zNodeData).Status = initialStatus
@@ -41,11 +39,16 @@ func (obj *Client) RegisterClientRequest(guid string, initialStatus uint8) error
 	zNodePath := fmt.Sprintf("%s/%s", pendingClientRequestsZNodePath, guid)
 	finalizedRequestZNodePath := fmt.Sprintf("%s/%s", completeClientRequestsZNodePath, guid)
 
-	if err = (*obj).createZNodeCheckingExistence(zNodePath, utility.Encode(zNodeData), int32(0)); err != nil {
+	if serializedData, err := utility.Encoding(zNodeData); err != nil {
 		return err
-	}
-	if err = (*obj).createZNodeCheckingExistence(finalizedRequestZNodePath, nil, int32(0)); err != nil {
-		return err
+	} else {
+
+		if err := (*obj).createZNodeCheckingExistence(zNodePath, serializedData, int32(0)); err != nil {
+			return err
+		}
+		if err := (*obj).createZNodeCheckingExistence(finalizedRequestZNodePath, nil, int32(0)); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -59,7 +62,11 @@ func (obj *Client) UpdateClientRequestStatusBackup(guid string, status uint8, da
 	(*zNodeData).Data = data
 	(*zNodeData).Status = status
 
-	return (*obj).setZNodeData(zNodePath, utility.Encode(zNodeData))
+	if serializedData, err := utility.Encoding(zNodeData); err != nil {
+		return err
+	} else {
+		return (*obj).setZNodeData(zNodePath, serializedData)
+	}
 }
 
 func (obj *Client) GetClientRequestInformation(guid string) (uint8, []byte, error) {
@@ -71,8 +78,13 @@ func (obj *Client) GetClientRequestInformation(guid string) (uint8, []byte, erro
 	if rawData, _, err := (*obj).getZNodeData(zNodePath); err != nil {
 		return 0, nil, err
 	} else {
-		utility.Decode(rawData, &clientRequestData)
-		return clientRequestData.Status, clientRequestData.Data, nil
+
+		if err := utility.Decoding(rawData, &clientRequestData); err != nil {
+			return 0, nil, err
+		} else {
+			return clientRequestData.Status, clientRequestData.Data, nil
+		}
+
 	}
 }
 

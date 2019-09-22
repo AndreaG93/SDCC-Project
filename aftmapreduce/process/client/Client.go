@@ -129,6 +129,9 @@ func sendRequest(sourceFileDigest string, currentLeaderInternetAddress string, r
 }
 
 func printResult(rawData []byte) {
-	result := WordTokenList.Deserialize(rawData)
-	result.Print()
+	if result, err := WordTokenList.Deserialize(rawData); err != nil {
+		panic(err)
+	} else {
+		result.Print()
+	}
 }

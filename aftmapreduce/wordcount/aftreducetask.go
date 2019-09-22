@@ -70,8 +70,6 @@ func (obj *AFTReduceTask) GetAvailableWorkerProcessesRPCInternetAddresses() []st
 func (obj *AFTReduceTask) DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool {
 	reduceLastReply := lastReply.(*ReduceOutput)
 
-	process.GetMembershipRegister().AddProcessCPUUtilization(reduceLastReply.MyInternetAddress, reduceLastReply.CPUUtilization)
-
 	return (*obj).replyRegistry.AddReplyCheckingRequiredMatches(reduceLastReply.Digest, reduceLastReply.NodeId, nil)
 }
 
@@ -85,7 +83,11 @@ func (obj *AFTReduceTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 	}
 	output := ReduceOutput{}
 
-	go aftmapreduce.MakeRPCCall("Reduce.Execute", fullRPCInternetAddress, input, &output, replyChannel)
+	go func() {
+		if err := aftmapreduce.MakeRPCCall("Reduce.Execute", fullRPCInternetAddress, input, &output, replyChannel); err != nil {
+			process.GetLogger().PrintInfoLevelMessage(err.Error())
+		}
+	}()
 }
 
 func (obj *AFTReduceTask) GetChannelToSendFirstReply() chan interface{} {

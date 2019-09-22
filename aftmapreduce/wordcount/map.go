@@ -30,35 +30,42 @@ type MapOutput struct {
 func (x *Map) Execute(input MapInput, output *MapOutput) error {
 
 	var err error
-	var digest string
-	var indexPartitionSize map[int]int
-	var wordTokenHashTable *WordTokenHashTable.WordTokenHashTable
-	var rawData []byte
+	var digestData string
+	var indexPartitionSizes map[int]int
+	var serializedData []byte
 
 	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Received %s task! -- Mapping Cardinality %d", MapTaskName, input.MappingCardinality))
 
 	guid := utility.GenerateDigestUsingSHA512([]byte(input.Text))
 
-	if rawData = process.GetDataRegistry().Get(guid); rawData == nil {
+	if serializedData = process.GetDataRegistry().Get(guid); serializedData == nil {
 
-		digest, wordTokenHashTable, indexPartitionSize = performMapTask(input.Text, input.MappingCardinality)
+		if digestData, serializedData, indexPartitionSizes, err = performMapTask(input.Text, input.MappingCardinality); err != nil {
+			return err
+		} else {
 
-		if err = process.GetDataRegistry().Set(digest, wordTokenHashTable.Serialize()); err != nil {
-			return err
-		}
-		if err = process.GetDataRegistry().Set(guid, []byte(digest)); err != nil {
-			return err
-		}
-		if err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), utility.Encode(indexPartitionSize)); err != nil {
-			return err
+			if serializedIndexPartitionSize, err := utility.Encoding(indexPartitionSizes); err != nil {
+				return err
+			} else {
+
+				if err = process.GetDataRegistry().Set(digestData, serializedData); err != nil {
+					return err
+				}
+				if err = process.GetDataRegistry().Set(guid, []byte(digestData)); err != nil {
+					return err
+				}
+				if err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), serializedIndexPartitionSize); err != nil {
+					return err
+				}
+			}
 		}
 
 	} else {
 
-		digest = string(rawData)
-		rawData = process.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid))
+		digestData = string(serializedData)
+		serializedData = process.GetDataRegistry().Get(fmt.Sprintf("%s-mappedDataSize", guid))
 
-		if err = utility.Decoding(rawData, &indexPartitionSize); err != nil {
+		if err = utility.Decoding(serializedData, &indexPartitionSizes); err != nil {
 			return err
 		}
 	}
@@ -70,8 +77,8 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 	(*output).MyInternetAddress = process.GetPropertyAsString(property.InternetAddress)
 	(*output).IdGroup = process.GetPropertyAsInteger(property.NodeGroupID)
 	(*output).IdNode = process.GetPropertyAsInteger(property.NodeID)
-	(*output).ReplayDigest = digest
-	(*output).MappedDataSizes = indexPartitionSize
+	(*output).ReplayDigest = digestData
+	(*output).MappedDataSizes = indexPartitionSizes
 
 	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("A Map task is COMPLETED with Digest %s :: IndexPartitionSize %d", (*output).ReplayDigest, (*output).MappedDataSizes))
 
@@ -84,11 +91,11 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 	return nil
 }
 
-func performMapTask(text string, mappingCardinality int) (string, *WordTokenHashTable.WordTokenHashTable, map[int]int) {
+func performMapTask(text string, mappingCardinality int) (string, []byte, map[int]int, error) {
 
-	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Test received: %s", text))
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Text received: %s", text))
 
-	mappedDataSizes := make(map[int]int)
+	indexPartitionSizes := make(map[int]int)
 
 	outputData := WordTokenHashTable.New(uint(mappingCardinality))
 	wordScanner := utility.BuildWordScannerFromString(text)
@@ -99,12 +106,14 @@ func performMapTask(text string, mappingCardinality int) (string, *WordTokenHash
 		utility.CheckError(outputData.InsertWord(currentWord))
 	}
 
-	rawData := outputData.Serialize()
-	digest := utility.GenerateDigestUsingSHA512(rawData)
+	if digestData, serializedData, err := outputData.GetDigestAndSerializedData(); err != nil {
+		return "", nil, nil, err
+	} else {
 
-	for index := 0; index < mappingCardinality; index++ {
-		mappedDataSizes[index] = outputData.GetWordTokenListAt(index).GetLength()
+		for index := 0; index < mappingCardinality; index++ {
+			indexPartitionSizes[index] = outputData.GetWordTokenListAt(index).GetLength()
+		}
+
+		return digestData, serializedData, indexPartitionSizes, nil
 	}
-
-	return digest, outputData, mappedDataSizes
 }

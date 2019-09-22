@@ -3,7 +3,6 @@ package wordcount
 import (
 	"SDCC-Project/aftmapreduce"
 	"SDCC-Project/aftmapreduce/process"
-	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount/DataStructures/WordTokenHashTable"
 	"fmt"
 	"net/rpc"
@@ -25,27 +24,22 @@ type SendOutput struct {
 
 func (x *Send) Execute(input SendInput, output *SendOutput) error {
 
-	var rawData []byte
-	var dataDigest string
+	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Received SEND order! Destination worker IPs: %s :: Source Digest: %s :: Destination Digest: %s :: ReduceTaskIndex: %d", input.ReceiversInternetAddresses, input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
 
-	process.GetLogger().PrintInfoLevelLabeledMessage(SendTaskName, fmt.Sprintf("Destination worker IP: %s", input.ReceiversInternetAddresses))
-	process.GetLogger().PrintInfoLevelLabeledMessage(SendTaskName, fmt.Sprintf("Source Digest: %s Destination Digest: %s ReduceTaskIndex: %d", input.SourceDataDigest, input.ReceiverAssociatedDataDigest, input.WordTokenListIndex))
-
-	currentWordTokenHashTable := WordTokenHashTable.Deserialize(process.GetDataRegistry().Get(input.SourceDataDigest))
+	rawData := process.GetDataRegistry().Get(input.SourceDataDigest)
 
 	if input.WordTokenListIndex == -1 {
-
-		rawData = currentWordTokenHashTable.Serialize()
-		dataDigest = input.SourceDataDigest
-
+		(*output).SendDataDigest = input.SourceDataDigest
 	} else {
-		data := currentWordTokenHashTable.GetWordTokenListAt(input.WordTokenListIndex)
-		dataDigest, rawData = data.GetDigestAndSerializedData()
+
+		if localWordTokenHashTable, err := WordTokenHashTable.Deserialize(rawData); err != nil {
+			return err
+		} else {
+			(*output).SendDataDigest, rawData, err = localWordTokenHashTable.GetWordTokenListAt(input.WordTokenListIndex).GetDigestAndSerializedData()
+		}
 	}
 
-	sendDataToWorker(rawData, dataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)
-
-	output.SendDataDigest = dataDigest
+	sendDataToWorker(rawData, (*output).SendDataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)
 
 	return nil
 }
@@ -94,16 +88,16 @@ func sendDataTask(sourceNodeIds []int, sourceGroupId int, receiverNodeIds []int,
 		(*input).WordTokenListIndex = receiverReduceTaskId
 		(*input).ReceiversInternetAddresses = receiverInternetAddresses
 
-		worker, err := rpc.Dial("tcp", sender)
-		if err != nil {
-			process.GetLogger().PrintInfoLevelLabeledMessage(SendTaskName, "Send operation failed!...")
-			continue
-		}
-
-		err = worker.Call("Send.Execute", input, output)
-		utility.CheckError(worker.Close())
-		if err == nil {
-			return
+		if worker, err := rpc.Dial("tcp", sender); err != nil {
+			process.GetLogger().PrintInfoLevelMessage(err.Error())
+		} else {
+			if err = worker.Call("Send.Execute", input, output); err != nil {
+				process.GetLogger().PrintInfoLevelMessage(err.Error())
+			} else {
+				if err := worker.Close(); err == nil {
+					return
+				}
+			}
 		}
 	}
 }
