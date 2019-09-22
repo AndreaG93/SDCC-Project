@@ -29,22 +29,25 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	sourceFileDigest := utility.GenerateDigestUsingSHA512(data)
 	utility.CheckError(err)
 
+	fmt.Println("---> Asking for pre-signed URL for input upload...")
 	for {
 
 		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderPublicInternetAddress()
-		fmt.Println("Current Leader IP: " + currentLeaderInternetAddress)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 
 		preSignedURL, err = sendRequest(sourceFileDigest, currentLeaderInternetAddress, wordcount.UploadPreSignedURLRequestType)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		} else {
 			break
 		}
 	}
 
+	fmt.Println("---> Pre-signed URL received! Uploading...")
 	for {
 		err = storage.Upload(preSignedURL, data)
 		if err != nil {
@@ -55,51 +58,59 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 		}
 	}
 
+	fmt.Println("---> Making job's request...")
 	for {
 
 		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderPublicInternetAddress()
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 
 		_, err := sendRequest(sourceFileDigest, currentLeaderInternetAddress, wordcount.AcceptanceJobRequestType)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		} else {
 			break
 		}
 	}
 
-	fmt.Println("Waiting for job completion...")
+	fmt.Println("---> Request is been accepted by system. Waiting for job's completion...")
 	for {
 		outputDigest, err = zookeeperClient.WaitForClientRequestCompletion(sourceFileDigest)
 		if err == nil {
+			fmt.Println(err)
 			break
 		}
 	}
-	fmt.Println("Job completion signal received...")
 
+	fmt.Println("---> Job completion signal received! Asking for pre-signed URL for output download...")
 	for {
 
 		currentLeaderInternetAddress, err = zookeeperClient.GetCurrentLeaderPublicInternetAddress()
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 
 		preSignedURL, err = sendRequest(outputDigest, currentLeaderInternetAddress, wordcount.DownloadPreSignedURLRequestType)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		} else {
 			break
 		}
 	}
 
+	fmt.Println("---> Pre-signed URL received! Downloading...")
 	for {
 		outputBytes, err := storage.Download(preSignedURL)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		} else {
+			fmt.Println("---> Download complete!!\n\n |========= OUTPUT =========|")
 			printResult(outputBytes)
 			return
 		}
