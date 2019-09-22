@@ -52,31 +52,6 @@ func Test_WordTokenList_Inserting(t *testing.T) {
 	}
 }
 
-func TestWordTokenList_Serialize(t *testing.T) {
-
-	var data *WordTokenList
-	var dataSerialized []byte
-	var dataDeserialized *WordTokenList
-	var err error
-
-	data = New()
-
-	(*data).InsertWordToken(WordToken.New("Andrea", 5))
-	(*data).InsertWordToken(WordToken.New("Graziani", 5))
-	(*data).InsertWordToken(WordToken.New("Diana", 5))
-
-	if dataSerialized, err = (*data).Serialize(); err != nil {
-		panic(err)
-	}
-
-	if dataDeserialized, err = Deserialize(dataSerialized); err != nil {
-		panic(err)
-	}
-
-	data.Print()
-	dataDeserialized.Print()
-}
-
 func Test_WordTokenList_WordTokenListMerging(t *testing.T) {
 
 	var currentWordToken *WordToken.WordToken
