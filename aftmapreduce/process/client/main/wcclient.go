@@ -9,7 +9,8 @@ import (
 func main() {
 
 	if len(os.Args) < 3 {
-		fmt.Printf("USAGE: %s [INPUT FILE PATH] [Zookeeper-Server-1 IPv4] [Zookeeper-Server-2 IPv4]...", os.Args[0])
+		fmt.Printf("USAGE: %s [INPUT FILE PATH] [Zookeeper-Server-1 IPv4] [Zookeeper-Server-2 IPv4]...\n", os.Args[0])
+		return
 	}
 
 	inputFilePath := os.Args[1]

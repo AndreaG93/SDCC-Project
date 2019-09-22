@@ -80,7 +80,6 @@ func StartWork(sourceFilePath string, zookeeperAddresses []string) {
 	for {
 		outputDigest, err = zookeeperClient.WaitForClientRequestCompletion(sourceFileDigest)
 		if err == nil {
-			fmt.Println(err)
 			break
 		}
 	}
