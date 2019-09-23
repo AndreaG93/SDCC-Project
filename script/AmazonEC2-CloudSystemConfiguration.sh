@@ -181,7 +181,13 @@ done
 
 
 
-
+go build  -o $HOME/wcworker $HOME/go/src/SDCC-Project/aftmapreduce/main/wcserver.go
+for x in 0
+do
+    echo '{"ZookeeperServersPrivateIPs": ["localhost"], "NodeID": '$x', "NodeGroupID": 0, "NodeClass": "Primary"}' | ssh -i "graziani.pem" ubuntu@ec2-52-201-215-139.compute-1.amazonaws.com 'cat -> ./conf.json'
+    cat $HOME/wcworker | ssh -i "graziani.pem" ubuntu@ec2-52-201-215-139.compute-1.amazonaws.com 'cat -> ./wcworker'
+    ssh -i "graziani.pem" ubuntu@ec2-52-201-215-139.compute-1.amazonaws.com 'chmod 0777 ./wcworker'
+done
 
 
 
