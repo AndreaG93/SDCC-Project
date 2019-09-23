@@ -1,8 +1,7 @@
 {
   "ZookeeperServersPrivateIPs": [
     "172.31.83.14",
-    "172.31.92.183",
-    "172.31.85.212"
+    "172.31.92.183"
   ],
   "NodeID": 1,
   "NodeGroupID": 1,

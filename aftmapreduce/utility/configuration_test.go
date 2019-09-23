@@ -8,7 +8,9 @@ import (
 func Test_Configuration(t *testing.T) {
 
 	configuration := new(NodeConfiguration)
-	configuration.Load("example_conf.json")
+	if err := configuration.Load("conf.json"); err != nil {
+		panic(err)
+	}
 
 	fmt.Println(configuration.ZookeeperServersPrivateIPs)
 	fmt.Println(configuration.NodeClass)
