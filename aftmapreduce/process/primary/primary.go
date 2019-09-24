@@ -7,6 +7,7 @@ import (
 	"SDCC-Project/aftmapreduce/utility"
 	"SDCC-Project/aftmapreduce/wordcount"
 	"encoding/gob"
+	"fmt"
 )
 
 func StartWork() {
@@ -14,7 +15,11 @@ func StartWork() {
 	var err error
 	var allPendingClientRequestGuid []string
 
-	err = (*process.GetSystemCoordinator()).WaitUntilLeader(process.GetPropertyAsString(property.WordCountRequestRPCFullAddress))
+	process.GetPropertyAsString(property.InternetAddress)
+
+	address := fmt.Sprintf("%s:%d", process.GetPropertyAsString(property.InternetAddress), aftmapreduce.WordCountRequestRPCBasePort+process.GetPropertyAsInteger(property.NodeID))
+
+	err = (*process.GetSystemCoordinator()).WaitUntilLeader(address)
 	utility.CheckError(err)
 
 	(*process.GetLogger()).PrintInfoLevelLabeledMessage("Initialization", "I'm leader")
