@@ -20,7 +20,7 @@ func main() {
 	}
 
 	if len(os.Args) == 1 {
-		fmt.Println("HERE")
+
 		command := exec.Command("curl", "http://169.254.169.254/latest/meta-data/public-ipv4")
 		if commandOutput, err := command.Output(); err != nil {
 			panic(err)
