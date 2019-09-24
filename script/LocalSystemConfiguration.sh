@@ -27,6 +27,8 @@ do
 done
 
 # Client
+sudo zkServer.sh start
+
 go build -o $HOME/wcclient $HOME/go/src/SDCC-Project/aftmapreduce/process/client/main/wcclient.go
 
 

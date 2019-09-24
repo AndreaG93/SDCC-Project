@@ -1,7 +1,6 @@
 package aftmapreduce
 
 import (
-	"fmt"
 	"net"
 	"net/rpc"
 )
@@ -31,7 +30,6 @@ func StartAcceptingRPCRequest(serviceTypeRequest interface{}, address string) {
 				}
 			}()
 			for {
-				fmt.Println("I'm listening on " + address)
 				rpc.Accept(listener)
 			}
 		}
