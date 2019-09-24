@@ -25,6 +25,7 @@ sudo apt update && sudo apt install -y default-jre
 sudo wget https://www-us.apache.org/dist/zookeeper/zookeeper-3.5.5/apache-zookeeper-3.5.5-bin.tar.gz
 
 sudo tar -xzf  apache-zookeeper-3.5.5-bin.tar.gz
+sudo rm -rf /usr/local/zookeeper
 sudo mv apache-zookeeper-3.5.5-bin /usr/local/zookeeper
 
 echo 'tickTime=2000

@@ -79,18 +79,18 @@ func initializeProperties(processID int, processGroupID int, processType string,
 	case PrimaryProcessType:
 
 		SetProperty(property.NodeGroupID, -1)
-		SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountRequestRPCBasePort+processID))
+		SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", publicInternetAddress, aftmapreduce.WordCountRequestRPCBasePort+processID))
 		SetProperty(property.CanUseDataRegister, false)
 		SetProperty(property.CanAccessToDFS, true)
 
 	case WorkerProcessType:
 
 		SetProperty(property.NodeGroupID, processGroupID)
-		SetProperty(property.WordCountMapRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountMapTaskRPCBasePort+processID))
-		SetProperty(property.WordCountReduceRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountReduceTaskRPCBasePort+processID))
-		SetProperty(property.WordCountReceiveRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountReceiveRPCBasePort+processID))
-		SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountSendRPCBasePort+processID))
-		SetProperty(property.WordCountRetrieveRPCFullAddress, fmt.Sprintf("%s:%d", "localhost", aftmapreduce.WordCountRetrieverRPCBasePort+processID))
+		SetProperty(property.WordCountMapRPCFullAddress, fmt.Sprintf("%s:%d", publicInternetAddress, aftmapreduce.WordCountMapTaskRPCBasePort+processID))
+		SetProperty(property.WordCountReduceRPCFullAddress, fmt.Sprintf("%s:%d", publicInternetAddress, aftmapreduce.WordCountReduceTaskRPCBasePort+processID))
+		SetProperty(property.WordCountReceiveRPCFullAddress, fmt.Sprintf("%s:%d", publicInternetAddress, aftmapreduce.WordCountReceiveRPCBasePort+processID))
+		SetProperty(property.WordCountSendRPCFullAddress, fmt.Sprintf("%s:%d", publicInternetAddress, aftmapreduce.WordCountSendRPCBasePort+processID))
+		SetProperty(property.WordCountRetrieveRPCFullAddress, fmt.Sprintf("%s:%d", publicInternetAddress, aftmapreduce.WordCountRetrieverRPCBasePort+processID))
 
 		SetProperty(property.CanUseDataRegister, true)
 		SetProperty(property.CanAccessToDFS, false)
