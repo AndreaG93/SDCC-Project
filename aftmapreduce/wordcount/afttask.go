@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-const timeout = 2 * time.Second
+const timeout = 3 * time.Second
 
 type AFTTask interface {
 	GetReplyChannel() chan interface{}
@@ -13,7 +13,7 @@ type AFTTask interface {
 	DoWeHaveEnoughMatchingReplyAfter(lastReply interface{}) bool
 	ExecuteRPCCallTo(fullRPCInternetAddress string)
 	GetOutput() interface{}
-	GetChannelToSendFirstReply() chan interface{}
+	GetChannelToSendFirstReply() (bool, chan interface{})
 }
 
 func Execute(task AFTTask) interface{} {
@@ -27,7 +27,6 @@ func Execute(task AFTTask) interface{} {
 	for ; RPCCallSent <= task.GetFaultToleranceLevel(); RPCCallSent++ {
 		fullRPCInternetAddress := workerProcessesRPCInternetAddresses[RPCCallSent]
 		task.ExecuteRPCCallTo(fullRPCInternetAddress)
-
 	}
 
 	for {
@@ -44,13 +43,13 @@ func Execute(task AFTTask) interface{} {
 
 		case reply := <-task.GetReplyChannel():
 
+			timer.Stop()
+			repliesReceived++
+
 			if firstReply {
 				useFirstReplyForSpeculativeExecution(task, reply)
 				firstReply = false
 			}
-
-			timer.Stop()
-			repliesReceived++
 
 			if task.DoWeHaveEnoughMatchingReplyAfter(reply) {
 
@@ -82,9 +81,9 @@ func thereAreOtherAvailableWorkerProcesses(task AFTTask, RPCCallSentSoFar int) b
 
 func useFirstReplyForSpeculativeExecution(task AFTTask, reply interface{}) {
 
-	channel := task.GetChannelToSendFirstReply()
+	boolean, channel := task.GetChannelToSendFirstReply()
 
-	if channel != nil {
+	if boolean {
 		channel <- reply
 	}
 }

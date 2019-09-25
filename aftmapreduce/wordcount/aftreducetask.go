@@ -90,6 +90,6 @@ func (obj *AFTReduceTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 	}()
 }
 
-func (obj *AFTReduceTask) GetChannelToSendFirstReply() chan interface{} {
-	return nil
+func (obj *AFTReduceTask) GetChannelToSendFirstReply() (bool, chan interface{}) {
+	return false, nil
 }

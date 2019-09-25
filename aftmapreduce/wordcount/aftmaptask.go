@@ -93,6 +93,6 @@ func (obj *AFTMapTask) ExecuteRPCCallTo(fullRPCInternetAddress string) {
 	}()
 }
 
-func (obj *AFTMapTask) GetChannelToSendFirstReply() chan interface{} {
-	return (*obj).firstReplyPredictedAsCorrectChannel
+func (obj *AFTMapTask) GetChannelToSendFirstReply() (bool, chan interface{}) {
+	return true, (*obj).firstReplyPredictedAsCorrectChannel
 }

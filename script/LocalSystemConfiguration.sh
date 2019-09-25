@@ -31,6 +31,8 @@ sudo zkServer.sh start
 
 go build -o $HOME/wcclient $HOME/go/src/SDCC-Project/aftmapreduce/process/client/main/wcclient.go
 
+./wcclient input1 localhost:2181
+
 
 # ==================================================================================================================== #
 # To start all processes locally...

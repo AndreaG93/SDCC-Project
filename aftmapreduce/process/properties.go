@@ -46,12 +46,14 @@ func initializeServices(zookeeperClusterInternetAddresses []string) error {
 		return err
 	}
 
-	if membershipRegister, err = membership.New(membershipCoordinator); err != nil {
+	if processLogger, err = logger.New(GetPropertyAsInteger(property.NodeID), GetPropertyAsString(property.NodeType), GetPropertyAsInteger(property.NodeGroupID)); err != nil {
 		return err
 	}
 
-	if processLogger, err = logger.New(GetPropertyAsInteger(property.NodeID), GetPropertyAsString(property.NodeType), GetPropertyAsInteger(property.NodeGroupID)); err != nil {
-		return err
+	if GetPropertyAsBoolean(property.CanWatchForMembershipChanges) {
+		if membershipRegister, err = membership.New(membershipCoordinator); err != nil {
+			return err
+		}
 	}
 
 	if GetPropertyAsBoolean(property.CanAccessToDFS) {
@@ -90,6 +92,7 @@ func initializeProperties(processID int, processGroupID int, processType string,
 		SetProperty(property.WordCountRequestRPCFullAddress, fmt.Sprintf("%s:%d", address, aftmapreduce.WordCountRequestRPCBasePort+processID))
 		SetProperty(property.CanUseDataRegister, false)
 		SetProperty(property.CanAccessToDFS, true)
+		SetProperty(property.CanWatchForMembershipChanges, true)
 
 	case WorkerProcessType:
 
@@ -102,6 +105,7 @@ func initializeProperties(processID int, processGroupID int, processType string,
 
 		SetProperty(property.CanUseDataRegister, true)
 		SetProperty(property.CanAccessToDFS, false)
+		SetProperty(property.CanWatchForMembershipChanges, false)
 	}
 }
 

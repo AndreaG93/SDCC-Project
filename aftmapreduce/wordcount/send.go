@@ -39,6 +39,7 @@ func (x *Send) Execute(input SendInput, output *SendOutput) error {
 		}
 	}
 
+	(*output).SendDataDigest = fmt.Sprintf("%s-%d", (*output).SendDataDigest, input.WordTokenListIndex)
 	sendDataToWorker(rawData, (*output).SendDataDigest, input.ReceiverAssociatedDataDigest, input.ReceiversInternetAddresses)
 
 	return nil

@@ -13,6 +13,7 @@ const (
 	WordCountRequestRPCFullAddress  = "WordCountRequestRPCFullAddress"
 	WordCountRetrieveRPCFullAddress = "WordCountRetrieveRPCFullAddress"
 
-	CanUseDataRegister = "CanUseDataRegister"
-	CanAccessToDFS     = "CanAccessToDFS"
+	CanUseDataRegister           = "CanUseDataRegister"
+	CanAccessToDFS               = "CanAccessToDFS"
+	CanWatchForMembershipChanges = "CanWatchForMembershipChanges"
 )

@@ -74,9 +74,7 @@ func (obj *Client) createZNodeOverWritingExistent(zNodePath string, data []byte,
 	if isZNodeExistent, actualStat, err = (*obj).zooKeeperConnection.Exists(zNodePath); err != nil {
 		return err
 	} else if isZNodeExistent {
-		if err = (*obj).zooKeeperConnection.Delete(zNodePath, actualStat.Version); err != nil {
-			return err
-		}
+		_ = (*obj).zooKeeperConnection.Delete(zNodePath, actualStat.Version)
 	}
 
 	if _, err = (*obj).zooKeeperConnection.Create(zNodePath, data, flags, zk.WorldACL(zk.PermAll)); err != nil {

@@ -45,10 +45,9 @@ func performReduceTask(localDataDigest string, reduceTaskIndex int) (string, []b
 	if localWordTokenHashTable, err := WordTokenHashTable.Deserialize(process.GetDataRegistry().Get(localDataDigest)); err != nil {
 		return "", nil, err
 	} else {
-
 		localWordTokenList := localWordTokenHashTable.GetWordTokenListAt(reduceTaskIndex)
 
-		if digestsOfReceivedPartitions, err := GetDigestAssociationArray(localDataDigest); err != nil {
+		if digestsOfReceivedPartitions, err := GetDigestAssociationArray(localDataDigest, reduceTaskIndex); err != nil {
 			return "", nil, err
 		} else {
 

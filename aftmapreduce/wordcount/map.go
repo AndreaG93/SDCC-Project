@@ -51,9 +51,6 @@ func (x *Map) Execute(input MapInput, output *MapOutput) error {
 				if err = process.GetDataRegistry().Set(digestData, serializedData); err != nil {
 					return err
 				}
-				if err = process.GetDataRegistry().Set(guid, []byte(digestData)); err != nil {
-					return err
-				}
 				if err = process.GetDataRegistry().Set(fmt.Sprintf("%s-mappedDataSize", guid), serializedIndexPartitionSize); err != nil {
 					return err
 				}

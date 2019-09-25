@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -15,6 +16,7 @@ type Register struct {
 	dataTable  map[string][]byte
 	timerTable map[string]*time.Timer
 	path       string
+	mux        sync.Mutex
 }
 
 func New(processID int, processType string) (*Register, error) {
@@ -39,20 +41,22 @@ func (obj *Register) Get(guid string) []byte {
 
 func (obj *Register) Set(key string, input []byte) error {
 
-	if (*obj).dataTable[key] == nil {
+	(*obj).mux.Lock()
 
-		(*obj).dataTable[key] = input
-		(*obj).timerTable[key] = time.NewTimer(timeout)
+	(*obj).dataTable[key] = input
+	(*obj).timerTable[key] = time.NewTimer(timeout)
 
-		if err := (*obj).writeDataOnDisk(key, input); err != nil {
-			return err
-		}
-
-		go (*obj).startAutomaticCleanerRoutine(key)
-
-	} else {
-		(*obj).timerTable[key].Reset(timeout)
+	if err := (*obj).writeDataOnDisk(key, input); err != nil {
+		return err
 	}
+
+	if (*obj).dataTable[key] != nil {
+		(*obj).timerTable[key].Reset(timeout)
+	} else {
+		go (*obj).startAutomaticCleanerRoutine(key)
+	}
+
+	(*obj).mux.Unlock()
 
 	return nil
 }

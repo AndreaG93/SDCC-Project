@@ -4,6 +4,8 @@ import (
 	"SDCC-Project/aftmapreduce/process"
 	"SDCC-Project/aftmapreduce/utility"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 type Receive struct {
@@ -39,18 +41,31 @@ func (x *Receive) Execute(input ReceiveInput, output *ReceiveOutput) error {
 	return nil
 }
 
-func GetDigestAssociationArray(localDigest string) ([]string, error) {
+func GetDigestAssociationArray(localDigest string, reduceIndex int) ([]string, error) {
 
-	var output []string
+	var support []string
+	output := make([]string, 0)
 
 	key := fmt.Sprintf("%s-%s", localDigest, digestAssociationArrayLabel)
 	rawData := process.GetDataRegistry().Get(key)
 
-	if err := utility.Decoding(rawData, &output); err != nil {
+	if err := utility.Decoding(rawData, &support); err != nil {
 		return nil, err
-	} else {
-		return output, nil
 	}
+
+	for _, digest := range support {
+
+		keyIndexAsString := strings.Split(digest, "-")[1]
+		if keyIndex, err := strconv.Atoi(keyIndexAsString); err != nil {
+			return nil, err
+		} else {
+			if keyIndex == reduceIndex {
+				output = append(output, digest)
+			}
+		}
+	}
+
+	return output, nil
 }
 
 func SaveDigestAssociation(digest string, localDigest string) error {
@@ -62,7 +77,7 @@ func SaveDigestAssociation(digest string, localDigest string) error {
 
 	if rawData == nil {
 
-		digestAssociationArray := make([]string, 1)
+		digestAssociationArray = make([]string, 1)
 		digestAssociationArray[0] = digest
 
 	} else {
