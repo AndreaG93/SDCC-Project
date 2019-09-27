@@ -67,6 +67,10 @@ done
 # Configuration Zookeeper cluster
 # ==================================================================================================================== #
 
+# -- tickTime --
+
+# the length of a single tick, which is the basic time unit used by ZooKeeper, as measured in milliseconds. It is used to regulate heartbeats, and timeouts. For example, # the minimum session timeout will be two ticks.
+
 index=0
 for i in ${PP_INSTENCES_PUBLIC_IP[@]}
 do
@@ -83,7 +87,7 @@ sudo tar -xzf  apache-zookeeper-3.5.5-bin.tar.gz
 sudo rm -rf /usr/local/zookeeper
 sudo mv apache-zookeeper-3.5.5-bin /usr/local/zookeeper
 
-echo 'tickTime=2000
+echo 'tickTime=50
 initLimit=10
 syncLimit=5
 dataDir=/var/lib/zookeeper
@@ -148,10 +152,10 @@ do
     konsole --new-tab --noclose -e ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@$x 'sudo /usr/local/zookeeper/bin/zkServer.sh status' &
 done
 
-for x in ${PP_INSTENCES_PUBLIC_IP[@]}
-do
-    konsole --new-tab --noclose -e ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@$x './sddc_wc_aws_build' &
-done
+konsole --new-tab --noclose -e ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@${PP_INSTENCES_PUBLIC_IP[0]} './sddc_wc_aws_build' &
+
+konsole --new-tab --noclose -e ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@${PP_INSTENCES_PUBLIC_IP[1]} './sddc_wc_aws_build' &
+konsole --new-tab --noclose -e ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@${PP_INSTENCES_PUBLIC_IP[2]} './sddc_wc_aws_build' &
 
 for x in ${WP_INSTENCES_PUBLIC_IP[@]}
 do
@@ -162,12 +166,12 @@ done
 # Local process...
 # ==================================================================================================================== #
 
-# ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@${PP_INSTENCES_PUBLIC_IP[0]}
-# sudo /usr/local/zookeeper/bin/zkCli.sh
+# ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@3.208.162.153 '/usr/local/zookeeper/bin/zkCli.sh'
 
 go build -o ./wcclient $HOME/go/src/SDCC-Project/aftmapreduce/process/client/main/wcclient.go
+cp $HOME/go/src/SDCC-Project/test-input-data/input1.txt $HOME/input1.txt
 
-./wcclient input1 ${PP_INSTENCES_PUBLIC_IP[0]} ${PP_INSTENCES_PUBLIC_IP[1]} ${PP_INSTENCES_PUBLIC_IP[2]}
+./wcclient input1.txt 3.208.162.153 3.211.227.218 35.169.48.228
 
 
 

@@ -128,7 +128,7 @@ func startReducePhaseAfterMapPhaseSpeculativeExecution(guid string, mapPhaseOutp
 	} else {
 		reducePhaseOutputRawDataChannel <- rawOutput
 	}
-
+	crash()
 	process.GetLogger().PrintInfoLevelMessage(fmt.Sprintf("Reduce-Phase AFTER speculative execution FINISHED for Request GUID: %s", guid))
 }
 
