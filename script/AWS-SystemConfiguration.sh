@@ -67,7 +67,7 @@ done
 # Configuration Zookeeper cluster
 # ==================================================================================================================== #
 
-# -- tickTime --
+# -- tickTime
 
 # the length of a single tick, which is the basic time unit used by ZooKeeper, as measured in milliseconds. It is used to regulate heartbeats, and timeouts. For example, # the minimum session timeout will be two ticks.
 
@@ -166,12 +166,12 @@ done
 # Local process...
 # ==================================================================================================================== #
 
-# ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@3.208.162.153 '/usr/local/zookeeper/bin/zkCli.sh'
+# ssh -o "StrictHostKeyChecking=no" -i "graziani.pem" ubuntu@3.229.132.166 '/usr/local/zookeeper/bin/zkCli.sh'
 
 go build -o ./wcclient $HOME/go/src/SDCC-Project/aftmapreduce/process/client/main/wcclient.go
 cp $HOME/go/src/SDCC-Project/test-input-data/input1.txt $HOME/input1.txt
 
-./wcclient input1.txt 3.208.162.153 3.211.227.218 35.169.48.228
+./wcclient input1.txt 3.229.132.166 34.231.249.26 34.231.249.26
 
 
 
