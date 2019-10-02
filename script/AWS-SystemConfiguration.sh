@@ -7,7 +7,7 @@ WP_INSTENCES_PRIVATE_IP=()
 # ==================================================================================================================== #
 # Information retrival...
 # ==================================================================================================================== #
-for i in 1 2 3
+for i in 0 1 2
 do
     EC2_OUTPUT=$(aws ec2 describe-instances --region us-east-1 --filters "Name=tag:Name,Values=PP-$i")
   
@@ -87,7 +87,7 @@ sudo tar -xzf  apache-zookeeper-3.5.5-bin.tar.gz
 sudo rm -rf /usr/local/zookeeper
 sudo mv apache-zookeeper-3.5.5-bin /usr/local/zookeeper
 
-echo 'tickTime=50
+echo 'tickTime=250
 initLimit=10
 syncLimit=5
 dataDir=/var/lib/zookeeper
@@ -106,20 +106,16 @@ done
 # Generate all conf.json...
 # ==================================================================================================================== #
 
-index=0
 for x in 0 1 2
 do
-    ((index++))
-    MSG='{"ZookeeperServersPrivateIPs": ["'${PP_INSTENCES_PRIVATE_IP[0]}'","'${PP_INSTENCES_PRIVATE_IP[1]}'","'${PP_INSTENCES_PRIVATE_IP[2]}'"], "NodeID": '$index', "NodeGroupID": 0, "NodeClass": "Primary"}'
+    MSG='{"ZookeeperServersPrivateIPs": ["'${PP_INSTENCES_PRIVATE_IP[0]}'","'${PP_INSTENCES_PRIVATE_IP[1]}'","'${PP_INSTENCES_PRIVATE_IP[2]}'"], "NodeID": '$x', "NodeGroupID": 0, "NodeClass": "Primary"}'
 
     echo $MSG | ssh -i "graziani.pem" ubuntu@${PP_INSTENCES_PUBLIC_IP[$x]} 'cat > ./conf.json'
-
 done
 
 
 for x in 0 1 2
 do
-    ((index++))
     MSG='{"ZookeeperServersPrivateIPs": ["'${PP_INSTENCES_PRIVATE_IP[0]}'","'${PP_INSTENCES_PRIVATE_IP[1]}'","'${PP_INSTENCES_PRIVATE_IP[2]}'"], "NodeID": '$x', "NodeGroupID": 0, "NodeClass": "Worker"}'
 
     echo $MSG | ssh -i "graziani.pem" ubuntu@${WP_INSTENCES_PUBLIC_IP[$x]} 'cat > ./conf.json'

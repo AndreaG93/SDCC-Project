@@ -27,7 +27,7 @@ To start client use:
 
 ## How to build and run server side processes
 
-We prefer to omit a detailed description to how build server side processes because, since we have adopted some Amazon AWS services, *OUR* Amazon AWS token is required to run server side processes; then, unfortunately, it's not possible to test out of the box our application (we are sorry).
+We prefer to omit a detailed description about server side processes building because, having adopted some Amazon AWS services, *OUR* Amazon AWS token is required to run processes; then, unfortunately, it's not possible to test our application out of the box (we are sorry).
 
 However following Amazon AWS services are required:
 
